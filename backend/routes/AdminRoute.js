@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+
 const auth = require("../middleware/authMiddleware.js");
 const { requireRole } = require("../middleware/roleMiddleware.js");
 const { 
@@ -32,5 +33,10 @@ router.get("/donors", auth, requireRole("admin"), getAllDonors);
 router.get("/bloodbanks", auth, requireRole("admin"), getAllBloodBanks);
 router.get("/users/:id", auth, requireRole("admin"), getUserDetails);
 router.delete("/users/:id", auth, requireRole("admin"), removeUser);
+
+const { adminLogin } = require("../controller/AdminController");
+
+router.post("/login", adminLogin);
+
 
 module.exports = router;

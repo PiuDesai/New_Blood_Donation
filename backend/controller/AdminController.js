@@ -1,6 +1,9 @@
+<<<<<<< HEAD
 const jwt = require('jsonwebtoken');
 const User = require('../models/UserModel');
 
+=======
+>>>>>>> 255e0b8 (admin module initialized)
 exports.adminLogin = (req, res) => {
   const { email, password } = req.body;
 
@@ -8,6 +11,7 @@ exports.adminLogin = (req, res) => {
     email === process.env.ADMIN_EMAIL &&
     password === process.env.ADMIN_PASSWORD
   ) {
+<<<<<<< HEAD
     const token = jwt.sign(
       { role: "admin" },
       process.env.JWT_SECRET,
@@ -18,11 +22,17 @@ exports.adminLogin = (req, res) => {
       success: true,
       token,
       user: { role: "admin", email }
+=======
+    return res.json({
+      success: true,
+      message: "Login successful",
+>>>>>>> 255e0b8 (admin module initialized)
     });
   }
 
   return res.status(401).json({
     success: false,
+<<<<<<< HEAD
     message: "Invalid credentials"
   });
 };
@@ -198,4 +208,8 @@ exports.getAdminStats = async (req, res) => {
       message: error.message
     });
   }
+=======
+    message: "Invalid email or password",
+  });
+>>>>>>> 255e0b8 (admin module initialized)
 };
