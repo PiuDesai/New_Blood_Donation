@@ -1,30 +1,42 @@
 const express = require("express");
-const Database = require('./config/db');
 const cors = require("cors");
+require("dotenv").config();
+
+const Database = require("./config/db");
 
 const userRoutes = require("./routes/UserRoute.js");
+const adminRoutes = require("./routes/AdminRoute.js"); // ✅ NEW
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
-// Middleware
+// ───── Middleware ─────
 app.use(cors());
 app.use(express.json());
 
-// DB
+// ───── Database ─────
 Database();
 
-// Root route
+// ───── Root Route ─────
 app.get("/", (req, res) => {
   res.send("Blood Donation Server is running!");
 });
 
-// Routes
+// ───── Routes ─────
 app.use("/api/users", userRoutes);
+app.use("/api/admin", adminRoutes); // ✅ ADD THIS
 
-// ✅ ONLY ONE error handler (VERY IMPORTANT)
+// ───── 404 Handler (Optional but Recommended) ─────
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found"
+  });
+});
+
+// ───── Global Error Handler ─────
 app.use((err, req, res, next) => {
-  console.log("GLOBAL ERROR:", err);
+  console.error("GLOBAL ERROR:", err.message);
 
   res.status(500).json({
     success: false,
@@ -32,7 +44,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// ───── Start Server ─────
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
