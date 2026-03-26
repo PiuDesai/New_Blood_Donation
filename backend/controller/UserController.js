@@ -6,14 +6,20 @@ const signToken = (id, role) =>
   jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
 
+<<<<<<< HEAD
 // ───────────────── REGISTER USER (Donor/Patient) ─────────────────
 const registerUser = async (req, res, next) => {
+=======
+// ───────────────── REGISTER ─────────────────
+const register = async (req, res, next) => {
+>>>>>>> 87a3729 (User model done)
   try {
     const {
       name, email, phone, password, role,
       bloodGroup, dateOfBirth, gender, location
     } = req.body;
 
+<<<<<<< HEAD
     if (!name || !email || !phone || !password || !bloodGroup || !dateOfBirth || !gender) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
@@ -22,6 +28,8 @@ const registerUser = async (req, res, next) => {
       return res.status(400).json({ message: 'location with type Point and coordinates [lng, lat] is required' });
     }
 
+=======
+>>>>>>> 87a3729 (User model done)
     const existing = await User.findOne({ $or: [{ email }, { phone }] });
     if (existing)
       return res.status(400).json({ message: 'Email or phone already registered' });
@@ -38,6 +46,7 @@ const registerUser = async (req, res, next) => {
     });
 
   } catch (err) {
+<<<<<<< HEAD
     next(err);
   }
 };
@@ -76,6 +85,9 @@ const registerBloodBank = async (req, res, next) => {
 
   } catch (err) {
     next(err);
+=======
+    next(err); // ✅ FIX
+>>>>>>> 87a3729 (User model done)
   }
 };
 
@@ -226,8 +238,11 @@ const checkEligibility = async (req, res, next) => {
 };
 
 
+<<<<<<< HEAD
 const { addPointsForDonation } = require('./GamificationController.js');
 
+=======
+>>>>>>> 87a3729 (User model done)
 // ───────────────── RECORD DONATION ─────────────────
 const recordDonation = async (req, res, next) => {
   try {
@@ -236,6 +251,7 @@ const recordDonation = async (req, res, next) => {
     if (!user)
       return res.status(404).json({ message: 'User not found' });
 
+<<<<<<< HEAD
     // Awards points and updates donation count + badges
     await addPointsForDonation(user._id, 50);
 
@@ -249,6 +265,20 @@ const recordDonation = async (req, res, next) => {
 
   } catch (err) {
     next(err);
+=======
+    if (!user.canDonate)
+      return res.status(400).json({ message: 'Not eligible' });
+
+    user.donorInfo.lastDonatedAt = new Date();
+    user.donorInfo.donationCount += 1;
+
+    await user.save();
+
+    res.json({ message: 'Donation recorded' });
+
+  } catch (err) {
+    next(err); // ✅ FIX
+>>>>>>> 87a3729 (User model done)
   }
 };
 
@@ -261,6 +291,7 @@ const logout = async (req, res, next) => {
     res.json({ message: 'Logged out successfully' });
 
   } catch (err) {
+<<<<<<< HEAD
     next(err);
   }
 };
@@ -296,20 +327,31 @@ const saveToken = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
+=======
+    next(err); // ✅ FIX
+>>>>>>> 87a3729 (User model done)
   }
 };
 
 
 module.exports = {
+<<<<<<< HEAD
   registerUser,
   registerBloodBank,
+=======
+  register,
+>>>>>>> 87a3729 (User model done)
   login,
   getProfile,
   updateProfile,
   changePassword,
   checkEligibility,
   recordDonation,
+<<<<<<< HEAD
   logout,
   getAllBloodBanks,
   saveToken
+=======
+  logout
+>>>>>>> 87a3729 (User model done)
 };

@@ -4,9 +4,12 @@ const auth = (req, res, next) => {
   try {
     // 🔹 Get token
     const authHeader = req.headers.authorization;
+<<<<<<< HEAD
     if (process.env.NODE_ENV !== "production") {
       console.log("[auth] authorization header:", authHeader);
     }
+=======
+>>>>>>> 87a3729 (User model done)
 
     if (!authHeader) {
       return res.status(401).json({
@@ -24,6 +27,7 @@ const auth = (req, res, next) => {
     const token = authHeader.split(" ")[1];
 
     // 🔹 Verify
+<<<<<<< HEAD
     if (!process.env.JWT_SECRET) {
       return res.status(500).json({ message: "JWT_SECRET is not configured" });
     }
@@ -39,6 +43,10 @@ const auth = (req, res, next) => {
       decoded.role = String(decoded.role).toLowerCase();
     }
 
+=======
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+>>>>>>> 87a3729 (User model done)
     req.user = decoded;
 
     next(); // ✅ MUST

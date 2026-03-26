@@ -9,6 +9,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
 <<<<<<< HEAD
+<<<<<<< HEAD
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
@@ -28,10 +29,17 @@
     "tesseract.js": "^7.0.0"
 =======
     "start": "node server.js"
+=======
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+>>>>>>> 87a3729 (User model done)
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.3.2",
     "nodemon": "^3.1.14"
 >>>>>>> a484510 (added backend dependencies)
