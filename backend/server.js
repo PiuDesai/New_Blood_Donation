@@ -6,6 +6,7 @@ const Database = require("./config/db");
 
 const userRoutes = require("./routes/UserRoute.js");
 const adminRoutes = require("./routes/AdminRoute.js"); // ✅ NEW
+const analyzeRoutes = require("./routes/analyzeRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 // ───── Routes ─────
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes); // ✅ ADD THIS
+app.use("/api", analyzeRoutes);
 
 // ───── 404 Handler (Optional but Recommended) ─────
 app.use((req, res) => {
