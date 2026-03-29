@@ -4,7 +4,7 @@ import { Building2, Droplets, Activity, Plus, Search, MapPin, MoreVertical, Shie
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
-import { getBloodBankStats } from "../../api/authAPI";
+import { getBloodBankStats } from "../../api/api";
 import { motion, AnimatePresence } from "framer-motion";
 
 const BloodBankDashboard = () => {
@@ -24,7 +24,7 @@ const BloodBankDashboard = () => {
         setStats(data);
       } catch (err) {
         console.error("Failed to fetch blood bank stats:", err);
-        setError("Unable to load real-time stats. Showing demo data.");
+        setError(err?.response?.data?.message || err?.message || "Could not load dashboard stats.");
       } finally {
         setLoading(false);
       }
@@ -68,10 +68,10 @@ const BloodBankDashboard = () => {
   const renderInventory = () => (
     <div className="space-y-10">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <StatsCard title="Total Units" value={stats?.totalUnits || 212} icon={Droplets} color="from-blue-500 to-indigo-600" />
-        <StatsCard title="Today's Intake" value={stats?.todayDonations || 18} icon={TrendingUp} color="from-emerald-500 to-teal-600" />
-        <StatsCard title="Active Requests" value={stats?.activeRequests || 42} icon={Activity} color="from-purple-500 to-violet-600" />
-        <StatsCard title="Low Stock" value={stats?.lowStockAlerts || 3} icon={AlertTriangle} color="from-red-500 to-pink-600" />
+        <StatsCard title="Total Units" value={stats?.totalUnits ?? 0} icon={Droplets} color="from-blue-500 to-indigo-600" />
+        <StatsCard title="Today's Intake" value={stats?.todayDonations ?? 0} icon={TrendingUp} color="from-emerald-500 to-teal-600" />
+        <StatsCard title="Active Requests" value={stats?.activeRequests ?? 0} icon={Activity} color="from-purple-500 to-violet-600" />
+        <StatsCard title="Low Stock" value={stats?.lowStockAlerts ?? 0} icon={AlertTriangle} color="from-red-500 to-pink-600" />
       </div>
 
       <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
