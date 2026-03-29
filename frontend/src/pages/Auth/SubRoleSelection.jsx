@@ -46,7 +46,7 @@ const SubRoleSelection = () => {
               initial={{ opacity: 0, x: index === 0 ? -30 : 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1, type: "spring" }}
-              onClick={() => navigate(`/login?role=${role.id}`)}
+              onClick={() => navigate(`/login/${role.id}`)}
               className="group cursor-pointer"
             >
               <Card variant="glass" className="h-full p-12 relative overflow-hidden group-hover:border-red-200 group-hover:shadow-red-100">

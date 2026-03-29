@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/Layout/DashboardLayout";
+import { Toaster } from "react-hot-toast";
 
 // Pages
 import RoleSelection from "./pages/Auth/RoleSelection";
@@ -12,15 +13,17 @@ import AdminDashboard from "./pages/Dashboard/AdminDashboard";
 import DonorDashboard from "./pages/Dashboard/DonorDashboard";
 import PatientDashboard from "./pages/Dashboard/PatientDashboard";
 import BloodBankDashboard from "./pages/Dashboard/BloodBankDashboard";
+import Home from "./pages/Home";
 
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         {/* Auth Routes */}
         <Route path="/role-selection" element={<RoleSelection />} />
         <Route path="/sub-role-selection" element={<SubRoleSelection />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login/:role" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
         {/* Admin Routes */}
@@ -33,6 +36,11 @@ function App() {
           }
         >
           <Route index element={<AdminDashboard />} />
+          <Route path="donors" element={<AdminDashboard />} />
+          <Route path="patients" element={<AdminDashboard />} />
+          <Route path="inventory" element={<AdminDashboard />} />
+          <Route path="settings" element={<AdminDashboard />} />
+          <Route path="help" element={<AdminDashboard />} />
         </Route>
 
         {/* Donor Routes */}
@@ -45,6 +53,10 @@ function App() {
           }
         >
           <Route index element={<DonorDashboard />} />
+          <Route path="history" element={<DonorDashboard />} />
+          <Route path="schedule" element={<DonorDashboard />} />
+          <Route path="settings" element={<DonorDashboard />} />
+          <Route path="help" element={<DonorDashboard />} />
         </Route>
 
         {/* Patient Routes */}
@@ -57,6 +69,10 @@ function App() {
           }
         >
           <Route index element={<PatientDashboard />} />
+          <Route path="requests" element={<PatientDashboard />} />
+          <Route path="find" element={<PatientDashboard />} />
+          <Route path="settings" element={<PatientDashboard />} />
+          <Route path="help" element={<PatientDashboard />} />
         </Route>
 
         {/* Blood Bank Routes */}
@@ -69,11 +85,15 @@ function App() {
           }
         >
           <Route index element={<BloodBankDashboard />} />
+          <Route path="requests" element={<BloodBankDashboard />} />
+          <Route path="donations" element={<BloodBankDashboard />} />
+          <Route path="settings" element={<BloodBankDashboard />} />
+          <Route path="help" element={<BloodBankDashboard />} />
         </Route>
 
         {/* Default Route */}
-        <Route path="/" element={<Navigate to="/role-selection" replace />} />
-        <Route path="*" element={<Navigate to="/role-selection" replace />} />
+        <Route path="/" element={<Home />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
   );
