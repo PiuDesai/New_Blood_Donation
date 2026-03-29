@@ -14,6 +14,7 @@ import DonorDashboard from "./pages/Dashboard/DonorDashboard";
 import PatientDashboard from "./pages/Dashboard/PatientDashboard";
 import BloodBankDashboard from "./pages/Dashboard/BloodBankDashboard";
 import Home from "./pages/Home";
+import HomeBloodTest from "./pages/Patient/HomeBloodTest";
 
 function App() {
   return (
@@ -52,7 +53,8 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<DonorDashboard />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DonorDashboard />} />
           <Route path="history" element={<DonorDashboard />} />
           <Route path="schedule" element={<DonorDashboard />} />
           <Route path="settings" element={<DonorDashboard />} />
@@ -68,9 +70,11 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<PatientDashboard />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<PatientDashboard />} />
           <Route path="requests" element={<PatientDashboard />} />
           <Route path="find" element={<PatientDashboard />} />
+          <Route path="lab" element={<HomeBloodTest />} />
           <Route path="settings" element={<PatientDashboard />} />
           <Route path="help" element={<PatientDashboard />} />
         </Route>

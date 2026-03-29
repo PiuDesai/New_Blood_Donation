@@ -4,10 +4,11 @@ import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
 import { Input } from "../../components/Common/Input";
 import { useAuth } from "../../context/AuthContext";
-import { getPatientStats } from "../../api/authAPI";
+import { getPatientStats } from "../../api/api";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
+import { dashboardPath } from "../../utils/rolePaths";
 import toast from "react-hot-toast";
 
 const PatientDashboard = () => {
@@ -45,7 +46,7 @@ const PatientDashboard = () => {
         setStats(data);
       } catch (err) {
         console.error("Failed to fetch patient stats:", err);
-        setError("Unable to connect to server. Showing demo data.");
+        setError(err?.response?.data?.message || err?.message || "Could not load dashboard stats.");
       } finally {
         setLoading(false);
       }
@@ -53,16 +54,16 @@ const PatientDashboard = () => {
     fetchData();
   }, []);
 
+  if (user && String(user.role).toLowerCase() !== "patient") {
+    return <Navigate to={dashboardPath(user.role)} replace />;
+  }
+
   const labTests = [
     { id: 1, test: "Complete Blood Count (CBC)", date: "March 20, 2024", status: "Report Ready", result: "Normal" },
     { id: 2, test: "Liver Function Test", date: "March 15, 2024", status: "Pending", result: "N/A" },
   ];
 
-  const myRequests = stats?.requests || [
-    { id: 1, bloodGroup: "O+", units: "2 Units", urgency: "Emergency", hospital: "City General Hospital", date: "2024-03-25", status: "Pending" },
-    { id: 2, bloodGroup: "A-", units: "1 Unit", urgency: "Regular", hospital: "St. Jude Medical Center", date: "2024-03-20", status: "Completed" },
-    { id: 3, bloodGroup: "B+", units: "3 Units", urgency: "Urgent", hospital: "Metro Health Care", date: "2024-03-18", status: "Completed" }
-  ];
+  const myRequests = stats?.requests || [];
 
   const nearbyDonors = [
     { name: "John Doe", bloodGroup: "O+", distance: "1.2 km", reliability: 98, phone: "+91 98765 43210" },
@@ -82,7 +83,7 @@ const PatientDashboard = () => {
   if (isRequestsPage) {
     return (
       <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate("/patient")} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+        <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
           <ArrowLeft size={16} /> Back to Dashboard
         </Button>
         <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
@@ -120,7 +121,7 @@ const PatientDashboard = () => {
   if (isFindPage) {
     return (
       <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate("/patient")} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+        <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
           <ArrowLeft size={16} /> Back to Dashboard
         </Button>
         <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
@@ -162,7 +163,7 @@ const PatientDashboard = () => {
   if (isLabPage) {
     return (
       <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate("/patient")} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+        <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
           <ArrowLeft size={16} /> Back to Dashboard
         </Button>
         <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
@@ -192,7 +193,7 @@ const PatientDashboard = () => {
   if (isSettingsPage) {
     return (
       <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate("/patient")} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+        <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
           <ArrowLeft size={16} /> Back to Dashboard
         </Button>
         <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
@@ -212,7 +213,7 @@ const PatientDashboard = () => {
   if (isHelpPage) {
     return (
       <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate("/patient")} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+        <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
           <ArrowLeft size={16} /> Back to Dashboard
         </Button>
         <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
@@ -268,19 +269,19 @@ const PatientDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <StatsCard 
           title="Active Requests" 
-          value={stats?.activeRequests || 2} 
+          value={stats?.activeRequests ?? 0} 
           icon={HeartPulse} 
           color="from-red-500 to-pink-600" 
         />
         <StatsCard 
           title="Donors Found" 
-          value={stats?.donorsFound || 124} 
+          value={stats?.donorsFound ?? 0} 
           icon={Activity} 
           color="from-blue-500 to-indigo-600" 
         />
         <StatsCard 
           title="Nearby Centers" 
-          value={stats?.nearbyCenters || 8} 
+          value={stats?.nearbyCenters ?? 0} 
           icon={MapPin} 
           color="from-emerald-500 to-teal-600" 
         />
