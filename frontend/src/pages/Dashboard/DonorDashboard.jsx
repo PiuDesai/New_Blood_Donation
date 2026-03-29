@@ -1,17 +1,19 @@
-import { Heart, Activity, Droplets, Calendar, Clock, MapPin, Search, Star, ShieldCheck, CheckCircle2, User, ArrowRight, Phone, ArrowLeft } from "lucide-react";
+import { Heart, Activity, Droplets, Calendar, Clock, MapPin, Search, Star, ShieldCheck, CheckCircle2, User, ArrowRight, Phone, ArrowLeft, HelpCircle } from "lucide-react";
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
 import { useAuth } from "../../context/AuthContext";
-import { getDonorStats } from "../../api/authAPI";
+import { getDonorStats } from "../../api/api";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
+import { dashboardPath } from "../../utils/rolePaths";
 
 const DonorDashboard = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,7 +31,7 @@ const DonorDashboard = () => {
         setStats(data);
       } catch (err) {
         console.error("Failed to fetch donor stats:", err);
-        setError("Unable to connect to server. Showing demo data.");
+        setError(err?.response?.data?.message || err?.message || "Could not load dashboard stats.");
       } finally {
         setLoading(false);
       }
@@ -37,17 +39,17 @@ const DonorDashboard = () => {
     fetchData();
   }, []);
 
+  if (user && String(user.role).toLowerCase() !== "donor") {
+    return <Navigate to={dashboardPath(user.role)} replace />;
+  }
+
   const pendingRequests = [
     { id: 1, name: "Rahul Sharma", bloodGroup: "O+", units: "2 Units", urgency: "Emergency", location: "City Hospital, Mumbai", distance: "2.4 km", time: "10 mins ago" },
     { id: 2, name: "Priya Gupta", bloodGroup: "O+", units: "1 Unit", urgency: "Regular", location: "Global Health, Navi Mumbai", distance: "5.1 km", time: "25 mins ago" },
     { id: 3, name: "Amit Patel", bloodGroup: "O+", units: "3 Units", urgency: "Urgent", location: "Lifeline Clinic, Thane", distance: "8.2 km", time: "45 mins ago" }
   ];
 
-  const donationHistory = stats?.history || [
-    { id: 101, location: "Red Cross Blood Bank", date: "Jan 12, 2024", units: "1 Unit", type: "Whole Blood", status: "Verified" },
-    { id: 102, location: "Apollo Hospitals", date: "Oct 05, 2023", units: "1 Unit", type: "Platelets", status: "Verified" },
-    { id: 103, location: "City Medical Center", date: "June 18, 2023", units: "1 Unit", type: "Whole Blood", status: "Verified" }
-  ];
+  const donationHistory = stats?.history || [];
 
   const nearbyCamps = [
     { id: 1, title: "Grand Plaza Drive", date: "April 05, 2024", location: "Mumbai Central", time: "10:00 AM - 06:00 PM" },
@@ -65,7 +67,7 @@ const DonorDashboard = () => {
   if (isHistoryPage) {
     return (
       <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate("/donor")} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+        <Button onClick={() => navigate(dashboardPath("donor"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
           <ArrowLeft size={16} /> Back to Dashboard
         </Button>
         <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
@@ -92,7 +94,7 @@ const DonorDashboard = () => {
   if (isSchedulePage) {
     return (
       <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate("/donor")} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+        <Button onClick={() => navigate(dashboardPath("donor"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
           <ArrowLeft size={16} /> Back to Dashboard
         </Button>
         <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
@@ -118,7 +120,7 @@ const DonorDashboard = () => {
   if (isSettingsPage) {
     return (
       <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate("/donor")} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+        <Button onClick={() => navigate(dashboardPath("donor"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
           <ArrowLeft size={16} /> Back to Dashboard
         </Button>
         <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
@@ -138,7 +140,7 @@ const DonorDashboard = () => {
   if (isHelpPage) {
     return (
       <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate("/donor")} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+        <Button onClick={() => navigate(dashboardPath("donor"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
           <ArrowLeft size={16} /> Back to Dashboard
         </Button>
         <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
@@ -186,19 +188,19 @@ const DonorDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <StatsCard 
           title="Total Donations" 
-          value={stats?.totalDonations || 8} 
+          value={stats?.totalDonations ?? 0} 
           icon={Droplets} 
           color="from-red-500 to-pink-600" 
         />
         <StatsCard 
           title="Lives Saved" 
-          value={stats?.livesSaved || 12} 
+          value={stats?.livesSaved ?? 0} 
           icon={Activity} 
           color="from-blue-500 to-indigo-600" 
         />
         <StatsCard 
           title="Next Eligible" 
-          value={stats?.nextEligible || "April 15"} 
+          value={stats?.nextEligible ?? "—"} 
           icon={Calendar} 
           color="from-emerald-500 to-teal-600" 
         />

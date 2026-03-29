@@ -1,79 +1,77 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { registerUser } from "../../api/authAPI";
-import { useAuth } from "../../context/AuthContext";
+import { registerUser } from "../../api/api";
+import { getErrorMessage } from "../../api/axios";
 import { Card } from "../../components/Common/Card";
 import { Input } from "../../components/Common/Input";
 import { Button } from "../../components/Common/Button";
-import { User, Mail, Lock, Phone, MapPin, Droplets, Calendar, Loader2, ArrowRight, ShieldAlert } from "lucide-react";
+import { User, Mail, Lock, Phone, MapPin, Droplets, Calendar, Loader2, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
+
+const genderToApi = (g) => {
+  const m = { Male: "male", Female: "female", Other: "other" };
+  return m[g] || String(g).toLowerCase();
+};
 
 const Register = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     name: "", email: "", phone: "", password: "",
     bloodGroup: "", gender: "", dateOfBirth: "", city: "", state: "",
-    role: "patient" // Default role
+    role: "patient"
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showFallback, setShowFallback] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setShowFallback(false);
+
+    const phoneDigits = String(formData.phone).replace(/\D/g, "").slice(-10);
+    if (phoneDigits.length !== 10 || !/^[6-9]/.test(phoneDigits)) {
+      setError("Enter a valid 10-digit Indian mobile number");
+      setLoading(false);
+      toast.error("Invalid phone number");
+      return;
+    }
 
     const payload = {
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
+      name: formData.name.trim(),
+      email: formData.email.trim().toLowerCase(),
+      phone: phoneDigits,
       password: formData.password,
+      role: formData.role,
       bloodGroup: formData.bloodGroup,
-      gender: formData.gender,
+      gender: genderToApi(formData.gender),
       dateOfBirth: formData.dateOfBirth,
       location: {
         type: "Point",
-        coordinates: [72.8777, 19.0760], // Default coordinates as per requirement
-        city: formData.city,
-        state: formData.state
+        coordinates: [72.8777, 19.0760],
+        city: formData.city.trim(),
+        state: formData.state.trim()
       }
     };
 
     try {
       const response = await registerUser(payload);
-      if (response.success) {
-        login(response.user, response.token);
-      } else {
-        setError(response.message || "Registration failed");
-        setShowFallback(true);
-      }
+      toast.success(response.message || "Registration successful. Please sign in.");
+      navigate("/role-selection");
     } catch (err) {
-      setError("Server connection failed. You can use demo access.");
-      setShowFallback(true);
+      const msg = getErrorMessage(err);
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFallbackRegister = () => {
-    const fakeUser = {
-      name: formData.name || "Demo User",
-      email: formData.email || "demo@example.com",
-      role: formData.role,
-      isDemo: true
-    };
-    const fakeToken = "demo-token-" + Math.random().toString(36).substr(2);
-    login(fakeUser, fakeToken);
-  };
-
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-red-50 via-white to-blue-50 flex items-center justify-center p-6 py-20">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="max-w-4xl w-full"
@@ -97,9 +95,9 @@ const Register = () => {
                       type="button"
                       onClick={() => setFormData({ ...formData, role: r })}
                       className={`flex-1 py-3 rounded-2xl font-bold border-2 transition-all capitalize ${
-                        formData.role === r 
-                        ? "border-red-600 bg-red-50 text-red-600 shadow-md" 
-                        : "border-gray-100 bg-white text-gray-400 hover:border-red-200"
+                        formData.role === r
+                          ? "border-red-600 bg-red-50 text-red-600 shadow-md"
+                          : "border-gray-100 bg-white text-gray-400 hover:border-red-200"
                       }`}
                     >
                       {r}
@@ -117,7 +115,7 @@ const Register = () => {
             <Input label="Email Address" icon={Mail} type="email" placeholder="email@example.com" required
               value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
 
-            <Input label="Phone Number" icon={Phone} placeholder="+1 234 567 890" required
+            <Input label="Phone Number" icon={Phone} placeholder="+91 9876543210" required
               value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
 
             <Input label="Password" icon={Lock} type="password" placeholder="••••••••" required
@@ -170,12 +168,6 @@ const Register = () => {
                       <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
                       {error}
                     </div>
-                    {showFallback && (
-                      <button type="button" onClick={handleFallbackRegister}
-                        className="text-xs bg-red-600 text-white py-2 px-4 rounded-xl hover:bg-red-700 transition-colors flex items-center justify-center gap-2">
-                        <ShieldAlert size={14} /> Register with Demo Access
-                      </button>
-                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

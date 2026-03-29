@@ -14,6 +14,14 @@ const register = async (req, res, next) => {
       bloodGroup, dateOfBirth, gender, location
     } = req.body;
 
+    if (!name || !email || !phone || !password || !bloodGroup || !dateOfBirth || !gender) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    if (!location || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
+      return res.status(400).json({ message: 'location with type Point and coordinates [lng, lat] is required' });
+    }
+
     const existing = await User.findOne({ $or: [{ email }, { phone }] });
     if (existing)
       return res.status(400).json({ message: 'Email or phone already registered' });
