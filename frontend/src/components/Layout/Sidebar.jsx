@@ -33,7 +33,8 @@ const Sidebar = ({ role }) => {
       ],
     };
 
-    return [...(roleSpecific[role] || []), ...common];
+    const currentRoleLinks = roleSpecific[role] || roleSpecific[role?.toLowerCase()] || [];
+    return [...currentRoleLinks, ...common];
   };
 
   return (
