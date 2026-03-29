@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const auth = require('../middleware/authMiddleware.js');
+const { requireRole } = require('../middleware/roleMiddleware.js');
 const {
   register,
   login,
@@ -26,9 +27,9 @@ router.put('/me', auth, updateProfile);
 
 router.put('/change-password', auth, changePassword);
 
-router.get('/eligibility', auth, checkEligibility);
+router.get('/eligibility', auth, requireRole('donor'), checkEligibility);
 
-router.post('/record-donation', auth, recordDonation);
+router.post('/record-donation', auth, requireRole('donor'), recordDonation);
 
 router.post('/logout', auth, logout);
 

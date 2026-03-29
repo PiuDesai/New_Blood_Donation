@@ -4,7 +4,7 @@ import { Users, HeartPulse, Droplets, Activity, Plus, MoreVertical, Search, Filt
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
-import { getStats } from "../../api/authAPI";
+import { getAdminStats } from "../../api/api";
 import { motion, AnimatePresence } from "framer-motion";
 
 const AdminDashboard = () => {
@@ -19,11 +19,11 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getStats();
+        const data = await getAdminStats();
         setStats(data);
       } catch (err) {
         console.error("Failed to fetch admin stats:", err);
-        setError("API connection failed. Showing simulated system data.");
+        setError(err?.response?.data?.message || err?.message || "Could not load admin stats.");
       } finally {
         setLoading(false);
       }
@@ -74,9 +74,9 @@ const AdminDashboard = () => {
   const renderOverview = () => (
     <div className="space-y-10">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <StatsCard title="Total Donors" value={stats?.totalDonors || 1420} icon={Users} color="from-blue-500 to-indigo-600" />
-        <StatsCard title="Active Patients" value={stats?.totalPatients || 856} icon={Activity} color="from-purple-500 to-violet-600" />
-        <StatsCard title="Global Requests" value={stats?.bloodRequests || 124} icon={HeartPulse} color="from-red-500 to-pink-600" />
+        <StatsCard title="Total Donors" value={stats?.totalDonors ?? 0} icon={Users} color="from-blue-500 to-indigo-600" />
+        <StatsCard title="Active Patients" value={stats?.totalPatients ?? 0} icon={Activity} color="from-purple-500 to-violet-600" />
+        <StatsCard title="Global Requests" value={stats?.bloodRequests ?? 0} icon={HeartPulse} color="from-red-500 to-pink-600" />
         <StatsCard title="System Uptime" value="99.9%" icon={Zap} color="from-emerald-500 to-teal-600" />
       </div>
 
