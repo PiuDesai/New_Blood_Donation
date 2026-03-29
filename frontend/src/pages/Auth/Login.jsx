@@ -1,47 +1,67 @@
 import { useState } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../../api/authAPI";
 import { useAuth } from "../../context/AuthContext";
 import { Card } from "../../components/Common/Card";
 import { Input } from "../../components/Common/Input";
 import { Button } from "../../components/Common/Button";
-import { Mail, Lock, Loader2, ArrowRight } from "lucide-react";
+import { Mail, Lock, Loader2, ArrowRight, ShieldAlert } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
 
 const Login = () => {
-  const [searchParams] = useSearchParams();
-  const role = searchParams.get("role") || "patient";
+  const { role } = useParams();
   const navigate = useNavigate();
   const { login } = useAuth();
   
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [demoMessage, setDemoMessage] = useState("");
+  const [showFallback, setShowFallback] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setDemoMessage("");
+    setShowFallback(false);
+
+    const loginPromise = loginUser({ ...formData, role });
+
+    toast.promise(loginPromise, {
+      loading: 'Authenticating...',
+      success: (response) => {
+        if (response.success) {
+          login(response.user, response.token);
+          return response.message || "Welcome back!";
+        }
+        throw new Error(response.message || "Login failed");
+      },
+      error: (err) => {
+        setError(err.message || "Server connection failed.");
+        setShowFallback(true);
+        return err.message || "Connection failed. Try demo mode.";
+      },
+    });
 
     try {
-      const result = await loginUser({ ...formData, role });
-      if (result.success) {
-        if (result.message?.includes("Demo Mode")) {
-          setDemoMessage(result.message);
-          setTimeout(() => login(result.user, result.token), 1500);
-        } else {
-          login(result.user, result.token);
-        }
-      } else {
-        setError(result.message || "Login failed");
-      }
+      await loginPromise;
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+      // Error handled by toast.promise
     } finally {
-      if (!demoMessage) setLoading(false);
+      setLoading(false);
     }
+  };
+
+  const handleFallbackLogin = () => {
+    const fakeUser = {
+      name: `Demo ${role.charAt(0).toUpperCase() + role.slice(1)}`,
+      email: formData.email || `demo@${role}.com`,
+      role: role,
+      isDemo: true
+    };
+    const fakeToken = "demo-token-" + Math.random().toString(36).substr(2);
+    login(fakeUser, fakeToken);
+    toast.success("Logged in with demo access!");
   };
 
   return (
@@ -87,47 +107,50 @@ const Login = () => {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-bold border border-red-100 flex items-center gap-3"
+                  className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-bold border border-red-100 flex flex-col gap-3"
                 >
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
-                  {error}
-                </motion.div>
-              )}
-              {demoMessage && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="bg-amber-50 text-amber-600 p-4 rounded-2xl text-sm font-bold border border-amber-100 flex items-center gap-3"
-                >
-                  <Loader2 className="animate-spin" size={16} />
-                  {demoMessage}
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                    {error}
+                  </div>
+                  {showFallback && (
+                    <button
+                      type="button"
+                      onClick={handleFallbackLogin}
+                      className="text-xs bg-red-600 text-white py-2 px-4 rounded-xl hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <ShieldAlert size={14} /> Continue with Demo Access
+                    </button>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <Button type="submit" className="w-full py-5 text-lg group" disabled={loading}>
-              {loading ? <Loader2 className="animate-spin" /> : (
-                <>
-                  Sign In
-                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                </>
+            <Button
+              type="submit"
+              className="w-full h-14 text-lg font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-red-100"
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <span className="flex items-center gap-3">
+                  Sign In <ArrowRight size={20} />
+                </span>
               )}
             </Button>
           </form>
 
-          <div className="mt-12 space-y-4">
-            <p className="text-gray-400 font-medium">
+          <div className="mt-12 pt-8 border-t border-gray-100">
+            <p className="text-gray-400 font-bold text-sm">
               Don't have an account?{" "}
-              <Link to={`/register?role=${role}`} className="text-red-600 font-black hover:underline underline-offset-4">
-                Join Now
+              <Link 
+                to="/register" 
+                className="text-red-600 hover:text-red-700 underline underline-offset-4 decoration-2"
+              >
+                Create Account
               </Link>
             </p>
-            <button 
-              onClick={() => navigate("/role-selection")}
-              className="text-sm font-bold text-gray-300 hover:text-gray-500 transition-colors uppercase tracking-widest"
-            >
-              &larr; Switch Role
-            </button>
           </div>
         </Card>
       </motion.div>

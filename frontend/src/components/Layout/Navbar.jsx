@@ -12,7 +12,7 @@ const Navbar = () => {
           <div className="w-12 h-12 bg-gradient-to-tr from-red-600 to-pink-500 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-red-200 group-hover:rotate-12 transition-transform">
             B
           </div>
-          <span className="text-2xl font-black text-gray-900 tracking-tighter hidden md:block">SmartBlood</span>
+          <span className="text-2xl font-black text-gray-900 tracking-tighter hidden md:block">BloodMatrix</span>
         </div>
 
         <div className="hidden lg:flex items-center bg-gray-50 border border-gray-100 rounded-2xl px-4 py-2 w-96 group focus-within:bg-white focus-within:border-red-200 transition-all">
