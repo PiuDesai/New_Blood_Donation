@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }) => {
     if (role === "admin") navigate("/admin");
     else if (role === "donor") navigate("/donor");
     else if (role === "patient") navigate("/patient");
+    else if (role === "bloodbank") navigate("/bloodbank");
     else navigate("/");
   };
 
