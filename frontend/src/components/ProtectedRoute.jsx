@@ -18,9 +18,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/role-selection" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user?.role?.toLowerCase())) {
+  if (allowedRoles && (!user || !allowedRoles.includes(user.role?.toLowerCase()))) {
     // Redirect to their respective dashboard if they try to access a role-restricted route
-    const role = user?.role?.toLowerCase();
+    const role = user?.role?.toLowerCase() || "role-selection";
     return <Navigate to={`/${role}`} replace />;
   }
 
