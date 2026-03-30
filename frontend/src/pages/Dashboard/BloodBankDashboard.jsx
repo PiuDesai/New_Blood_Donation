@@ -4,13 +4,16 @@ import { Building2, Droplets, Activity, Plus, Search, MapPin, MoreVertical, Shie
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
-import { getBloodBankStats } from "../../api/api";
+import { getBloodBankStats, getAllBloodRequests, getMyCamps, issueBlood } from "../../api/api";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
 
 const BloodBankDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
+  const [requests, setRequests] = useState([]);
+  const [camps, setCamps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("inventory");
@@ -20,11 +23,17 @@ const BloodBankDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getBloodBankStats();
-        setStats(data);
+        const [statsData, requestsData, campsData] = await Promise.all([
+          getBloodBankStats(),
+          getAllBloodRequests(),
+          getMyCamps()
+        ]);
+        setStats(statsData);
+        setRequests(requestsData);
+        setCamps(campsData);
       } catch (err) {
-        console.error("Failed to fetch blood bank stats:", err);
-        setError(err?.response?.data?.message || err?.message || "Could not load dashboard stats.");
+        console.error("Failed to fetch blood bank data:", err);
+        setError(err?.response?.data?.message || err?.message || "Could not load dashboard data.");
       } finally {
         setLoading(false);
       }
@@ -32,31 +41,61 @@ const BloodBankDashboard = () => {
     fetchData();
   }, []);
 
-  const inventoryData = [
-    { group: "A+", units: 45, status: "Healthy", color: "text-emerald-600 bg-emerald-50" },
-    { group: "A-", units: 12, status: "Low", color: "text-amber-600 bg-amber-50" },
-    { group: "B+", units: 38, status: "Healthy", color: "text-emerald-600 bg-emerald-50" },
-    { group: "B-", units: 8, status: "Critical", color: "text-red-600 bg-red-50" },
-    { group: "O+", units: 62, status: "Healthy", color: "text-emerald-600 bg-emerald-50" },
-    { group: "O-", units: 15, status: "Low", color: "text-amber-600 bg-amber-50" },
-    { group: "AB+", units: 24, status: "Healthy", color: "text-emerald-600 bg-emerald-50" },
-    { group: "AB-", units: 5, status: "Critical", color: "text-red-600 bg-red-50" },
-  ];
+  const getStockStatus = (units) => {
+    if (units <= 5) return { label: "Critical", color: "text-red-600 bg-red-50" };
+    if (units <= 15) return { label: "Low", color: "text-amber-600 bg-amber-50" };
+    return { label: "Healthy", color: "text-emerald-600 bg-emerald-50" };
+  };
 
-  const incomingRequests = [
-    { id: 1, patient: "Rajesh Koothrappali", bloodGroup: "O+", units: "2 Units", hospital: "City General", time: "10 mins ago", urgency: "Emergency" },
-    { id: 2, patient: "Howard Wolowitz", bloodGroup: "AB-", units: "1 Unit", hospital: "St. Jude", time: "45 mins ago", urgency: "Urgent" },
-  ];
+  const inventoryData = (stats?.bloodStock || [
+    { bloodGroup: "A+", units: 0 },
+    { bloodGroup: "A-", units: 0 },
+    { bloodGroup: "B+", units: 0 },
+    { bloodGroup: "B-", units: 0 },
+    { bloodGroup: "O+", units: 0 },
+    { bloodGroup: "O-", units: 0 },
+    { bloodGroup: "AB+", units: 0 },
+    { bloodGroup: "AB-", units: 0 },
+  ]).map(item => ({
+    group: item.bloodGroup,
+    units: item.units,
+    ...getStockStatus(item.units)
+  }));
 
-  const recentDonations = [
-    { id: 1, donor: "Penny Hofstadter", bloodGroup: "A+", date: "Today, 10:30 AM", type: "Whole Blood" },
-    { id: 2, donor: "Bernadette Rostenkowski", bloodGroup: "O-", date: "Today, 09:15 AM", type: "Platelets" },
-  ];
+  const incomingRequests = requests.map(req => ({
+    id: req._id,
+    patient: req.patientName,
+    bloodGroup: req.bloodGroup,
+    units: `${req.units} Units`,
+    hospital: req.hospital,
+    time: new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    urgency: req.urgency
+  }));
 
-  const upcomingCamps = [
-    { id: 1, title: "City Mall Donation Drive", date: "April 05, 2024", location: "South Mumbai", target: "100 Units", registered: 65 },
-    { id: 2, title: "Tech Park Blood Camp", date: "April 12, 2024", location: "Andheri East", target: "200 Units", registered: 120 },
-  ];
+  const upcomingCamps = camps.map(camp => ({
+    id: camp._id,
+    title: camp.name,
+    date: new Date(camp.date).toLocaleDateString(),
+    location: camp.location,
+    target: "N/A",
+    registered: camp.registeredDonors?.length || 0
+  }));
+
+  const handleFulfill = async (requestId) => {
+    try {
+      await issueBlood({ requestId });
+      toast.success("Request fulfilled successfully!");
+      // Refresh data
+      const [statsData, requestsData] = await Promise.all([
+        getBloodBankStats(),
+        getAllBloodRequests()
+      ]);
+      setStats(statsData);
+      setRequests(requestsData);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to fulfill request");
+    }
+  };
 
   if (loading) return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
@@ -131,7 +170,12 @@ const BloodBankDashboard = () => {
             </div>
             <div className="flex items-center gap-4">
               <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${req.urgency === "Emergency" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>{req.urgency}</span>
-              <Button className="h-12 bg-blue-600 hover:bg-blue-700">Fulfill Request</Button>
+              <Button 
+                onClick={() => handleFulfill(req.id)}
+                className="h-12 bg-blue-600 hover:bg-blue-700"
+              >
+                Fulfill Request
+              </Button>
             </div>
           </motion.div>
         ))}
