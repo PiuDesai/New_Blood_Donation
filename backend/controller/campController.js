@@ -3,29 +3,28 @@ const Camp = require("../models/Camp");
 // CREATE CAMP
 exports.createCamp = async (req, res) => {
   try {
-    const { name, location, date } = req.body;
+    const userId = req.user?.id || req.user?.userId || req.user?._id;
 
-    const newCamp = new Camp({
-      name,
-      location,
-      date,
-      createdBy: req.user.id   // ✅ use id
+    const camp = await Camp.create({
+      ...req.body,
+      createdBy: userId
     });
 
-    await newCamp.save();
+    res.status(201).json(camp);
 
-    res.status(201).json(newCamp);
-
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to create camp" });
   }
 };
 
 // GET ALL CAMPS (ONLY FOR LOGGED-IN BLOOD BANK)
 exports.getCamps = async (req, res) => {
   try {
+    const userId = req.user?.id || req.user?.userId || req.user?._id;
+
     const camps = await Camp.find({
-      createdBy: req.user.id
+      createdBy: userId
     });
 
     res.json(camps);
@@ -49,6 +48,7 @@ exports.getAllCamps = async (req, res) => {
 exports.updateCamp = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.id || req.user?.userId || req.user?._id;
 
     const camp = await Camp.findById(id);
 
@@ -56,12 +56,10 @@ exports.updateCamp = async (req, res) => {
       return res.status(404).json({ message: "Camp not found" });
     }
 
-    // 🔥 SECURITY CHECK
-    if (camp.createdBy.toString() !== req.user.id) {
+    if (camp.createdBy.toString() !== userId.toString()) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    // Update fields
     camp.name = req.body.name || camp.name;
     camp.location = req.body.location || camp.location;
     camp.date = req.body.date || camp.date;
@@ -82,6 +80,7 @@ exports.updateCamp = async (req, res) => {
 exports.deleteCamp = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.id || req.user?.userId || req.user?._id;
 
     const camp = await Camp.findById(id);
 
@@ -89,8 +88,7 @@ exports.deleteCamp = async (req, res) => {
       return res.status(404).json({ message: "Camp not found" });
     }
 
-    // 🔥 SECURITY CHECK
-    if (camp.createdBy.toString() !== req.user.id) {
+    if (camp.createdBy.toString() !== userId.toString()) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
@@ -105,41 +103,56 @@ exports.deleteCamp = async (req, res) => {
   }
 };
 
-// TODO: Connect with Donor module once implemented
-//Register donor
+// REGISTER DONOR
 exports.registerDonor = async (req, res) => {
   try {
-    const { campId, donorId } = req.body;
+    console.log("REQ USER:", req.user);
 
-    // 1. Find camp
+    const { campId } = req.body;
+
+    const donorId = req.user?.id || req.user?.userId || req.user?._id;
+    console.log("Donor ID:", donorId);
+
+    if (!donorId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
     const camp = await Camp.findById(campId);
 
     if (!camp) {
       return res.status(404).json({ message: "Camp not found" });
     }
 
-    // 2. Check duplicate
-    if (camp.registeredDonors.includes(donorId)) {
-      return res.status(400).json({ message: "Donor already registered" });
+    const alreadyRegistered = camp.registeredDonors.some(
+      (id) => id && donorId && id.toString() === donorId.toString()
+    );
+
+    if (alreadyRegistered) {
+      return res.status(400).json({ message: "Already registered" });
     }
 
-    // 3. Add donor
     camp.registeredDonors.push(donorId);
     camp.unitsCollected = camp.registeredDonors.length;
+
     await camp.save();
 
     res.status(200).json({
-      message: "Donor registered successfully",
+      message: "Registered successfully",
       camp
     });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("REGISTER ERROR:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
+
+// TOTAL UNITS
 exports.getTotalUnits = async (req, res) => {
   try {
-    const camps = await Camp.find({ createdBy: req.user.id });
+    const userId = req.user?.id || req.user?.userId || req.user?._id;
+
+    const camps = await Camp.find({ createdBy: userId });
 
     const totalUnits = camps.reduce(
       (sum, camp) => sum + camp.unitsCollected,
