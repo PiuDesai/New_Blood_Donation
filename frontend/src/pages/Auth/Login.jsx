@@ -24,7 +24,7 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await loginUser({ email: formData.email, password: formData.password });
+      const response = await loginUser({ email: formData.email, password: formData.password }, role);
       if (!response?.token || !response?.user) {
         const msg = response?.message || "Login failed";
         setError(msg);
@@ -110,12 +110,12 @@ const Login = () => {
             </Button>
           </form>
 
-          <div className="mt-12 pt-8 border-t border-gray-100">
-            <p className="text-gray-400 font-bold text-sm">
-              Don't have an account?{" "}
+          <div className="mt-12 text-center">
+            <p className="text-gray-400 font-bold">
+              New to our network?{" "}
               <Link
-                to="/register"
-                className="text-red-600 hover:text-red-700 underline underline-offset-4 decoration-2"
+                to={role === "bloodbank" ? "/register/bloodbank" : "/register"}
+                className="text-red-600 hover:text-red-700 underline decoration-2 underline-offset-4"
               >
                 Create Account
               </Link>
