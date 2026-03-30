@@ -29,11 +29,31 @@ const DonorDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsData, requestsData, campsData] = await Promise.all([
-          getDonorStats(),
-          getAllBloodRequests(),
-          getAllCamps()
-        ]);
+        let statsData = null;
+let requestsData = [];
+let campsData = [];
+
+try {
+  statsData = await getDonorStats();
+} catch (err) {
+  console.error("Stats failed");
+}
+
+try {
+  requestsData = await getAllBloodRequests();
+} catch (err) {
+  console.error("Requests failed (403 expected for donor)");
+}
+
+try {
+  campsData = await getAllCamps();
+} catch (err) {
+  console.error("Camps failed");
+}
+
+setStats(statsData);
+setRequests(requestsData);
+setCamps(campsData);
         setStats(statsData);
         setRequests(requestsData);
         setCamps(campsData);
@@ -46,6 +66,32 @@ const DonorDashboard = () => {
     };
     fetchData();
   }, []);
+  const participateInCamp = async (campId) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("http://localhost:5000/api/camps/register-donor", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ campId })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert("Successfully registered for camp!");
+    } else {
+      alert(data.message);
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Error registering for camp");
+  }
+};
 
   if (user && String(user.role).toLowerCase() !== "donor") {
     return <Navigate to={dashboardPath(user.role)} replace />;
@@ -123,7 +169,12 @@ const DonorDashboard = () => {
                   <p className="text-gray-400 font-bold text-sm flex items-center gap-2"><MapPin size={16} /> {camp.location}</p>
                   <p className="text-gray-400 font-bold text-sm flex items-center gap-2"><Clock size={16} /> {camp.time}</p>
                 </div>
-                <Button className="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 shadow-lg shadow-red-100 font-black uppercase tracking-widest text-[10px]">Register for Camp</Button>
+<Button
+  onClick={() => participateInCamp(camp.id)}
+  className="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 shadow-lg shadow-red-100 font-black uppercase tracking-widest text-[10px]"
+>
+  Participate
+</Button>
               </motion.div>
             ))}
           </div>
