@@ -4,7 +4,7 @@ import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
 import { Input } from "../../components/Common/Input";
 import { useAuth } from "../../context/AuthContext";
-import { getPatientStats } from "../../api/api";
+import { getPatientStats, getMyBloodRequests, createBloodRequest, getAllCamps } from "../../api/api";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
@@ -16,21 +16,20 @@ const PatientDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
+  const [myRequests, setMyRequests] = useState([]);
+  const [camps, setCamps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showNearbyDonors, setShowNearbyDonors] = useState(false);
   const [showLabModal, setShowLabModal] = useState(false);
   const [requestForm, setRequestModalForm] = useState({
+    patientName: "",
     bloodGroup: "O+",
     units: "",
     hospital: "",
-    urgency: "Regular"
-  });
-  const [labForm, setLabForm] = useState({
-    testType: "Complete Blood Count (CBC)",
-    preferredDate: "",
-    address: ""
+    urgency: "Normal",
+    city: ""
   });
 
   const isRequestsPage = location.pathname.includes("/requests");
@@ -42,17 +41,45 @@ const PatientDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getPatientStats();
-        setStats(data);
+        const [statsData, requestsData, campsData] = await Promise.all([
+          getPatientStats(),
+          getMyBloodRequests(),
+          getAllCamps()
+        ]);
+        setStats(statsData);
+        setMyRequests(requestsData);
+        setCamps(campsData);
       } catch (err) {
-        console.error("Failed to fetch patient stats:", err);
-        setError(err?.response?.data?.message || err?.message || "Could not load dashboard stats.");
+        console.error("Failed to fetch patient data:", err);
+        setError(err?.response?.data?.message || err?.message || "Could not load dashboard data.");
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, []);
+
+  const handleRequestSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...requestForm,
+        location: {
+          type: "Point",
+          coordinates: [72.8777, 19.0760], // Placeholder
+          city: requestForm.city
+        }
+      };
+      await createBloodRequest(payload);
+      toast.success("Blood request created!");
+      setShowRequestModal(false);
+      // Refresh
+      const requestsData = await getMyBloodRequests();
+      setMyRequests(requestsData);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to create request");
+    }
+  };
 
   if (user && String(user.role).toLowerCase() !== "patient") {
     return <Navigate to={dashboardPath(user.role)} replace />;
@@ -62,8 +89,6 @@ const PatientDashboard = () => {
     { id: 1, test: "Complete Blood Count (CBC)", date: "March 20, 2024", status: "Report Ready", result: "Normal" },
     { id: 2, test: "Liver Function Test", date: "March 15, 2024", status: "Pending", result: "N/A" },
   ];
-
-  const myRequests = stats?.requests || [];
 
   const nearbyDonors = [
     { name: "John Doe", bloodGroup: "O+", distance: "1.2 km", reliability: 98, phone: "+91 98765 43210" },
@@ -103,7 +128,7 @@ const PatientDashboard = () => {
                     </div>
                     <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
                       <span className="flex items-center gap-1.5"><MapPin size={14} /> {req.hospital}</span>
-                      <span className="flex items-center gap-1.5"><Calendar size={14} /> {req.date}</span>
+                      <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(req.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
                 </div>
@@ -319,7 +344,7 @@ const PatientDashboard = () => {
                     </div>
                     <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
                       <span className="flex items-center gap-1.5"><MapPin size={14} /> {req.hospital}</span>
-                      <span className="flex items-center gap-1.5"><Calendar size={14} /> {req.date}</span>
+                      <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(req.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
                 </div>
@@ -340,6 +365,25 @@ const PatientDashboard = () => {
 
         {/* Nearby Donors Sidebar */}
         <div className="space-y-10">
+          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50 bg-gradient-to-br from-white to-blue-50/30">
+            <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-8">Upcoming Camps</h3>
+            <div className="space-y-6">
+              {camps.map((camp, i) => (
+                <div key={i} className="p-6 rounded-2xl bg-white border border-gray-50 hover:border-red-100 transition-all group">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center font-black"><Calendar size={20} /></div>
+                    <div><p className="font-black text-gray-900">{camp.name}</p><p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{new Date(camp.date).toLocaleDateString()}</p></div>
+                  </div>
+                  <p className="text-xs text-gray-500 font-bold flex items-center gap-2 mb-4"><MapPin size={12} /> {camp.location}</p>
+                  <Button className="w-full h-10 text-[10px] bg-red-600">Register as Donor</Button>
+                </div>
+              ))}
+              {camps.length === 0 && (
+                <p className="text-gray-400 font-bold text-center py-10">No camps scheduled yet.</p>
+              )}
+            </div>
+          </Card>
+
           <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50 bg-gradient-to-br from-white to-blue-50/30">
             <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-8">Nearby Donors</h3>
             <div className="space-y-8">
@@ -386,7 +430,17 @@ const PatientDashboard = () => {
                 <h3 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Request Blood</h3>
                 <p className="text-gray-400 font-bold mb-10">Fill in the details for your urgent requirement</p>
                 
-                <form className="space-y-6">
+                <form onSubmit={handleRequestSubmit} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-2">Patient Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Rahul Sharma" 
+                      value={requestForm.patientName}
+                      onChange={(e) => setRequestModalForm({...requestForm, patientName: e.target.value})}
+                      className="w-full h-14 bg-gray-50 border-none rounded-2xl px-6 font-black text-gray-900 focus:ring-4 focus:ring-red-100 transition-all outline-none" 
+                    />
+                  </div>
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-2">Blood Group</label>
@@ -399,6 +453,10 @@ const PatientDashboard = () => {
                         <option>A+</option>
                         <option>B+</option>
                         <option>AB+</option>
+                        <option>O-</option>
+                        <option>A-</option>
+                        <option>B-</option>
+                        <option>AB-</option>
                       </select>
                     </div>
                     <div className="space-y-2">
@@ -412,20 +470,32 @@ const PatientDashboard = () => {
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-2">Hospital Name</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. City General Hospital" 
-                      value={requestForm.hospital}
-                      onChange={(e) => setRequestModalForm({...requestForm, hospital: e.target.value})}
-                      className="w-full h-14 bg-gray-50 border-none rounded-2xl px-6 font-black text-gray-900 focus:ring-4 focus:ring-red-100 transition-all outline-none" 
-                    />
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-2">Hospital Name</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. City Hospital" 
+                        value={requestForm.hospital}
+                        onChange={(e) => setRequestModalForm({...requestForm, hospital: e.target.value})}
+                        className="w-full h-14 bg-gray-50 border-none rounded-2xl px-6 font-black text-gray-900 focus:ring-4 focus:ring-red-100 transition-all outline-none" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-2">City</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. Mumbai" 
+                        value={requestForm.city}
+                        onChange={(e) => setRequestModalForm({...requestForm, city: e.target.value})}
+                        className="w-full h-14 bg-gray-50 border-none rounded-2xl px-6 font-black text-gray-900 focus:ring-4 focus:ring-red-100 transition-all outline-none" 
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-2">Urgency Level</label>
                     <div className="flex gap-4">
-                      {["Regular", "Urgent", "Emergency"].map(level => (
+                      {["Normal", "Urgent", "Emergency"].map(level => (
                         <button 
                           key={level} 
                           type="button" 
@@ -442,11 +512,7 @@ const PatientDashboard = () => {
                     </div>
                   </div>
                   <Button 
-                    type="button" 
-                    onClick={() => {
-                      setShowRequestModal(false);
-                      toast.success(`Blood request (${requestForm.urgency}) submitted successfully!`);
-                    }} 
+                    type="submit" 
                     className="w-full h-16 rounded-2xl bg-red-600 text-white font-black uppercase tracking-widest text-lg shadow-2xl shadow-red-100 mt-8"
                   >
                     Submit Request

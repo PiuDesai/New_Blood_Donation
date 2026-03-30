@@ -10,6 +10,9 @@ const analyzeRoutes = require("./routes/analyzeRoutes");
 const bloodTestRoutes = require("./routes/BloodTestRoute.js");
 const notificationRoutes = require("./routes/NotificationRoute.js");
 const statsRoutes = require("./routes/StatsRoute.js");
+const bloodBankRoutes = require("./routes/bloodBankRoutes.js");
+const campRoutes = require("./routes/campRoutes.js");
+const bloodRequestRoutes = require("./routes/BloodRequestRoute.js");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -35,8 +38,11 @@ app.get("/", (req, res) => {
 });
 
 // ───── Routes ─────
-app.use("/api/users", userRoutes);
-app.use("/api/admin", adminRoutes); // ✅ ADD THIS
+app.use("/api", userRoutes); // ✅ MOUNT AT /api
+app.use("/api/admin", adminRoutes);
+app.use("/api/bloodbank", bloodBankRoutes);
+app.use("/api/camps", campRoutes);
+app.use("/api/requests", bloodRequestRoutes);
 app.use("/api", analyzeRoutes);
 app.use("/api/bookings", bloodTestRoutes);
 app.use("/api/notifications", notificationRoutes);

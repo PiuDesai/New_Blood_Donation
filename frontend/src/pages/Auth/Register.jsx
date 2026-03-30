@@ -89,7 +89,7 @@ const Register = () => {
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-700 ml-1 uppercase tracking-tight">Register As</label>
                 <div className="flex gap-4">
-                  {["patient", "donor", "bloodbank"].map((r) => (
+                  {["patient", "donor"].map((r) => (
                     <button
                       key={r}
                       type="button"

@@ -59,13 +59,13 @@ const userSchema = new mongoose.Schema(
 
     dateOfBirth: {
       type: Date,
-      required: true
+      required: function() { return this.role === 'donor' || this.role === 'patient'; }
     },
 
     gender: {
       type: String,
       enum: ['male', 'female', 'other'],
-      required: true
+      required: function() { return this.role === 'donor' || this.role === 'patient'; }
     },
 
     role: {
@@ -77,8 +77,26 @@ const userSchema = new mongoose.Schema(
     bloodGroup: {
       type: String,
       enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-      required: true
+      required: function() { return this.role === 'donor' || this.role === 'patient'; }
     },
+
+    licenseInfo: {
+       type: String,
+       required: function() { return this.role === 'bloodbank'; }
+     },
+
+    bloodStock: [
+      {
+        bloodGroup: {
+          type: String,
+          enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+        },
+        units: {
+          type: Number,
+          default: 0
+        }
+      }
+    ],
 
     // ✅ FIXED (removed duplicate index here)
     location: {

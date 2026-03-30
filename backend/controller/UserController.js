@@ -6,8 +6,8 @@ const signToken = (id, role) =>
   jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
 
-// ───────────────── REGISTER ─────────────────
-const register = async (req, res, next) => {
+// ───────────────── REGISTER USER (Donor/Patient) ─────────────────
+const registerUser = async (req, res, next) => {
   try {
     const {
       name, email, phone, password, role,
@@ -38,7 +38,44 @@ const register = async (req, res, next) => {
     });
 
   } catch (err) {
-    next(err); // ✅ FIX
+    next(err);
+  }
+};
+
+
+// ───────────────── REGISTER BLOOD BANK ─────────────────
+const registerBloodBank = async (req, res, next) => {
+  try {
+    const {
+      name, email, phone, password, location, licenseInfo
+    } = req.body;
+
+    if (!name || !email || !phone || !password || !location || !licenseInfo) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    if (!location || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
+      return res.status(400).json({ message: 'location with type Point and coordinates [lng, lat] is required' });
+    }
+
+    const existing = await User.findOne({ $or: [{ email }, { phone }] });
+    if (existing)
+      return res.status(400).json({ message: 'Email or phone already registered' });
+
+    const user = await User.create({
+      name, email, phone, password,
+      role: 'bloodbank',
+      location,
+      licenseInfo
+    });
+
+    res.status(201).json({
+      message: 'Blood bank registered successfully',
+      userId: user._id
+    });
+
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -221,18 +258,34 @@ const logout = async (req, res, next) => {
     res.json({ message: 'Logged out successfully' });
 
   } catch (err) {
-    next(err); // ✅ FIX
+    next(err);
+  }
+};
+
+
+// ───────────────── VIEW BLOOD BANKS (For Users) ─────────────
+const getAllBloodBanks = async (req, res, next) => {
+  try {
+    const bloodBanks = await User.find({ role: 'bloodbank', isActive: true })
+      .select('name location bloodStock email phone licenseInfo');
+
+    res.json(bloodBanks);
+
+  } catch (err) {
+    next(err);
   }
 };
 
 
 module.exports = {
-  register,
+  registerUser,
+  registerBloodBank,
   login,
   getProfile,
   updateProfile,
   changePassword,
   checkEligibility,
   recordDonation,
-  logout
+  logout,
+  getAllBloodBanks
 };

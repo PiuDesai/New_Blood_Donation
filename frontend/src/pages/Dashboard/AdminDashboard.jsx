@@ -4,12 +4,14 @@ import { Users, HeartPulse, Droplets, Activity, Plus, MoreVertical, Search, Filt
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
-import { getAdminStats } from "../../api/api";
+import { getAdminStats, getPendingBloodBanks, approveBloodBank } from "../../api/api";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
 
 const AdminDashboard = () => {
   const location = useLocation();
   const [stats, setStats] = useState(null);
+  const [pendingUsers, setPendingUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("users");
@@ -19,10 +21,22 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getAdminStats();
-        setStats(data);
+        const [statsData, pendingData] = await Promise.all([
+          getAdminStats(),
+          getPendingBloodBanks()
+        ]);
+        setStats(statsData);
+        setPendingUsers(pendingData.map(u => ({
+          id: u._id,
+          name: u.name,
+          role: "Blood Bank",
+          location: u.location?.city || "Unknown",
+          date: new Date(u.createdAt).toLocaleDateString(),
+          avatar: u.name.substring(0, 2).toUpperCase(),
+          licenseInfo: u.licenseInfo
+        })));
       } catch (err) {
-        console.error("Failed to fetch admin stats:", err);
+        console.error("Failed to fetch admin data:", err);
         setError(err?.response?.data?.message || err?.message || "Could not load admin stats.");
       } finally {
         setLoading(false);
@@ -30,6 +44,16 @@ const AdminDashboard = () => {
     };
     fetchData();
   }, []);
+
+  const handleApprove = async (id) => {
+    try {
+      await approveBloodBank(id);
+      toast.success("Blood bank approved!");
+      setPendingUsers(prev => prev.filter(u => u.id !== id));
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to approve blood bank");
+    }
+  };
 
   const donors = [
     { id: 1, name: "Amit Kumar", bloodGroup: "O+", location: "Mumbai, MH", status: "Active", lastDonation: "2024-01-15", reliability: 98 },
@@ -52,11 +76,6 @@ const AdminDashboard = () => {
     { group: "O-", units: 30, status: "Low" },
     { group: "AB+", units: 25, status: "Healthy" },
     { group: "AB-", units: 8, status: "Critical" },
-  ];
-
-  const pendingUsers = [
-    { id: 1, name: "City Blood Bank", role: "Blood Bank", location: "Mumbai, MH", date: "2 mins ago", avatar: "CB" },
-    { id: 2, name: "Dr. Alok Verma", role: "Donor", location: "Delhi, DL", date: "15 mins ago", avatar: "AV" },
   ];
 
   const systemLogs = [
@@ -107,7 +126,12 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div className="flex gap-3">
-                      <button className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><UserCheck size={24} /></button>
+                      <button 
+                        onClick={() => handleApprove(item.id)}
+                        className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                      >
+                        <UserCheck size={24} />
+                      </button>
                       <button className="w-14 h-14 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all shadow-sm"><UserX size={24} /></button>
                     </div>
                   </div>

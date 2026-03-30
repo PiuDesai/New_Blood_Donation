@@ -52,7 +52,11 @@ const RoleSelection = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
-              onClick={() => role.id === "user" ? navigate("/sub-role-selection") : navigate(`/login/${role.id}`)}
+              onClick={() => {
+                if (role.id === "user") navigate("/sub-role-selection");
+                else if (role.id === "bloodbank") navigate("/register/bloodbank");
+                else navigate(`/login/${role.id}`);
+              }}
               className="group cursor-pointer"
             >
               <Card variant="glass" className="h-full p-12 relative overflow-hidden group-hover:border-red-200 group-hover:shadow-red-100">
