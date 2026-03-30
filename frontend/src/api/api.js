@@ -111,6 +111,16 @@ export const getCampStats = async () => {
   return data;
 };
 
+export const updateCamp = async (id, payload) => {
+  const { data } = await API.put(`/camps/update/${id}`, payload);
+  return data;
+};
+
+export const deleteCamp = async (id) => {
+  const { data } = await API.delete(`/camps/delete/${id}`);
+  return data;
+};
+
 // ═══════════════════════════════════════════════
 // ─── BLOOD REQUESTS ──────────────────────────
 // ═══════════════════════════════════════════════

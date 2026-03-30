@@ -7,6 +7,7 @@ import { Button } from "../../components/Common/Button";
 import { getBloodBankStats, getAllBloodRequests, getMyCamps, issueBlood } from "../../api/api";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import { updateCamp, deleteCamp, getCampStats } from "../../api/api";
 
 const BloodBankDashboard = () => {
   const location = useLocation();
@@ -17,6 +18,14 @@ const BloodBankDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("inventory");
+  const [showCampForm, setShowCampForm] = useState(false);
+  const [editingCampId, setEditingCampId] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [campForm, setCampForm] = useState({
+    name: "",
+    date: "",
+    location: ""
+  });
 
   const path = location.pathname.split("/")[2] || "inventory";
 
@@ -96,6 +105,60 @@ const BloodBankDashboard = () => {
       toast.error(err?.response?.data?.message || "Failed to fulfill request");
     }
   };
+  const createCamp = async () => {
+    try {
+      const token = localStorage.getItem("token"); // ✅ ADD THIS
+
+      const res = await fetch("http://localhost:5000/api/camps/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` // ✅ VERY IMPORTANT
+        },
+        body: JSON.stringify(campForm)
+      });
+
+      const data = await res.json();
+
+      toast.success("Camp created successfully!");
+      setShowCampForm(false);
+
+      // refresh camps
+      const updatedCamps = await getMyCamps();
+      setCamps(updatedCamps);
+
+    } catch (err) {
+      toast.error("Failed to create camp");
+    }
+  };
+  const handleDeleteCamp = async (id) => {
+    try {
+      await deleteCamp(id);
+      toast.success("Camp deleted");
+
+      const updated = await getMyCamps();
+      setCamps(updated);
+    } catch (err) {
+      toast.error("Delete failed");
+    }
+  };
+
+  const handleUpdateCamp = async (id) => {
+    try {
+      await updateCamp(id, { name: editName });
+
+      toast.success("Camp updated");
+
+      setEditingCampId(null);
+      setEditName("");
+
+      const updated = await getMyCamps();
+      setCamps(updated);
+
+    } catch (err) {
+      toast.error("Update failed");
+    }
+  };
 
   if (loading) return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
@@ -122,7 +185,7 @@ const BloodBankDashboard = () => {
             ))}
           </div>
         </div>
-        
+
         <AnimatePresence mode="wait">
           {activeTab === "inventory" ? (
             <motion.div key="inventory" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-2 sm:grid-cols-4 gap-8">
@@ -137,17 +200,70 @@ const BloodBankDashboard = () => {
           ) : (
             <motion.div key="camps" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
               {upcomingCamps.map((camp, i) => (
-                <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-blue-100 hover:shadow-xl transition-all group gap-8">
-                  <div className="flex items-center gap-8">
-                    <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-blue-100 group-hover:rotate-6 transition-transform"><Calendar size={32} /></div>
-                    <div><h4 className="font-black text-2xl text-gray-900 mb-2">{camp.title}</h4><p className="text-gray-400 font-bold text-sm flex items-center gap-1.5"><MapPin size={14} /> {camp.location} • {camp.date}</p></div>
-                  </div>
-                  <div className="text-right flex flex-col items-end gap-3">
-                    <div className="flex items-center gap-2"><Users size={16} className="text-blue-600" /><span className="font-black text-gray-900">{camp.registered} / {camp.target}</span></div>
-                    <div className="w-32 bg-gray-100 h-2 rounded-full overflow-hidden"><div className="bg-blue-600 h-full rounded-full" style={{ width: `${(parseInt(camp.registered)/parseInt(camp.target))*100}%` }} /></div>
-                  </div>
-                </div>
-              ))}
+  <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-blue-100 hover:shadow-xl transition-all group gap-8">
+
+    {/* LEFT */}
+    <div className="flex items-center gap-8">
+      <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center text-white shadow-2xl">
+        <Calendar size={32} />
+      </div>
+
+      <div>
+        {editingCampId === camp.id ? (
+          <input
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            className="border px-3 py-1 rounded font-bold"
+          />
+        ) : (
+          <h4 className="font-black text-2xl text-gray-900">
+            {camp.title}
+          </h4>
+        )}
+
+        <p className="text-gray-400 font-bold text-sm flex items-center gap-1.5">
+          <MapPin size={14} /> {camp.location} • {camp.date}
+        </p>
+
+        <p className="text-xs text-blue-600 font-bold mt-1">
+          Donors: {camp.registered}
+        </p>
+      </div>
+    </div>
+
+    {/* RIGHT */}
+    <div className="flex gap-2">
+
+      {editingCampId === camp.id ? (
+        <button
+          onClick={() => handleUpdateCamp(camp.id)}
+          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-xs"
+        >
+          Save
+        </button>
+      ) : (
+        <button
+          onClick={() => {
+            setEditingCampId(camp.id);
+            setEditName(camp.title);
+          }}
+          className="bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-2 rounded-xl text-xs"
+        >
+          Edit
+        </button>
+      )}
+
+      <button
+        onClick={() => handleDeleteCamp(camp.id)}
+        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-xs"
+      >
+        Delete
+      </button>
+
+    </div>
+
+  </div>
+))}
             </motion.div>
           )}
         </AnimatePresence>
@@ -170,7 +286,7 @@ const BloodBankDashboard = () => {
             </div>
             <div className="flex items-center gap-4">
               <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${req.urgency === "Emergency" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>{req.urgency}</span>
-              <Button 
+              <Button
                 onClick={() => handleFulfill(req.id)}
                 className="h-12 bg-blue-600 hover:bg-blue-700"
               >
@@ -235,7 +351,7 @@ const BloodBankDashboard = () => {
           <p className="text-gray-400 font-bold text-lg">Centralized inventory and donation drive control.</p>
         </motion.div>
         <div className="flex flex-wrap gap-4">
-          <Button className="h-14 px-8 rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100 text-lg font-black uppercase tracking-widest flex items-center gap-3 transition-all active:scale-95"><Plus size={24} /> New Camp</Button>
+          <Button className="h-14 px-8 rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100 text-lg font-black uppercase tracking-widest flex items-center gap-3 transition-all active:scale-95" onClick={() => setShowCampForm(true)}><Plus size={24} /> New Camp</Button>
           <Button variant="outline" className="h-14 px-8 rounded-2xl border-2 border-red-100 text-red-600 hover:bg-red-50 text-lg font-black uppercase tracking-widest flex items-center gap-3 transition-all"><Bell size={24} /> Notify Donors</Button>
         </div>
       </div>
@@ -254,6 +370,55 @@ const BloodBankDashboard = () => {
         {path === "settings" && renderSettings()}
         {path === "help" && renderHelp()}
       </motion.div>
+      {showCampForm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-2xl w-[400px] space-y-4">
+
+            <h2 className="text-xl font-black">Create New Camp</h2>
+
+            <input
+              placeholder="Camp Name"
+              className="w-full p-2 border rounded"
+              onChange={(e) =>
+                setCampForm({ ...campForm, name: e.target.value })
+              }
+            />
+
+            <input
+              type="date"
+              className="w-full p-2 border rounded"
+              onChange={(e) =>
+                setCampForm({ ...campForm, date: e.target.value })
+              }
+            />
+
+            <input
+              placeholder="Location"
+              className="w-full p-2 border rounded"
+              onChange={(e) =>
+                setCampForm({ ...campForm, location: e.target.value })
+              }
+            />
+
+            <div className="flex gap-2">
+              <button
+                onClick={createCamp}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Create
+              </button>
+
+              <button
+                onClick={() => setShowCampForm(false)}
+                className="bg-gray-200 px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };
