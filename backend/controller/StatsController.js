@@ -95,17 +95,24 @@ const getBloodBankStats = async (req, res, next) => {
       return res.status(403).json({ message: 'Blood bank role required' });
     }
 
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
     const activeRequests = await Notification.countDocuments({
       type: { $in: ['emergency_blood_request', 'blood_request'] },
       isEmergency: true,
-      createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+      isRead: false
     });
 
+    const lowStockAlerts = (user.bloodStock || []).filter(s => s.units < 10).length;
+    const totalUnits = (user.bloodStock || []).reduce((sum, s) => sum + s.units, 0);
+
     res.json({
-      totalUnits: 0,
+      totalUnits,
       todayDonations: 0,
       activeRequests,
-      lowStockAlerts: 0
+      lowStockAlerts,
+      bloodStock: user.bloodStock || []
     });
   } catch (err) {
     next(err);

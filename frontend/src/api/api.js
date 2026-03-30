@@ -10,21 +10,28 @@ import API from "./axios";
 // ═══════════════════════════════════════════════
 
 export const registerUser = async (userData) => {
-  const { data } = await API.post("/users/register", userData);
+  const { data } = await API.post("/user/register", userData);
   return data;
 };
 
-export const loginUser = async (credentials) => {
-  const { data } = await API.post("/users/login", credentials);
+export const registerBloodBank = async (bbData) => {
+  const { data } = await API.post("/bloodbank/register", bbData);
+  return data;
+};
+
+export const loginUser = async (credentials, role) => {
+  const url = role === "admin" ? "/admin/login" : "/login";
+  const { data } = await API.post(url, credentials);
   if (data.token) {
     localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
   }
   return data;
 };
 
 export const logoutUser = async () => {
   try {
-    const { data } = await API.post("/users/logout");
+    const { data } = await API.post("/logout");
     return data;
   } finally {
     localStorage.removeItem("token");
@@ -37,27 +44,94 @@ export const logoutUser = async () => {
 // ═══════════════════════════════════════════════
 
 export const getProfile = async () => {
-  const { data } = await API.get("/users/me");
+  const { data } = await API.get("/me");
   return data;
 };
 
 export const updateProfile = async (updates) => {
-  const { data } = await API.put("/users/me", updates);
+  const { data } = await API.put("/me", updates);
   return data;
 };
 
 export const changePassword = async (payload) => {
-  const { data } = await API.put("/users/change-password", payload);
+  const { data } = await API.put("/change-password", payload);
   return data;
 };
 
 export const checkDonorEligibility = async () => {
-  const { data } = await API.get("/users/eligibility");
+  const { data } = await API.get("/eligibility");
   return data;
 };
 
 export const recordDonation = async () => {
-  const { data } = await API.post("/users/record-donation");
+  const { data } = await API.post("/record-donation");
+  return data;
+};
+
+export const getAllBloodBanks = async () => {
+  const { data } = await API.get("/blood-banks");
+  return data;
+};
+
+// ═══════════════════════════════════════════════
+// ─── BLOOD BANK ──────────────────────────────
+// ═══════════════════════════════════════════════
+
+export const updateBloodStock = async (payload) => {
+  const { data } = await API.post("/bloodbank/stock", payload);
+  return data;
+};
+
+export const getBloodRequests = async () => {
+  const { data } = await API.get("/bloodbank/requests");
+  return data;
+};
+
+// ═══════════════════════════════════════════════
+// ─── CAMPS ────────────────────────────────────
+// ═══════════════════════════════════════════════
+
+export const createCamp = async (payload) => {
+  const { data } = await API.post("/camps/create", payload);
+  return data;
+};
+
+export const getMyCamps = async () => {
+  const { data } = await API.get("/camps/my-camps");
+  return data;
+};
+
+export const getAllCamps = async () => {
+  const { data } = await API.get("/camps/all");
+  return data;
+};
+
+export const getCampStats = async () => {
+  const { data } = await API.get("/camps/total-units");
+  return data;
+};
+
+// ═══════════════════════════════════════════════
+// ─── BLOOD REQUESTS ──────────────────────────
+// ═══════════════════════════════════════════════
+
+export const createBloodRequest = async (payload) => {
+  const { data } = await API.post("/requests/create", payload);
+  return data;
+};
+
+export const getMyBloodRequests = async () => {
+  const { data } = await API.get("/requests/my-requests");
+  return data;
+};
+
+export const getAllBloodRequests = async () => {
+  const { data } = await API.get("/requests/all");
+  return data;
+};
+
+export const issueBlood = async (payload) => {
+  const { data } = await API.post("/requests/issue", payload);
   return data;
 };
 
@@ -67,6 +141,16 @@ export const recordDonation = async () => {
 
 export const getAdminStats = async () => {
   const { data } = await API.get("/admin/stats");
+  return data;
+};
+
+export const getPendingBloodBanks = async () => {
+  const { data } = await API.get("/admin/pending-blood-banks");
+  return data;
+};
+
+export const approveBloodBank = async (id) => {
+  const { data } = await API.post(`/admin/approve-blood-bank/${id}`);
   return data;
 };
 

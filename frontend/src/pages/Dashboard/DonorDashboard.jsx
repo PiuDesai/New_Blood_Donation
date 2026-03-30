@@ -3,7 +3,7 @@ import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
 import { useAuth } from "../../context/AuthContext";
-import { getDonorStats } from "../../api/api";
+import { getDonorStats, getAllBloodRequests, getAllCamps } from "../../api/api";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
@@ -15,6 +15,8 @@ const DonorDashboard = () => {
   const navigate = useNavigate();
 
   const [stats, setStats] = useState(null);
+  const [requests, setRequests] = useState([]);
+  const [camps, setCamps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("requests");
@@ -27,11 +29,17 @@ const DonorDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getDonorStats();
-        setStats(data);
+        const [statsData, requestsData, campsData] = await Promise.all([
+          getDonorStats(),
+          getAllBloodRequests(),
+          getAllCamps()
+        ]);
+        setStats(statsData);
+        setRequests(requestsData);
+        setCamps(campsData);
       } catch (err) {
-        console.error("Failed to fetch donor stats:", err);
-        setError(err?.response?.data?.message || err?.message || "Could not load dashboard stats.");
+        console.error("Failed to fetch donor data:", err);
+        setError(err?.response?.data?.message || err?.message || "Could not load dashboard data.");
       } finally {
         setLoading(false);
       }
@@ -43,19 +51,26 @@ const DonorDashboard = () => {
     return <Navigate to={dashboardPath(user.role)} replace />;
   }
 
-  const pendingRequests = [
-    { id: 1, name: "Rahul Sharma", bloodGroup: "O+", units: "2 Units", urgency: "Emergency", location: "City Hospital, Mumbai", distance: "2.4 km", time: "10 mins ago" },
-    { id: 2, name: "Priya Gupta", bloodGroup: "O+", units: "1 Unit", urgency: "Regular", location: "Global Health, Navi Mumbai", distance: "5.1 km", time: "25 mins ago" },
-    { id: 3, name: "Amit Patel", bloodGroup: "O+", units: "3 Units", urgency: "Urgent", location: "Lifeline Clinic, Thane", distance: "8.2 km", time: "45 mins ago" }
-  ];
+  const pendingRequests = requests.map(req => ({
+    id: req._id,
+    name: req.patientName,
+    bloodGroup: req.bloodGroup,
+    units: `${req.units} Units`,
+    urgency: req.urgency,
+    location: req.hospital,
+    distance: "Near you",
+    time: new Date(req.createdAt).toLocaleTimeString()
+  }));
 
   const donationHistory = stats?.history || [];
 
-  const nearbyCamps = [
-    { id: 1, title: "Grand Plaza Drive", date: "April 05, 2024", location: "Mumbai Central", time: "10:00 AM - 06:00 PM" },
-    { id: 2, title: "Corporate Wellness Hub", date: "April 12, 2024", location: "Bandra Kurla Complex", time: "09:00 AM - 05:00 PM" },
-    { id: 3, title: "Community Hall Camp", date: "April 20, 2024", location: "Borivali West", time: "11:00 AM - 07:00 PM" }
-  ];
+  const nearbyCamps = camps.map(camp => ({
+    id: camp._id,
+    title: camp.name,
+    date: new Date(camp.date).toLocaleDateString(),
+    location: camp.location,
+    time: "All Day"
+  }));
 
   if (loading) return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
