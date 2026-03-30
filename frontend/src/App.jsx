@@ -9,6 +9,7 @@ import RoleSelection from "./pages/Auth/RoleSelection";
 import SubRoleSelection from "./pages/Auth/SubRoleSelection";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
+import RegisterBloodBank from "./pages/Auth/RegisterBloodBank";
 import AdminDashboard from "./pages/Dashboard/AdminDashboard";
 import DonorDashboard from "./pages/Dashboard/DonorDashboard";
 import PatientDashboard from "./pages/Dashboard/PatientDashboard";
@@ -26,6 +27,7 @@ function App() {
         <Route path="/sub-role-selection" element={<SubRoleSelection />} />
         <Route path="/login/:role" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/register/bloodbank" element={<RegisterBloodBank />} />
 
         {/* Admin Routes */}
         <Route
