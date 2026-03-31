@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
+<<<<<<< HEAD
 import { useLocation } from "react-router-dom";
 import { Users, HeartPulse, Droplets, Activity, Plus, MoreVertical, Search, Filter, ShieldCheck, UserCheck, UserX, AlertCircle, BarChart3, Globe, Zap, Settings, ArrowRight, CheckCircle2, XCircle, HelpCircle, MapPin, Clock } from "lucide-react";
+=======
+<<<<<<< HEAD
+import { Users, HeartPulse, Droplets, Activity, Plus, MoreVertical, Search, Filter, ShieldCheck } from "lucide-react";
+=======
+import { useLocation } from "react-router-dom";
+import { Users, HeartPulse, Droplets, Activity, Plus, MoreVertical, Search, Filter, ShieldCheck, UserCheck, UserX, AlertCircle, BarChart3, Globe, Zap, Settings, ArrowRight, CheckCircle2, XCircle, HelpCircle, MapPin, Clock } from "lucide-react";
+>>>>>>> 68b81dae39cb4ed7c28eefd35d26b083a276efd5
+>>>>>>> nishant
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
@@ -92,11 +101,59 @@ const AdminDashboard = () => {
 
   const renderOverview = () => (
     <div className="space-y-10">
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-4xl font-extrabold text-gray-900 mb-2 tracking-tight">Admin Dashboard</h1>
+          <p className="text-gray-500 font-medium">System-wide monitoring and management</p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <StatsCard
+          title="Total Donors"
+          value={stats?.totalDonors || 0}
+          icon={Users}
+          color="bg-blue-600 shadow-blue-200/50"
+        />
+        <StatsCard
+          title="Pending Donors"
+          value={stats?.pendingDonors || 0}
+          icon={Activity}
+          color="bg-purple-600 shadow-purple-200/50"
+        />
+        <StatsCard
+          title="Total Blood Banks"
+          value={stats?.totalBanks || 0}   // ✅ FIX
+          icon={HeartPulse}
+          color="bg-red-600 shadow-red-200/50"
+        />
+
+        <StatsCard
+          title="Pending Blood Banks"
+          value={stats?.pendingBanks || 0}   // ✅ FIX
+          icon={Droplets}
+          color="bg-emerald-600 shadow-emerald-200/50"
+        />
+=======
+>>>>>>> nishant
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         <StatsCard title="Total Donors" value={stats?.totalDonors ?? 0} icon={Users} color="from-blue-500 to-indigo-600" />
         <StatsCard title="Active Patients" value={stats?.totalPatients ?? 0} icon={Activity} color="from-purple-500 to-violet-600" />
         <StatsCard title="Global Requests" value={stats?.bloodRequests ?? 0} icon={HeartPulse} color="from-red-500 to-pink-600" />
         <StatsCard title="System Uptime" value="99.9%" icon={Zap} color="from-emerald-500 to-teal-600" />
+<<<<<<< HEAD
+=======
+>>>>>>> 68b81dae39cb4ed7c28eefd35d26b083a276efd5
+>>>>>>> nishant
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -109,6 +166,43 @@ const AdminDashboard = () => {
               ))}
             </div>
           </div>
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+
+          {recentRequests.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-4">
+                    <th className="pb-4">User</th>
+                    <th className="pb-4">Action</th>
+                    <th className="pb-4">Status</th>
+                    <th className="pb-4 text-right">Time</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {recentRequests.map((req, i) => (
+                    <tr key={i} className="group">
+                      <td className="py-4 text-sm font-bold text-gray-900">{req.user}</td>
+                      <td className="py-4 text-sm text-gray-500">{req.action}</td>
+                      <td className="py-4">
+                        <span className="px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-bold uppercase">{req.status}</span>
+                      </td>
+                      <td className="py-4 text-right text-xs text-gray-400 font-medium">{req.time}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="py-20 text-center">
+              <Activity size={48} className="mx-auto text-gray-100 mb-4" />
+              <p className="text-gray-400 font-medium italic">No recent activity detected in the system</p>
+            </div>
+          )}
+=======
+>>>>>>> nishant
           
           <AnimatePresence mode="wait">
             {activeTab === "users" ? (
@@ -154,6 +248,10 @@ const AdminDashboard = () => {
               </motion.div>
             )}
           </AnimatePresence>
+<<<<<<< HEAD
+=======
+>>>>>>> 68b81dae39cb4ed7c28eefd35d26b083a276efd5
+>>>>>>> nishant
         </Card>
 
         <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50 bg-gradient-to-br from-white to-purple-50/30">

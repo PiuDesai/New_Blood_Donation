@@ -14,6 +14,11 @@ import AdminDashboard from "./pages/Dashboard/AdminDashboard";
 import DonorDashboard from "./pages/Dashboard/DonorDashboard";
 import PatientDashboard from "./pages/Dashboard/PatientDashboard";
 import BloodBankDashboard from "./pages/Dashboard/BloodBankDashboard";
+
+import AdminLogin from "./pages/Auth/AdminLogin";
+import PendingDonors from "./pages/Admin/PendingDonors";
+import PendingBloodBanks from "./pages/Admin/PendingBloodBanks";
+
 import Home from "./pages/Home";
 import HomeBloodTest from "./pages/Patient/HomeBloodTest";
 
@@ -21,15 +26,17 @@ function App() {
   return (
     <AuthProvider>
       <Toaster position="top-right" reverseOrder={false} />
+
       <Routes>
-        {/* Auth Routes */}
+        {/* ================= AUTH ROUTES ================= */}
         <Route path="/role-selection" element={<RoleSelection />} />
         <Route path="/sub-role-selection" element={<SubRoleSelection />} />
         <Route path="/login/:role" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/register/bloodbank" element={<RegisterBloodBank />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
 
-        {/* Admin Routes */}
+        {/* ================= ADMIN ROUTES ================= */}
         <Route
           path="/admin"
           element={
@@ -38,15 +45,20 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<AdminDashboard />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+
+          <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="donors" element={<AdminDashboard />} />
           <Route path="patients" element={<AdminDashboard />} />
           <Route path="inventory" element={<AdminDashboard />} />
           <Route path="settings" element={<AdminDashboard />} />
           <Route path="help" element={<AdminDashboard />} />
+
+          <Route path="pending-donors" element={<PendingDonors />} />
+          <Route path="pending-bloodbanks" element={<PendingBloodBanks />} />
         </Route>
 
-        {/* Donor Routes */}
+        {/* ================= DONOR ROUTES ================= */}
         <Route
           path="/donor"
           element={
@@ -63,7 +75,7 @@ function App() {
           <Route path="help" element={<DonorDashboard />} />
         </Route>
 
-        {/* Patient Routes */}
+        {/* ================= PATIENT ROUTES ================= */}
         <Route
           path="/patient"
           element={
@@ -81,7 +93,7 @@ function App() {
           <Route path="help" element={<PatientDashboard />} />
         </Route>
 
-        {/* Blood Bank Routes */}
+        {/* ================= BLOOD BANK ROUTES ================= */}
         <Route
           path="/bloodbank"
           element={
@@ -90,14 +102,15 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<BloodBankDashboard />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<BloodBankDashboard />} />
           <Route path="requests" element={<BloodBankDashboard />} />
           <Route path="donations" element={<BloodBankDashboard />} />
           <Route path="settings" element={<BloodBankDashboard />} />
           <Route path="help" element={<BloodBankDashboard />} />
         </Route>
 
-        {/* Default Route */}
+        {/* ================= DEFAULT ROUTES ================= */}
         <Route path="/" element={<Home />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

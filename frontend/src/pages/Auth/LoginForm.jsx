@@ -15,11 +15,31 @@ const LoginForm = () => {
   const handleLogin = async () => {
     try {
       const res = await loginUser({ email, password });
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      navigate(`/${res.data.user.role}`);
+      if (role === "admin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate(`/${role}`);
+        }
+
+=======
+>>>>>>> nishant
       if (!res?.token || !res?.user) {
         alert(res?.message || "Login failed");
         return;
       }
       login(res.user, res.token);
+<<<<<<< HEAD
+=======
+>>>>>>> 68b81dae39cb4ed7c28eefd35d26b083a276efd5
+>>>>>>> nishant
     } catch (err) {
       alert(getErrorMessage(err));
     }

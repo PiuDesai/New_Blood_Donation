@@ -14,10 +14,22 @@ const Sidebar = ({ role }) => {
 
     const roleSpecific = {
       admin: [
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+        { to: "/admin/dashboard", icon: LayoutDashboard, label: "Overview" },
+        { to: "/admin/dashboard/pending-donors", icon: Users, label: "Donor Requests" },
+        { to: "/admin/dashboard/pending-bloodbanks", icon: Users, label: "Blood Bank Requests" }
+=======
+>>>>>>> nishant
         { to: "/admin", icon: LayoutDashboard, label: "Overview", end: true },
         { to: "/admin/donors", icon: Users, label: "Manage Donors" },
         { to: "/admin/patients", icon: Users, label: "Manage Patients" },
         { to: "/admin/inventory", icon: Droplets, label: "Live Inventory" },
+<<<<<<< HEAD
+=======
+>>>>>>> 68b81dae39cb4ed7c28eefd35d26b083a276efd5
+>>>>>>> nishant
       ],
       donor: [
         { to: "/donor/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true },
@@ -63,6 +75,13 @@ const Sidebar = ({ role }) => {
           </NavLink>
         ))}
       </div>
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+      
+      
+=======
+>>>>>>> nishant
 
       <div className="p-8">
         <div className="bg-gradient-to-br from-red-600 to-pink-600 rounded-[2rem] p-8 text-white shadow-2xl shadow-red-100 overflow-hidden relative group cursor-pointer">
@@ -78,6 +97,10 @@ const Sidebar = ({ role }) => {
           <HeartPulse size={140} className="absolute -bottom-10 -right-10 text-white/10 group-hover:scale-110 transition-transform duration-500" />
         </div>
       </div>
+<<<<<<< HEAD
+=======
+>>>>>>> 68b81dae39cb4ed7c28eefd35d26b083a276efd5
+>>>>>>> nishant
     </aside>
   );
 };
