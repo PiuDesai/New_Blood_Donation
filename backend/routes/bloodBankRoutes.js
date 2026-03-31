@@ -19,4 +19,5 @@ router.post("/stock", auth, requireRole('bloodbank'), updateBloodStock);
 // 🔴 Blood Requests
 router.get("/requests", auth, requireRole('bloodbank'), getBloodRequests);
 
+
 module.exports = router;
