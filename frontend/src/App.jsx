@@ -12,6 +12,9 @@ import AdminDashboard from "./pages/Dashboard/AdminDashboard";
 import DonorDashboard from "./pages/Dashboard/DonorDashboard";
 import PatientDashboard from "./pages/Dashboard/PatientDashboard";
 import BloodBankDashboard from "./pages/Dashboard/BloodBankDashboard";
+import AdminLogin from "./pages/Auth/AdminLogin";
+import PendingDonors from "./pages/Admin/PendingDonors";
+import PendingBloodBanks from "./pages/Admin/PendingBloodBanks";
 
 function App() {
   return (
@@ -22,10 +25,11 @@ function App() {
         <Route path="/sub-role-selection" element={<SubRoleSelection />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
 
         {/* Admin Routes */}
         <Route
-          path="/admin"
+          path="/admin/dashboard"
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <DashboardLayout />
@@ -33,6 +37,8 @@ function App() {
           }
         >
           <Route index element={<AdminDashboard />} />
+          <Route path="pending-donors" element={<PendingDonors />} />
+          <Route path="pending-bloodbanks" element={<PendingBloodBanks />} />
         </Route>
 
         {/* Donor Routes */}

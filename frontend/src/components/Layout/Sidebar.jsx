@@ -11,10 +11,9 @@ const Sidebar = ({ role }) => {
 
     const roleSpecific = {
       admin: [
-        { to: "/admin", icon: LayoutDashboard, label: "Overview" },
-        { to: "/admin/donors", icon: Users, label: "Manage Donors" },
-        { to: "/admin/patients", icon: Users, label: "Manage Patients" },
-        { to: "/admin/inventory", icon: Droplets, label: "Live Inventory" },
+        { to: "/admin/dashboard", icon: LayoutDashboard, label: "Overview" },
+        { to: "/admin/dashboard/pending-donors", icon: Users, label: "Donor Requests" },
+        { to: "/admin/dashboard/pending-bloodbanks", icon: Users, label: "Blood Bank Requests" }
       ],
       donor: [
         { to: "/donor", icon: LayoutDashboard, label: "Dashboard" },
@@ -58,18 +57,7 @@ const Sidebar = ({ role }) => {
         ))}
       </div>
       
-      <div className="p-8">
-        <div className="bg-gradient-to-br from-red-600 to-pink-600 rounded-[2rem] p-8 text-white shadow-2xl shadow-red-100 overflow-hidden relative group cursor-pointer">
-          <div className="relative z-10">
-            <h4 className="font-black text-xl mb-2 tracking-tight">Emergency?</h4>
-            <p className="text-red-100 text-xs font-bold mb-6 leading-relaxed">Our 24/7 hotline is here to help you find blood instantly.</p>
-            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-6 py-3 rounded-2xl text-xs font-black transition-all border border-white/20 uppercase tracking-widest">
-              Call Now
-            </button>
-          </div>
-          <HeartPulse size={140} className="absolute -bottom-10 -right-10 text-white/10 group-hover:scale-110 transition-transform duration-500" />
-        </div>
-      </div>
+      
     </aside>
   );
 };

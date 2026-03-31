@@ -27,6 +27,25 @@ export const loginUser = async (credentials) => {
   }
 };
 
+// ✅ ADMIN LOGIN (ADDED)
+export const loginAdmin = async (credentials) => {
+  // ✅ ADMIN LOGIN (FIXED)
+  try {
+    const response = await API.post("/admin/login", credentials);
+    return response.data;
+  } catch (error) {
+    console.warn("Admin API error:", error.message);
+
+    // ❌ DO NOT allow fallback success for admin
+    return {
+      success: false, // ✅ IMPORTANT
+      message:
+        error.response?.data?.message ||
+        "Invalid email or password",
+    };
+  }
+};
+
 export const registerUser = async (userData) => {
   try {
     const response = await API.post("/users/register", userData);
@@ -98,4 +117,28 @@ export const getPatientStats = async () => {
       requests: [],
     };
   }
+};
+
+export const getPendingDonors = async () => {
+  const res = await API.get("/admin/pending-donors");
+  return res.data;
+};
+
+// ✅ APPROVE DONOR
+export const approveDonor = async (id) => {
+  const res = await API.put(`/admin/approve-donor/${id}`);
+  return res.data;
+};
+
+
+// ✅ GET BLOOD BANK REQUESTS
+export const getPendingBloodBanks = async () => {
+  const res = await API.get("/admin/pending-bloodbanks");
+  return res.data;
+};
+
+// ✅ APPROVE BLOOD BANK
+export const approveBloodBank = async (id) => {
+  const res = await API.put(`/admin/approve-bloodbank/${id}`);
+  return res.data;
 };

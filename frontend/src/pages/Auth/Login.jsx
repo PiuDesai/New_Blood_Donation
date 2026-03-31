@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { loginUser } from "../../api/authAPI";
+import { loginUser, loginAdmin } from "../../api/authAPI";
 import { useAuth } from "../../context/AuthContext";
 import { Card } from "../../components/Common/Card";
 import { Input } from "../../components/Common/Input";
@@ -8,12 +8,13 @@ import { Button } from "../../components/Common/Button";
 import { Mail, Lock, Loader2, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+
 const Login = () => {
   const [searchParams] = useSearchParams();
   const role = searchParams.get("role") || "patient";
   const navigate = useNavigate();
   const { login } = useAuth();
-  
+
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,27 +27,42 @@ const Login = () => {
     setDemoMessage("");
 
     try {
-      const result = await loginUser({ ...formData, role });
-      if (result.success) {
-        if (result.message?.includes("Demo Mode")) {
-          setDemoMessage(result.message);
-          setTimeout(() => login(result.user, result.token), 1500);
-        } else {
-          login(result.user, result.token);
-        }
+      let result;
+
+      if (role === "admin") {
+        result = await loginAdmin(formData);
+        console.log("LOGIN RESULT:", result);  // ✅ ONLY admin goes here
       } else {
-        setError(result.message || "Login failed");
+        result = await loginUser({ ...formData, role }); // ✅ all others unchanged
       }
+
+      if (result.success) {
+        localStorage.setItem("token", result.token);
+        localStorage.setItem("user", JSON.stringify(result.user));
+
+        if (result.user.role === "admin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate(`/${result.user.role}`);
+        }
+      }
+
+      // ❗ IMPORTANT: ADD THIS BLOCK
+      else {
+        alert(result.message || "Login failed"); // ✅ THIS FIXES YOUR ISSUE
+      }
+
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       if (!demoMessage) setLoading(false);
+
     }
   };
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-red-50 via-white to-pink-50 flex items-center justify-center p-6">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full"
@@ -83,7 +99,7 @@ const Login = () => {
 
             <AnimatePresence>
               {error && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
@@ -94,7 +110,7 @@ const Login = () => {
                 </motion.div>
               )}
               {demoMessage && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   className="bg-amber-50 text-amber-600 p-4 rounded-2xl text-sm font-bold border border-amber-100 flex items-center gap-3"
@@ -122,7 +138,7 @@ const Login = () => {
                 Join Now
               </Link>
             </p>
-            <button 
+            <button
               onClick={() => navigate("/role-selection")}
               className="text-sm font-bold text-gray-300 hover:text-gray-500 transition-colors uppercase tracking-widest"
             >

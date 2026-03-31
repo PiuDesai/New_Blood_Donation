@@ -17,6 +17,11 @@ const LoginForm = () => {
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
       navigate(`/${res.data.user.role}`);
+      if (role === "admin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate(`/${role}`);
+        }
 
     } catch (err) {
       alert("Login failed");

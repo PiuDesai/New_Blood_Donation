@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, HeartPulse, Droplets, Activity, Plus, MoreVertical, Search, Filter } from "lucide-react";
+import { Users, HeartPulse, Droplets, Activity, Plus, MoreVertical, Search, Filter, ShieldCheck } from "lucide-react";
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
@@ -35,16 +35,6 @@ const AdminDashboard = () => {
           <h1 className="text-4xl font-extrabold text-gray-900 mb-2 tracking-tight">Admin Dashboard</h1>
           <p className="text-gray-500 font-medium">System-wide monitoring and management</p>
         </div>
-        <div className="flex gap-4">
-          <Button variant="secondary" className="bg-white hover:bg-gray-50 flex items-center gap-2 border-2 border-gray-100 shadow-sm">
-            <Filter size={18} />
-            Filters
-          </Button>
-          <Button className="flex items-center gap-2 shadow-red-200/50 bg-red-600 hover:bg-red-700">
-            <Plus size={20} />
-            Add Entity
-          </Button>
-        </div>
       </div>
 
       {error && (
@@ -54,29 +44,30 @@ const AdminDashboard = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <StatsCard 
-          title="Total Donors" 
-          value={stats?.totalDonors || 0} 
-          icon={Users} 
-          color="bg-blue-600 shadow-blue-200/50" 
+        <StatsCard
+          title="Total Donors"
+          value={stats?.totalDonors || 0}
+          icon={Users}
+          color="bg-blue-600 shadow-blue-200/50"
         />
-        <StatsCard 
-          title="Patients" 
-          value={stats?.totalPatients || 0} 
-          icon={Activity} 
-          color="bg-purple-600 shadow-purple-200/50" 
+        <StatsCard
+          title="Pending Donors"
+          value={stats?.pendingDonors || 0}
+          icon={Activity}
+          color="bg-purple-600 shadow-purple-200/50"
         />
-        <StatsCard 
-          title="Active Requests" 
-          value={stats?.bloodRequests || 0} 
-          icon={HeartPulse} 
-          color="bg-red-600 shadow-red-200/50" 
+        <StatsCard
+          title="Total Blood Banks"
+          value={stats?.totalBanks || 0}   // ✅ FIX
+          icon={HeartPulse}
+          color="bg-red-600 shadow-red-200/50"
         />
-        <StatsCard 
-          title="Stock (Units)" 
-          value={stats?.availableUnits || 0} 
-          icon={Droplets} 
-          color="bg-emerald-600 shadow-emerald-200/50" 
+
+        <StatsCard
+          title="Pending Blood Banks"
+          value={stats?.pendingBanks || 0}   // ✅ FIX
+          icon={Droplets}
+          color="bg-emerald-600 shadow-emerald-200/50"
         />
       </div>
 
@@ -86,7 +77,7 @@ const AdminDashboard = () => {
             <h3 className="text-xl font-extrabold text-gray-900">Recent System Activity</h3>
             <Button variant="ghost" size="sm" className="text-red-600 font-bold hover:bg-red-50">View All</Button>
           </div>
-          
+
           {recentRequests.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
