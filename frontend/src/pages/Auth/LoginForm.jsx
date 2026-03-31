@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { loginUser } from "../../api/authAPI";
+import { loginUser } from "../../api/api";
+import { getErrorMessage } from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 
 const LoginForm = () => {
   const { role } = useParams();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -12,6 +15,7 @@ const LoginForm = () => {
   const handleLogin = async () => {
     try {
       const res = await loginUser({ email, password });
+<<<<<<< HEAD
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
@@ -23,8 +27,15 @@ const LoginForm = () => {
           navigate(`/${role}`);
         }
 
+=======
+      if (!res?.token || !res?.user) {
+        alert(res?.message || "Login failed");
+        return;
+      }
+      login(res.user, res.token);
+>>>>>>> 68b81dae39cb4ed7c28eefd35d26b083a276efd5
     } catch (err) {
-      alert("Login failed");
+      alert(getErrorMessage(err));
     }
   };
 

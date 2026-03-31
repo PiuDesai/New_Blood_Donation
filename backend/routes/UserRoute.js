@@ -2,19 +2,23 @@ const express = require('express');
 const router = express.Router();
 
 const auth = require('../middleware/authMiddleware.js');
+const { requireRole } = require('../middleware/roleMiddleware.js');
 const {
-  register,
+  registerUser,
+  registerBloodBank,
   login,
   getProfile,
   updateProfile,
   changePassword,
   checkEligibility,
   recordDonation,
-  logout
+  logout,
+  getAllBloodBanks
 } = require('../controller/UserController.js');
 
 // ── Public routes (no token required) ────────────────────────
-router.post('/register', register);
+router.post('/user/register', registerUser);
+router.post('/bloodbank/register', registerBloodBank);
 
 router.post('/login', login);
 
@@ -26,9 +30,11 @@ router.put('/me', auth, updateProfile);
 
 router.put('/change-password', auth, changePassword);
 
-router.get('/eligibility', auth, checkEligibility);
+router.get('/eligibility', auth, requireRole('donor'), checkEligibility);
 
-router.post('/record-donation', auth, recordDonation);
+router.post('/record-donation', auth, requireRole('donor'), recordDonation);
+
+router.get('/blood-banks', auth, getAllBloodBanks);
 
 router.post('/logout', auth, logout);
 

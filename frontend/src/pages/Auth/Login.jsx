@@ -1,32 +1,36 @@
 import { useState } from "react";
+<<<<<<< HEAD
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { loginUser, loginAdmin } from "../../api/authAPI";
+=======
+import { useParams, Link } from "react-router-dom";
+import { loginUser } from "../../api/api";
+import { getErrorMessage } from "../../api/axios";
+>>>>>>> 68b81dae39cb4ed7c28eefd35d26b083a276efd5
 import { useAuth } from "../../context/AuthContext";
 import { Card } from "../../components/Common/Card";
 import { Input } from "../../components/Common/Input";
 import { Button } from "../../components/Common/Button";
 import { Mail, Lock, Loader2, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
 
 
 const Login = () => {
-  const [searchParams] = useSearchParams();
-  const role = searchParams.get("role") || "patient";
-  const navigate = useNavigate();
+  const { role } = useParams();
   const { login } = useAuth();
 
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [demoMessage, setDemoMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setDemoMessage("");
 
     try {
+<<<<<<< HEAD
       let result;
 
       if (role === "admin") {
@@ -52,11 +56,28 @@ const Login = () => {
         alert(result.message || "Login failed"); // ✅ THIS FIXES YOUR ISSUE
       }
 
+=======
+      const response = await loginUser({ email: formData.email, password: formData.password }, role);
+      if (!response?.token || !response?.user) {
+        const msg = response?.message || "Login failed";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      toast.success(response.message || "Welcome back!");
+      login(response.user, response.token);
+>>>>>>> 68b81dae39cb4ed7c28eefd35d26b083a276efd5
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+      const msg = getErrorMessage(err);
+      setError(msg);
+      toast.error(msg);
     } finally {
+<<<<<<< HEAD
       if (!demoMessage) setLoading(false);
 
+=======
+      setLoading(false);
+>>>>>>> 68b81dae39cb4ed7c28eefd35d26b083a276efd5
     }
   };
 
@@ -103,8 +124,9 @@ const Login = () => {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-bold border border-red-100 flex items-center gap-3"
+                  className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-bold border border-red-100 flex flex-col gap-3"
                 >
+<<<<<<< HEAD
                   <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
                   {error}
                 </motion.div>
@@ -117,33 +139,50 @@ const Login = () => {
                 >
                   <Loader2 className="animate-spin" size={16} />
                   {demoMessage}
+=======
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                    {error}
+                  </div>
+>>>>>>> 68b81dae39cb4ed7c28eefd35d26b083a276efd5
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <Button type="submit" className="w-full py-5 text-lg group" disabled={loading}>
-              {loading ? <Loader2 className="animate-spin" /> : (
-                <>
-                  Sign In
-                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                </>
+            <Button
+              type="submit"
+              className="w-full h-14 text-lg font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-red-100"
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <span className="flex items-center gap-3">
+                  Sign In <ArrowRight size={20} />
+                </span>
               )}
             </Button>
           </form>
 
-          <div className="mt-12 space-y-4">
-            <p className="text-gray-400 font-medium">
-              Don't have an account?{" "}
-              <Link to={`/register?role=${role}`} className="text-red-600 font-black hover:underline underline-offset-4">
-                Join Now
+          <div className="mt-12 text-center">
+            <p className="text-gray-400 font-bold">
+              New to our network?{" "}
+              <Link
+                to={role === "bloodbank" ? "/register/bloodbank" : "/register"}
+                className="text-red-600 hover:text-red-700 underline decoration-2 underline-offset-4"
+              >
+                Create Account
               </Link>
             </p>
+<<<<<<< HEAD
             <button
               onClick={() => navigate("/role-selection")}
               className="text-sm font-bold text-gray-300 hover:text-gray-500 transition-colors uppercase tracking-widest"
             >
               &larr; Switch Role
             </button>
+=======
+>>>>>>> 68b81dae39cb4ed7c28eefd35d26b083a276efd5
           </div>
         </Card>
       </motion.div>

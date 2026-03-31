@@ -1,131 +1,402 @@
-import { Heart, Activity, Droplets, Calendar, Clock, MapPin, Search } from "lucide-react";
+import { Heart, Activity, Droplets, Calendar, Clock, MapPin, Search, Star, ShieldCheck, CheckCircle2, User, ArrowRight, Phone, ArrowLeft, HelpCircle } from "lucide-react";
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
 import { useAuth } from "../../context/AuthContext";
-import { getDonorStats } from "../../api/authAPI";
+import { getDonorStats, getAllBloodRequests, getAllCamps } from "../../api/api";
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
+import { dashboardPath } from "../../utils/rolePaths";
 
 const DonorDashboard = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [stats, setStats] = useState(null);
+  const [requests, setRequests] = useState([]);
+  const [camps, setCamps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("requests");
+
+  const isHistoryPage = location.pathname.includes("/history");
+  const isSchedulePage = location.pathname.includes("/schedule");
+  const isSettingsPage = location.pathname.includes("/settings");
+  const isHelpPage = location.pathname.includes("/help");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getDonorStats();
-        setStats(data);
+        let statsData = null;
+let requestsData = [];
+let campsData = [];
+
+try {
+  statsData = await getDonorStats();
+} catch (err) {
+  console.error("Stats failed");
+}
+
+try {
+  requestsData = await getAllBloodRequests();
+} catch (err) {
+  console.error("Requests failed (403 expected for donor)");
+}
+
+try {
+  campsData = await getAllCamps();
+} catch (err) {
+  console.error("Camps failed");
+}
+
+setStats(statsData);
+setRequests(requestsData);
+setCamps(campsData);
+        setStats(statsData);
+        setRequests(requestsData);
+        setCamps(campsData);
       } catch (err) {
-        console.error("Failed to fetch donor stats:", err);
-        setError("Unable to connect to server.");
+        console.error("Failed to fetch donor data:", err);
+        setError(err?.response?.data?.message || err?.message || "Could not load dashboard data.");
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, []);
+  const participateInCamp = async (campId) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("http://localhost:5000/api/camps/register-donor", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ campId })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert("Successfully registered for camp!");
+    } else {
+      alert(data.message);
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Error registering for camp");
+  }
+};
+
+  if (user && String(user.role).toLowerCase() !== "donor") {
+    return <Navigate to={dashboardPath(user.role)} replace />;
+  }
+
+  const pendingRequests = requests.map(req => ({
+    id: req._id,
+    name: req.patientName,
+    bloodGroup: req.bloodGroup,
+    units: `${req.units} Units`,
+    urgency: req.urgency,
+    location: req.hospital,
+    distance: "Near you",
+    time: new Date(req.createdAt).toLocaleTimeString()
+  }));
 
   const donationHistory = stats?.history || [];
 
-  return (
-    <div className="space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-2 tracking-tight">Welcome, {user?.name?.split(" ")[0]}!</h1>
-          <p className="text-gray-500 font-medium italic">"Your blood can save a life. You are a hero."</p>
-        </div>
-        <Button className="flex items-center gap-2 shadow-red-200/50 bg-red-600 hover:bg-red-700">
-          <Calendar size={20} />
-          Schedule Donation
+  const nearbyCamps = camps.map(camp => ({
+    id: camp._id,
+    title: camp.name,
+    date: new Date(camp.date).toLocaleDateString(),
+    location: camp.location,
+    time: "All Day"
+  }));
+
+  if (loading) return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+      <div className="w-16 h-16 border-4 border-red-100 border-t-red-600 rounded-full animate-spin" />
+      <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Accessing Donor Records...</p>
+    </div>
+  );
+
+  if (isHistoryPage) {
+    return (
+      <div className="space-y-10 pb-20">
+        <Button onClick={() => navigate(dashboardPath("donor"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+          <ArrowLeft size={16} /> Back to Dashboard
         </Button>
+        <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
+          <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-10">Donation History</h3>
+          <div className="space-y-6">
+            {donationHistory.map((item, i) => (
+              <div key={i} className="flex items-center justify-between p-8 rounded-[2.5rem] bg-gray-50/50 border border-transparent hover:border-blue-100 hover:bg-white hover:shadow-xl hover:shadow-blue-50/50 transition-all group">
+                <div className="flex items-center gap-6">
+                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-xl shadow-blue-50 group-hover:bg-blue-600 group-hover:text-white transition-all"><CheckCircle2 size={24} /></div>
+                  <div>
+                    <p className="font-black text-gray-900 text-lg">{item.location}</p>
+                    <p className="text-gray-400 font-bold text-sm uppercase tracking-widest">{item.date} • {item.type} • {item.units}</p>
+                  </div>
+                </div>
+                <span className="text-emerald-600 font-black uppercase text-xs tracking-widest bg-emerald-50 px-4 py-2 rounded-xl">{item.status}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isSchedulePage) {
+    return (
+      <div className="space-y-10 pb-20">
+        <Button onClick={() => navigate(dashboardPath("donor"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+          <ArrowLeft size={16} /> Back to Dashboard
+        </Button>
+        <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
+          <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-10">Upcoming Donation Camps</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {nearbyCamps.map((camp, i) => (
+              <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }} className="p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group relative overflow-hidden">
+                <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 font-black text-xl mb-6 group-hover:bg-red-600 group-hover:text-white transition-all duration-300"><Calendar size={28} /></div>
+                <h4 className="font-black text-2xl text-gray-900 mb-2">{camp.title}</h4>
+                <div className="space-y-2 mb-8">
+                  <p className="text-gray-400 font-bold text-sm flex items-center gap-2"><MapPin size={16} /> {camp.location}</p>
+                  <p className="text-gray-400 font-bold text-sm flex items-center gap-2"><Clock size={16} /> {camp.time}</p>
+                </div>
+<Button
+  onClick={() => participateInCamp(camp.id)}
+  className="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 shadow-lg shadow-red-100 font-black uppercase tracking-widest text-[10px]"
+>
+  Participate
+</Button>
+              </motion.div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isSettingsPage) {
+    return (
+      <div className="space-y-10 pb-20">
+        <Button onClick={() => navigate(dashboardPath("donor"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+          <ArrowLeft size={16} /> Back to Dashboard
+        </Button>
+        <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
+          <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Donor Settings</h3>
+          <div className="space-y-6 max-w-2xl">
+            <div className="p-6 bg-gray-50 rounded-2xl">
+              <p className="font-black text-gray-900 mb-2">Availability Status</p>
+              <p className="text-sm text-gray-500 font-bold">Show yourself as active for nearby emergency requests.</p>
+              <Button className="mt-4 bg-red-600 h-10 text-xs">I'm Available</Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isHelpPage) {
+    return (
+      <div className="space-y-10 pb-20">
+        <Button onClick={() => navigate(dashboardPath("donor"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+          <ArrowLeft size={16} /> Back to Dashboard
+        </Button>
+        <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
+          <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Support Hub</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="p-8 bg-blue-50 rounded-[2rem] border border-blue-100">
+              <HelpCircle className="text-blue-600 mb-4" size={32} />
+              <h4 className="font-black text-xl text-gray-900 mb-2">Donation Guidance</h4>
+              <p className="text-gray-500 font-bold text-sm mb-6">Learn more about donation protocols and health benefits.</p>
+              <Button className="bg-blue-600 h-10 text-xs">Read Guide</Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-10 pb-20">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <h1 className="text-5xl font-black text-gray-900 mb-2 tracking-tight">
+            Welcome, <span className="text-red-600">Hero!</span>
+          </h1>
+          <p className="text-gray-400 font-bold text-lg">Your contributions have saved <span className="text-red-600">12 lives</span> so far.</p>
+        </motion.div>
+        
+        <div className="flex flex-wrap gap-4">
+          <Button 
+            className="h-14 px-8 rounded-2xl bg-red-600 hover:bg-red-700 shadow-xl shadow-red-100 text-lg font-black uppercase tracking-widest flex items-center gap-3 transition-all active:scale-95"
+          >
+            <Calendar size={24} /> Schedule Donation
+          </Button>
+        </div>
       </div>
 
       {error && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl text-sm font-medium">
-          {error}
-        </div>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-2xl text-sm font-bold flex items-center gap-3">
+          <ShieldCheck className="text-amber-500" /> {error}
+        </motion.div>
       )}
 
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <StatsCard 
           title="Total Donations" 
-          value={stats?.totalDonations || 0} 
-          icon={Heart} 
-          color="bg-red-600 shadow-red-200/50" 
+          value={stats?.totalDonations ?? 0} 
+          icon={Droplets} 
+          color="from-red-500 to-pink-600" 
         />
         <StatsCard 
           title="Lives Saved" 
-          value={stats?.livesSaved || 0} 
+          value={stats?.livesSaved ?? 0} 
           icon={Activity} 
-          color="bg-blue-600 shadow-blue-200/50" 
+          color="from-blue-500 to-indigo-600" 
         />
         <StatsCard 
           title="Next Eligible" 
-          value={stats?.nextEligible || "N/A"} 
+          value={stats?.nextEligible ?? "—"} 
           icon={Calendar} 
-          color="bg-emerald-600 shadow-emerald-200/50" 
+          color="from-emerald-500 to-teal-600" 
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-2 p-8 border-none bg-white shadow-xl shadow-gray-200/50">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-extrabold text-gray-900">My Donation History</h3>
-            <Button variant="ghost" size="sm" className="text-red-600 font-bold hover:bg-red-50">View History</Button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* Main Content Area */}
+        <Card variant="glass" className="lg:col-span-2 p-10 border-none shadow-2xl shadow-gray-100/50">
+          <div className="flex items-center gap-8 border-b border-gray-100 mb-10">
+            {["requests", "history"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`pb-4 text-sm font-black uppercase tracking-widest transition-all relative ${
+                  activeTab === tab ? "text-red-600" : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                {tab === "requests" ? "Urgent Requests" : "Donation History"}
+                {activeTab === tab && (
+                  <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-1 bg-red-600 rounded-full" />
+                )}
+              </button>
+            ))}
           </div>
           
-          {donationHistory.length > 0 ? (
-            <div className="space-y-6">
-              {donationHistory.map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-5 rounded-2xl border border-gray-50 hover:bg-gray-50 transition-all group">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-600 group-hover:bg-red-600 group-hover:text-white transition-all">
-                      <Droplets size={24} />
+          <AnimatePresence mode="wait">
+            {activeTab === "requests" ? (
+              <motion.div 
+                key="requests"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-6"
+              >
+                {pendingRequests.map((req, i) => (
+                  <div key={i} className="p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8 mb-6">
+                      <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-red-100 group-hover:scale-110 transition-transform">
+                          {req.bloodGroup}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-3 mb-1">
+                            <h4 className="font-black text-xl text-gray-900">{req.name}</h4>
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                              req.urgency === "Emergency" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
+                            }`}>
+                              {req.urgency}
+                            </span>
+                          </div>
+                          <p className="text-gray-400 font-bold text-sm flex items-center gap-1.5"><MapPin size={14} /> {req.location}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-red-600 font-black text-lg">{req.distance}</p>
+                        <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">{req.time}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-gray-900">{item.location}</p>
-                      <p className="text-xs text-gray-400 font-medium">{item.date} • {item.type}</p>
+                    <div className="flex gap-4">
+                      <Button className="flex-1 h-14 rounded-2xl bg-red-600 hover:bg-red-700 font-black uppercase tracking-widest text-xs shadow-lg shadow-red-100">
+                        Accept Request
+                      </Button>
+                      <button className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all">
+                        <Phone size={20} />
+                      </button>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg uppercase tracking-wider">
-                    {item.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-20 text-center">
-              <Heart size={48} className="mx-auto text-gray-100 mb-4" />
-              <p className="text-gray-400 font-medium italic">You haven't made any donations yet.</p>
-            </div>
-          )}
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="history"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-6"
+              >
+                {donationHistory.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between p-8 rounded-[2.5rem] bg-gray-50/50 border border-transparent hover:border-blue-100 hover:bg-white hover:shadow-xl hover:shadow-blue-50/50 transition-all group">
+                    <div className="flex items-center gap-6">
+                      <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-xl shadow-blue-50 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                        <CheckCircle2 size={24} />
+                      </div>
+                      <div>
+                        <p className="font-black text-gray-900 text-lg">{item.location}</p>
+                        <p className="text-gray-400 font-bold text-sm uppercase tracking-widest">{item.date} • {item.type}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-emerald-600 font-black uppercase text-xs tracking-widest bg-emerald-50 px-4 py-2 rounded-xl">
+                        {item.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Card>
 
-        <Card className="p-8 border-none bg-red-50/30 shadow-inner relative overflow-hidden group">
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-extrabold text-gray-900">Health Profile</h3>
-              <Activity size={20} className="text-red-500" />
-            </div>
-            <div className="space-y-6">
-              <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-red-100/50">
-                <span className="text-sm font-bold text-gray-500 uppercase tracking-tight">Blood Type</span>
-                <span className="text-xl font-black text-red-600">{user?.bloodGroup || "O+"}</span>
+        {/* Sidebar */}
+        <div className="space-y-10">
+          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50 text-center">
+            <div className="relative inline-block mb-6">
+              <div className="w-24 h-24 bg-gradient-to-tr from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white shadow-2xl shadow-orange-100">
+                <Star size={40} fill="currentColor" />
               </div>
-              <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-red-100/50">
-                <span className="text-sm font-bold text-gray-500 uppercase tracking-tight">Eligibility</span>
-                <span className="text-sm font-extrabold text-emerald-600">Active</span>
+              <div className="absolute -bottom-2 -right-2 bg-white px-3 py-1 rounded-full shadow-lg border border-gray-50">
+                <p className="text-gray-900 font-black text-sm">4.9</p>
               </div>
             </div>
-            <p className="mt-8 text-xs text-gray-400 leading-relaxed font-medium">
-              Regular donations help maintain a healthy lifestyle and save lives in your community.
-            </p>
-          </div>
-          <Droplets size={140} className="absolute -bottom-10 -right-10 text-red-600/5 group-hover:scale-110 transition-transform duration-500" />
-        </Card>
+            <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-2">Reliability Score</h3>
+            <p className="text-gray-400 font-bold text-sm mb-8 leading-relaxed">Top 5% of donors in your region. Keep up the great work!</p>
+            <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden mb-4">
+              <motion.div initial={{ width: 0 }} animate={{ width: "95%" }} transition={{ duration: 1, delay: 0.5 }} className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full" />
+            </div>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">950 Points to next rank</p>
+          </Card>
+
+          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-blue-100/50 bg-gradient-to-br from-blue-600 to-indigo-600 text-white relative overflow-hidden group">
+            <div className="relative z-10">
+              <h4 className="text-xl font-black mb-4 tracking-tight">Refer a Friend</h4>
+              <p className="text-white/80 font-bold text-sm leading-relaxed mb-8">Help us grow our community. Get special badges for every successful referral.</p>
+              <button className="h-14 px-8 rounded-2xl bg-white text-blue-600 font-black uppercase tracking-widest text-xs shadow-xl hover:scale-105 transition-all flex items-center gap-2">
+                Share Link <ArrowRight size={16} />
+              </button>
+            </div>
+            <User size={120} className="absolute -bottom-10 -right-10 text-white/10 group-hover:scale-110 transition-transform duration-700" />
+          </Card>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { dashboardPath } from "../utils/rolePaths";
 import { Loader2 } from "lucide-react";
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -18,10 +19,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/role-selection" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user?.role?.toLowerCase())) {
-    // Redirect to their respective dashboard if they try to access a role-restricted route
+  if (allowedRoles && (!user || !allowedRoles.includes(user.role?.toLowerCase()))) {
     const role = user?.role?.toLowerCase();
-    return <Navigate to={`/${role}`} replace />;
+    return <Navigate to={role ? dashboardPath(role) : "/role-selection"} replace />;
   }
 
   return children;

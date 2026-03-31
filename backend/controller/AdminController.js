@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/UserModel");
+const jwt = require('jsonwebtoken');
+const User = require('../models/UserModel');
 
 exports.adminLogin = (req, res) => {
   const { email, password } = req.body;

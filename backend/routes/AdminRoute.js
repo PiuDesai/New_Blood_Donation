@@ -1,8 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const { adminLogin, getPendingDonors, approveDonor, approveBloodBank, getPendingBloodBanks, getAdminStats } = require("../controller/AdminController");
+const { 
+  adminLogin, 
+  getPendingBloodBanks, 
+  approveBloodBank 
+} = require("../controller/AdminController");
 
 router.post("/login", adminLogin);
+router.get("/pending-blood-banks", getPendingBloodBanks);
+router.post("/approve-blood-bank/:id", approveBloodBank);
 
 router.get("/pending-donors", getPendingDonors);
 router.put("/approve-donor/:id", approveDonor);
