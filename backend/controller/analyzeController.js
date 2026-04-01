@@ -1,5 +1,6 @@
 const extractText = require("../utils/extractText");
 const { analyzeWithAI } = require("../services/groqService");
+const fs = require("fs");
 
 exports.analyzeReport = async (req, res) => {
   try {
@@ -7,20 +8,32 @@ exports.analyzeReport = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // Extract text from uploaded file
+    // Extract text
     const text = await extractText(req.file.path, req.file.mimetype);
-    console.log("📄 Extracted Text:", text);
 
-    // Limit text length for AI speed
-    const cleanedText = text.slice(0, 1500);
+    if (!text || text.trim().length < 10) {
+      return res.status(400).json({
+        message: "Could not extract meaningful text",
+      });
+    }
 
-    // Send text to AI
+    // Clean text (important)
+    const cleanedText = text
+      .replace(/\s+/g, " ")
+      .replace(/[^\x00-\x7F]/g, "")
+      .slice(0, 1500);
+
+    // AI analysis
     const result = await analyzeWithAI(cleanedText);
 
+    // Delete uploaded file
+    fs.unlinkSync(req.file.path);
+
     res.json({
-      extractedText: text,
+      success: true,
       result,
     });
+
   } catch (error) {
     console.error("Controller Error:", error);
     res.status(500).json({ message: "Server error" });
