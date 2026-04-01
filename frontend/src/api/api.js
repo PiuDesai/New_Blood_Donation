@@ -1,6 +1,6 @@
 /**
  * api.js – Central API layer for Smart Blood Donation
- * All user-module, blood-test booking, and push-notification calls live here.
+ * Cleaned version (NO duplicate /api)
  */
 
 import API from "./axios";
@@ -22,10 +22,12 @@ export const registerBloodBank = async (bbData) => {
 export const loginUser = async (credentials, role) => {
   const url = role === "admin" ? "/admin/login" : "/login";
   const { data } = await API.post(url, credentials);
+
   if (data.token) {
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
   }
+
   return data;
 };
 
@@ -146,7 +148,7 @@ export const issueBlood = async (payload) => {
 };
 
 // ═══════════════════════════════════════════════
-// ─── STATS (per role) ────────────────────────
+// ─── STATS ───────────────────────────────────
 // ═══════════════════════════════════════════════
 
 export const getAdminStats = async () => {
@@ -170,11 +172,13 @@ export const getBloodBankStats = async () => {
 };
 
 export const getDonorStats = async () => {
+  // Backend StatsRoute is mounted at /api and defines GET /donor/stats
   const { data } = await API.get("/donor/stats");
   return data;
 };
 
 export const getPatientStats = async () => {
+  // Backend StatsRoute is mounted at /api and defines GET /patient/stats
   const { data } = await API.get("/patient/stats");
   return data;
 };
@@ -196,6 +200,7 @@ export const bookBloodTest = async (payload) => {
 export const getMyBookings = async ({ status, page = 1, limit = 10 } = {}) => {
   const params = { page, limit };
   if (status) params.status = status;
+
   const { data } = await API.get("/bookings/tests/my-bookings", { params });
   return data;
 };
@@ -215,7 +220,9 @@ export const cancelBooking = async (bookingId) => {
 // ═══════════════════════════════════════════════
 
 export const getNotifications = async ({ unreadOnly = false, page = 1, limit = 20 } = {}) => {
-  const { data } = await API.get("/notifications", { params: { unreadOnly, page, limit } });
+  const { data } = await API.get("/notifications", {
+    params: { unreadOnly, page, limit },
+  });
   return data;
 };
 

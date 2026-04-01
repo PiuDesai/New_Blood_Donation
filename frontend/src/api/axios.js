@@ -6,6 +6,10 @@ const API = axios.create({
 
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
+  if (import.meta.env.DEV) {
+    const preview = token ? `${token.slice(0, 12)}…${token.slice(-8)}` : null;
+    console.debug("[API] token preview:", preview);
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

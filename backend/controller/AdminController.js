@@ -9,10 +9,6 @@ exports.adminLogin = (req, res) => {
     password === process.env.ADMIN_PASSWORD
   ) {
     const token = jwt.sign(
-
-      { id: 'admin-id', role: 'admin' },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
       { role: "admin" },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
@@ -20,8 +16,6 @@ exports.adminLogin = (req, res) => {
 
     return res.json({
       success: true,
-      message: "Login successful",
-      user: { role: 'admin', name: 'System Admin', _id: 'admin-id' },
       token,
       user: { role: "admin", email }
     });
@@ -29,37 +23,59 @@ exports.adminLogin = (req, res) => {
 
   return res.status(401).json({
     success: false,
-
-    message: "Invalid email or password",
+    message: "Invalid credentials"
   });
 };
 
-exports.getPendingBloodBanks = async (req, res, next) => {
+exports.getAllDonors = async (req, res) => {
   try {
-    const bloodBanks = await User.find({ role: 'bloodbank', isApproved: false });
-    res.json(bloodBanks);
-  } catch (err) {
-    next(err);
+    const donors = await User.find({ role: "donor" })
+      .select("-password")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, donors });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-exports.approveBloodBank = async (req, res, next) => {
+exports.getAllBloodBanks = async (req, res) => {
+  try {
+    const bloodbanks = await User.find({ role: "bloodbank" })
+      .select("-password")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, bloodbanks });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getUserDetails = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    res.json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.removeUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const bloodBank = await User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
       id,
-      { isApproved: true, approvedAt: new Date() },
+      { isActive: false },
       { new: true }
-    );
+    ).select("-password");
 
-    if (!bloodBank) return res.status(404).json({ message: 'Blood bank not found' });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    res.json({ message: 'Blood bank approved successfully', bloodBank });
-  } catch (err) {
-    next(err);
-
-    message: "Invalid credentials"
-  });
+    res.json({ success: true, message: "User deactivated", user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 exports.getPendingDonors = async (req, res) => {
@@ -181,6 +197,5 @@ exports.getAdminStats = async (req, res) => {
     res.status(500).json({
       message: error.message
     });
-
   }
 };
