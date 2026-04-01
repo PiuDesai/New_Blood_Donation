@@ -1,28 +1,24 @@
 import API from "./axios";
 
-// Fallback user data
-const getFallbackUser = (role) => ({
-  _id: "demo_id_123",
-  name: "Demo User",
-  email: "demo@example.com",
-  role: role.toLowerCase(),
-  bloodGroup: "O+",
-  phone: "1234567890",
-  location: { city: "Demo City", state: "DS" },
-});
-
 export const loginUser = async (credentials) => {
   try {
-    const response = await API.post("/users/login", credentials);
-    return response.data;
-  } catch (error) {
-    console.warn("API Login failed, using fallback:", error.message);
-    // If backend fails, we return a successful fallback response
+    // Backend route: POST /api/login (mounted at /api in server.js)
+    const response = await API.post("/login", credentials);
+    const data = response.data;
+
     return {
       success: true,
-      token: "demo_token_xyz_123",
-      user: getFallbackUser(credentials.role || "patient"),
-      message: "Connected in Demo Mode (Backend Offline)",
+      token: data.token,
+      user: data.user,
+      message: data.message || "Login successful",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error.response?.data?.message ||
+        error.message ||
+        "Login failed",
     };
   }
 };
@@ -32,7 +28,13 @@ export const loginAdmin = async (credentials) => {
   // ✅ ADMIN LOGIN (FIXED)
   try {
     const response = await API.post("/admin/login", credentials);
-    return response.data;
+    const data = response.data;
+    return {
+      success: true,
+      token: data.token,
+      user: data.user,
+      message: data.message || "Login successful",
+    };
   } catch (error) {
     console.warn("Admin API error:", error.message);
 
@@ -48,15 +50,16 @@ export const loginAdmin = async (credentials) => {
 
 export const registerUser = async (userData) => {
   try {
-    const response = await API.post("/users/register", userData);
-    return response.data;
+    // Backend route: POST /api/user/register
+    const response = await API.post("/user/register", userData);
+    return { success: true, ...response.data };
   } catch (error) {
-    console.warn("API Registration failed, using fallback:", error.message);
     return {
-      success: true,
-      token: "demo_token_xyz_123",
-      user: { ...userData, _id: "demo_id_123" },
-      message: "Account created in Demo Mode (Backend Offline)",
+      success: false,
+      message:
+        error.response?.data?.message ||
+        error.message ||
+        "Registration failed",
     };
   }
 };
@@ -140,5 +143,26 @@ export const getPendingBloodBanks = async () => {
 // ✅ APPROVE BLOOD BANK
 export const approveBloodBank = async (id) => {
   const res = await API.put(`/admin/approve-bloodbank/${id}`);
+  return res.data;
+};
+
+// ── Admin: lists + user management ───────────────────────────────
+export const getAllDonors = async () => {
+  const res = await API.get("/admin/donors");
+  return res.data;
+};
+
+export const getAllBloodBanks = async () => {
+  const res = await API.get("/admin/bloodbanks");
+  return res.data;
+};
+
+export const getUserDetails = async (id) => {
+  const res = await API.get(`/admin/users/${id}`);
+  return res.data;
+};
+
+export const removeUser = async (id) => {
+  const res = await API.delete(`/admin/users/${id}`);
   return res.data;
 };
