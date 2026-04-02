@@ -198,36 +198,86 @@ const ReportAnalyzer = () => {
                             </button>
                         </div>
 
-                        {/* Formatted Content */}
-                        <div style={{ marginTop: "15px" }}>
+                        {/* Content */}
+                        <div style={{ marginTop: "20px" }}>
                             {result.split("\n").map((line, index) => {
-                                // Highlight abnormal keywords
-                                const isAbnormal =
-                                    line.toLowerCase().includes("low") ||
-                                    line.toLowerCase().includes("high") ||
-                                    line.toLowerCase().includes("below") ||
-                                    line.toLowerCase().includes("above");
+                                let clean = line.replace(/\*\*/g, "").trim();
 
-                                // Bullet points
-                                if (line.trim().startsWith("-")) {
+                                if (!clean) return null;
+
+                                // Section Titles
+                                if (clean.toLowerCase().includes("abnormal findings")) {
+                                    return (
+                                        <h4
+                                            key={index}
+                                            style={{
+                                                marginTop: "15px",
+                                                color: "#dc2626",
+                                                borderBottom: "1px solid #eee",
+                                                paddingBottom: "5px",
+                                            }}
+                                        >
+                                            ⚠️ Abnormal Findings
+                                        </h4>
+                                    );
+                                }
+
+                                if (clean.toLowerCase().includes("summary")) {
+                                    return (
+                                        <h4
+                                            key={index}
+                                            style={{
+                                                marginTop: "20px",
+                                                color: "#111",
+                                                borderBottom: "1px solid #eee",
+                                                paddingBottom: "5px",
+                                            }}
+                                        >
+                                            📝 Summary
+                                        </h4>
+                                    );
+                                }
+
+                                // Bullet Points
+                                if (clean.startsWith("•") || clean.startsWith("-")) {
+                                    const isAbnormal =
+                                        clean.toLowerCase().includes("low") ||
+                                        clean.toLowerCase().includes("high") ||
+                                        clean.toLowerCase().includes("below") ||
+                                        clean.toLowerCase().includes("above");
+
+                                    const parts = clean.replace(/[•-]/g, "").split(":");
+
                                     return (
                                         <div
                                             key={index}
                                             style={{
                                                 display: "flex",
-                                                alignItems: "flex-start",
-                                                marginBottom: "8px",
-                                                color: isAbnormal ? "#dc2626" : "#333",
-                                                fontWeight: isAbnormal ? "500" : "400",
+                                                justifyContent: "space-between",
+                                                padding: "10px",
+                                                marginTop: "8px",
+                                                background: "#fafafa",
+                                                borderRadius: "8px",
+                                                border: isAbnormal ? "1px solid #fecaca" : "1px solid #eee",
                                             }}
                                         >
-                                            <span style={{ marginRight: "8px" }}>•</span>
-                                            <span>{line.replace(/[-*]/g, "").trim()}</span>
+                                            <span style={{ fontWeight: "500", color: "#333" }}>
+                                                {parts[0]}
+                                            </span>
+
+                                            <span
+                                                style={{
+                                                    color: isAbnormal ? "#dc2626" : "#555",
+                                                    fontWeight: isAbnormal ? "600" : "400",
+                                                }}
+                                            >
+                                                {parts.slice(1).join(":")}
+                                            </span>
                                         </div>
                                     );
                                 }
 
-                                // Normal paragraph
+                                // Paragraph (Summary)
                                 return (
                                     <p
                                         key={index}
@@ -237,7 +287,7 @@ const ReportAnalyzer = () => {
                                             color: "#444",
                                         }}
                                     >
-                                        {line}
+                                        {clean}
                                     </p>
                                 );
                             })}
