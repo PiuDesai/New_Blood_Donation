@@ -1,10 +1,11 @@
-import { HeartPulse, Droplets, Activity, Search, Plus, MapPin, Calendar, Clock, Loader2, ShieldCheck, Phone, CheckCircle2, Home, ArrowLeft, HelpCircle } from "lucide-react";
+import { HeartPulse, Droplets, Activity, Search, Plus, MapPin, Calendar, Clock, Loader2, ShieldCheck, Phone, CheckCircle2, Home, ArrowLeft, HelpCircle, Edit3, Trash2, Star, User } from "lucide-react";
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
 import { Input } from "../../components/Common/Input";
+import { RatingInput, StarRating } from "../../components/Common/RatingComponent";
 import { useAuth } from "../../context/AuthContext";
-import { getPatientStats, getMyBloodRequests, createBloodRequest, getAllCamps } from "../../api/api";
+import { getPatientStats, getMyBloodRequests, createBloodRequest, getAllCamps, updateBloodRequest, deleteBloodRequest, rateDonor, verifyRequestCompletion, bookBloodTest } from "../../api/api";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
@@ -23,6 +24,14 @@ const PatientDashboard = () => {
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showNearbyDonors, setShowNearbyDonors] = useState(false);
   const [showLabModal, setShowLabModal] = useState(false);
+  const [ratingDonorId, setRatingDonorId] = useState(null);
+  const [ratingRequestId, setRatingRequestId] = useState(null);
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [confirming, setConfirming] = useState(null);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingRequestId, setEditingRequestId] = useState(null);
+
   const [requestForm, setRequestModalForm] = useState({
     patientName: "",
     bloodGroup: "O+",
@@ -32,6 +41,39 @@ const PatientDashboard = () => {
     city: ""
   });
 
+  const openRequestModal = (req = null) => {
+    if (req) {
+      setRequestModalForm({
+        patientName: req.patientName,
+        bloodGroup: req.bloodGroup,
+        units: req.units,
+        hospital: req.hospital,
+        urgency: req.urgency,
+        city: req.location?.city || ""
+      });
+      setEditingRequestId(req._id);
+      setIsEditing(true);
+    } else {
+      setRequestModalForm({
+        patientName: "",
+        bloodGroup: "O+",
+        units: "",
+        hospital: "",
+        urgency: "Normal",
+        city: ""
+      });
+      setEditingRequestId(null);
+      setIsEditing(false);
+    }
+    setShowRequestModal(true);
+  };
+
+  const [labForm, setLabForm] = useState({
+    testType: "Complete Blood Count (CBC)",
+    preferredDate: "",
+    address: user?.location?.address || ""
+  });
+
   const isRequestsPage = location.pathname.includes("/requests");
   const isFindPage = location.pathname.includes("/find");
   const isLabPage = location.pathname.includes("/lab");
@@ -39,45 +81,116 @@ const PatientDashboard = () => {
   const isHelpPage = location.pathname.includes("/help");
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [statsData, requestsData, campsData] = await Promise.all([
-          getPatientStats(),
-          getMyBloodRequests(),
-          getAllCamps()
-        ]);
-        setStats(statsData);
-        setMyRequests(requestsData);
-        setCamps(campsData);
-      } catch (err) {
-        console.error("Failed to fetch patient data:", err);
-        setError(err?.response?.data?.message || err?.message || "Could not load dashboard data.");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      const [statsData, requestsData, campsData] = await Promise.all([
+        getPatientStats(),
+        getMyBloodRequests(),
+        getAllCamps()
+      ]);
+      setStats(statsData);
+      setMyRequests(requestsData);
+      setCamps(campsData);
+    } catch (err) {
+      console.error("Failed to fetch patient data:", err);
+      setError(err?.response?.data?.message || err?.message || "Could not load dashboard data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRequestSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Remove top-level city and prepare location
+      const { city, ...formData } = requestForm;
       const payload = {
-        ...requestForm,
+        ...formData,
         location: {
           type: "Point",
           coordinates: [72.8777, 19.0760], // Placeholder
-          city: requestForm.city
+          city: city
         }
       };
-      await createBloodRequest(payload);
-      toast.success("Blood request created!");
+
+      if (isEditing) {
+        await updateBloodRequest(editingRequestId, payload);
+        toast.success("Blood request updated!");
+      } else {
+        await createBloodRequest(payload);
+        toast.success("Blood request created!");
+      }
+
       setShowRequestModal(false);
-      // Refresh
-      const requestsData = await getMyBloodRequests();
-      setMyRequests(requestsData);
+      setIsEditing(false);
+      setEditingRequestId(null);
+      fetchData();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to create request");
+      toast.error(err?.response?.data?.message || `Failed to ${isEditing ? 'update' : 'create'} request`);
+    }
+  };
+
+  const handleDeleteRequest = async (id) => {
+    const reason = window.prompt("Please provide a reason for cancellation:");
+    if (reason === null) return;
+    try {
+      await deleteBloodRequest(id, reason);
+      toast.success("Request cancelled");
+      fetchData();
+    } catch (err) {
+      toast.error("Failed to cancel request");
+    }
+  };
+
+  const handleRateDonor = async (ratingData) => {
+    setSubmittingRating(true);
+    try {
+      await rateDonor({
+        donorId: ratingDonorId,
+        requestId: ratingRequestId,
+        ...ratingData
+      });
+      toast.success("Thank you for your rating!");
+      setRatingDonorId(null);
+      setRatingRequestId(null);
+      fetchData();
+    } catch (err) {
+      toast.error("Failed to submit rating");
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
+  const handleConfirmReceived = async (requestId) => {
+    setConfirming(requestId);
+    try {
+      await verifyRequestCompletion(requestId, "patient");
+      toast.success("Donation confirmed! Thank you.");
+      fetchData();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to confirm donation");
+    } finally {
+      setConfirming(null);
+    }
+  };
+
+  const handleBookLabTest = async (e) => {
+    e.preventDefault();
+    try {
+      await bookBloodTest({
+        patientName: user?.name,
+        address: labForm.address,
+        phone: user?.phone,
+        testType: labForm.testType
+      });
+      setShowLabModal(false);
+      toast.success(`Lab test appointment scheduled for ${labForm.preferredDate || 'soon'}!`);
+      fetchData();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to book lab test");
     }
   };
 
@@ -114,30 +227,154 @@ const PatientDashboard = () => {
         <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
           <div className="flex items-center justify-between mb-10">
             <h3 className="text-3xl font-black text-gray-900 tracking-tight">All Blood Requests</h3>
-            <Button onClick={() => setShowRequestModal(true)} className="bg-red-600 hover:bg-red-700">New Request</Button>
+            <Button onClick={() => openRequestModal()} className="bg-red-600 hover:bg-red-700">New Request</Button>
           </div>
           <div className="space-y-6">
             {myRequests.map((req, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="flex flex-col sm:flex-row sm:items-center justify-between p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group gap-8">
-                <div className="flex items-center gap-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-pink-600 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-red-200 group-hover:rotate-6 transition-transform">{req.bloodGroup}</div>
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <p className="font-black text-2xl text-gray-900">{req.units}</p>
-                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${req.urgency === "Emergency" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>{req.urgency}</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
-                      <span className="flex items-center gap-1.5"><MapPin size={14} /> {req.hospital}</span>
-                      <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(req.createdAt).toLocaleDateString()}</span>
+              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group flex flex-col gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8">
+                  <div className="flex items-center gap-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-pink-600 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-red-200 group-hover:rotate-6 transition-transform">{req.bloodGroup}</div>
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <p className="font-black text-2xl text-gray-900">{req.units} Units</p>
+                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${req.urgency === "Emergency" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>{req.urgency}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
+                        <span className="flex items-center gap-1.5"><MapPin size={14} /> {req.hospital}</span>
+                        <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(req.createdAt).toLocaleDateString()}</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex items-center gap-4">
+                    <span className={`px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest ${
+                      req.status === "Pending" ? "bg-amber-50 text-amber-600" :
+                      req.status === "Accepted" ? "bg-blue-50 text-blue-600" :
+                      req.status === "Cancelled" ? "bg-gray-100 text-gray-400" :
+                      req.status === "Rejected" ? "bg-red-50 text-red-600" :
+                      "bg-emerald-50 text-emerald-600"
+                    }`}>{req.status}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className={`px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest ${req.status === "Pending" ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}`}>{req.status}</span>
+
+                {req.status === "Rejected" && req.rejectionReason && (
+                  <div className="p-6 bg-red-50 rounded-3xl border border-red-100">
+                    <p className="text-xs font-black text-red-600 uppercase tracking-widest mb-1">Blood Bank Rejection Reason</p>
+                    <p className="text-sm font-bold text-gray-700">{req.rejectionReason}</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase mt-2 tracking-widest">Notification has been sent to local donors to assist.</p>
+                  </div>
+                )}
+
+                {/* Conditional Actions/Info */}
+                <div className="pt-4 border-t border-gray-50 flex flex-wrap items-center justify-between gap-4">
+                  {req.status === "Pending" && (
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => openRequestModal(req)}
+                        variant="outline" 
+                        className="h-10 px-6 text-xs font-black uppercase border-gray-100 text-gray-400 hover:text-blue-600 hover:border-blue-100 transition-all flex items-center gap-2"
+                      >
+                        <Edit3 size={14} /> Edit
+                      </Button>
+                      <Button 
+                        onClick={() => handleDeleteRequest(req._id)}
+                        variant="outline" 
+                        className="h-10 px-6 text-xs font-black uppercase border-gray-100 text-gray-400 hover:text-red-600 hover:border-red-100 transition-all flex items-center gap-2"
+                      >
+                        <Trash2 size={14} /> Delete
+                      </Button>
+                    </div>
+                  )}
+
+                  {(req.status === "Accepted" || req.status === "Completed") && (req.acceptedBy || req.assignedBloodBank) && (
+                    <div className="w-full">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4 bg-blue-50/50 p-6 rounded-3xl border border-blue-50">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                            {req.acceptedByRole === 'bloodbank' ? <Home size={24} /> : <User size={24} />}
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
+                              {req.acceptedByRole === 'bloodbank' ? 'Blood Bank Details' : 'Donor Details'}
+                            </p>
+                            <div className="flex items-center gap-4">
+                              <p className="font-bold text-lg text-gray-900">
+                                {req.acceptedByRole === 'bloodbank' ? req.assignedBloodBank?.name : req.acceptedBy?.name}
+                              </p>
+                              {(req.donorContact || (req.acceptedByRole === 'bloodbank' ? req.assignedBloodBank?.phone : req.acceptedBy?.phone)) && (
+                                <a 
+                                  href={`tel:${req.donorContact || (req.acceptedByRole === 'bloodbank' ? req.assignedBloodBank.phone : req.acceptedBy.phone)}`} 
+                                  className="flex items-center gap-2 text-xs font-black text-blue-600 bg-white px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                >
+                                  <Phone size={12} /> Call {req.acceptedByRole === 'bloodbank' ? 'Bank' : 'Donor'}
+                                </a>
+                              )}
+                            </div>
+                            {req.acceptedByRole === 'bloodbank' && req.assignedBloodBank?.location && (
+                              <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 flex items-center gap-1">
+                                <MapPin size={10} /> {req.assignedBloodBank.location.address || req.assignedBloodBank.location.city || "Location not specified"}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {req.status === "Accepted" && (
+                          !req.completedByPatient ? (
+                            <Button 
+                              onClick={() => handleConfirmReceived(req._id)}
+                              disabled={confirming === req._id}
+                              className="bg-emerald-600 h-12 px-8 rounded-xl text-xs font-black uppercase tracking-widest"
+                            >
+                              {confirming === req._id ? "Confirming..." : "Mark as Received"}
+                            </Button>
+                          ) : (
+                            <div className="flex items-center gap-2 py-2.5 px-6 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                              <CheckCircle2 size={16} />
+                              <span className="text-xs font-black uppercase">Confirmed by You</span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {req.status === "Completed" && (
+                    <div className="flex items-center justify-between w-full p-4 bg-emerald-50 rounded-2xl border border-emerald-100 mt-2">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 size={20} className="text-emerald-500" />
+                        <p className="text-sm font-bold text-gray-900">
+                          Request successfully fulfilled by {req.acceptedByRole === 'bloodbank' ? req.assignedBloodBank?.name : req.acceptedBy?.name}
+                        </p>
+                      </div>
+                      {req.acceptedByRole === 'donor' && !req.isRated && (
+                        <Button 
+                          onClick={() => {
+                            setRatingDonorId(req.acceptedBy?._id);
+                            setRatingRequestId(req._id);
+                          }}
+                          className="bg-red-600 h-10 px-6 text-[10px] font-black uppercase tracking-widest"
+                        >
+                          Rate Donor
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}
           </div>
+
+          {/* Rating Modal */}
+          <AnimatePresence>
+            {ratingDonorId && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setRatingDonorId(null)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-md">
+                  <RatingInput onRate={handleRateDonor} submitting={submittingRating} />
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
         </Card>
       </div>
     );
@@ -269,7 +506,7 @@ const PatientDashboard = () => {
         
         <div className="flex flex-wrap gap-4">
           <Button 
-            onClick={() => setShowRequestModal(true)}
+            onClick={() => openRequestModal()}
             className="h-14 px-8 rounded-2xl bg-red-600 hover:bg-red-700 shadow-xl shadow-red-100 text-lg font-black uppercase tracking-widest flex items-center gap-3 transition-all active:scale-95"
           >
             <Plus size={24} /> New Request
@@ -348,15 +585,76 @@ const PatientDashboard = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className={`px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest ${
-                    req.status === "Pending" ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"
-                  }`}>
-                    {req.status}
-                  </span>
-                  <button className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-all">
-                    <Search size={20} />
-                  </button>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-end gap-4">
+                    {req.status === "Pending" && (
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={() => openRequestModal(req)}
+                          variant="outline" 
+                          className="h-10 px-6 text-xs font-black uppercase border-gray-100 text-gray-400 hover:text-blue-600 hover:border-blue-100 transition-all flex items-center gap-2"
+                        >
+                          <Edit3 size={14} /> Edit
+                        </Button>
+                        <Button 
+                          onClick={() => handleDeleteRequest(req._id)}
+                          variant="outline" 
+                          className="h-10 px-6 text-xs font-black uppercase border-gray-100 text-gray-400 hover:text-red-600 hover:border-red-100 transition-all flex items-center gap-2"
+                        >
+                          <Trash2 size={14} /> Cancel
+                        </Button>
+                      </div>
+                    )}
+                    {req.status === "Accepted" && (
+                      <div className="flex flex-col items-end gap-3">
+                        <div className="flex items-center gap-4 bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
+                          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                            {req.acceptedByRole === 'bloodbank' ? <Home size={20} /> : <User size={20} />}
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-0.5">
+                              {req.acceptedByRole === 'bloodbank' ? 'Assigned Bank' : 'Assigned Donor'}
+                            </p>
+                            <div className="flex items-center gap-3">
+                              <p className="font-black text-gray-900">{req.acceptedBy?.name || req.assignedBloodBank?.name}</p>
+                              <a href={`tel:${req.donorContact || req.acceptedBy?.phone || req.assignedBloodBank?.phone}`} className="flex items-center gap-2 px-3 py-1 bg-white rounded-lg border border-blue-100 text-blue-600 text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all">
+                                <Phone size={12} /> Call Now
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                        {!req.completedByPatient ? (
+                          <Button 
+                            onClick={() => handleConfirmReceived(req._id)}
+                            disabled={confirming === req._id}
+                            className="bg-emerald-600 h-10 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-100 hover:scale-105 active:scale-95 transition-all"
+                          >
+                            {confirming === req._id ? "Confirming..." : "Mark as Received"}
+                          </Button>
+                        ) : (
+                          <div className="flex items-center gap-2 py-2 px-6 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                            <CheckCircle2 size={16} />
+                            <span className="text-[10px] font-black uppercase">Received</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <span className={`px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest ${
+                      req.status === "Pending" ? "bg-amber-50 text-amber-600" : 
+                      req.status === "Accepted" ? "bg-blue-50 text-blue-600" :
+                      req.status === "Rejected" ? "bg-red-50 text-red-600" :
+                      "bg-emerald-50 text-emerald-600"
+                    }`}>
+                      {req.status}
+                    </span>
+                  </div>
+                  {req.status === "Rejected" && req.rejectionReason && (
+                    <div className="bg-red-50 p-4 rounded-2xl border border-red-100 mt-2">
+                      <p className="text-xs font-black text-red-600 uppercase tracking-widest mb-1">Rejection Reason</p>
+                      <p className="text-sm font-bold text-gray-700">{req.rejectionReason}</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase mt-2">Donors have been notified to help instead.</p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -533,7 +831,7 @@ const PatientDashboard = () => {
                 <h3 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Book Home Lab Test</h3>
                 <p className="text-gray-400 font-bold mb-10">Schedule a convenient home collection for your medical tests.</p>
                 
-                <form className="space-y-6">
+                <form onSubmit={handleBookLabTest} className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-2">Select Test Type</label>
                     <select 
@@ -570,11 +868,7 @@ const PatientDashboard = () => {
                   </div>
 
                   <Button 
-                    type="button" 
-                    onClick={() => {
-                      setShowLabModal(false);
-                      toast.success(`Lab test appointment scheduled for ${labForm.preferredDate || 'soon'}!`);
-                    }} 
+                    type="submit" 
                     className="w-full h-16 rounded-2xl bg-blue-600 text-white font-black uppercase tracking-widest text-lg shadow-2xl shadow-blue-100 mt-8"
                   >
                     Confirm Booking

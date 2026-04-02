@@ -34,6 +34,11 @@ const auth = (req, res, next) => {
       console.log("[auth] decoded token:", decoded);
     }
 
+    // Standardize: ensure role is lowercase if present
+    if (decoded.role) {
+      decoded.role = String(decoded.role).toLowerCase();
+    }
+
     req.user = decoded;
 
     next(); // ✅ MUST

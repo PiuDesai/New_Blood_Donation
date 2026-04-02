@@ -21,6 +21,9 @@ import AllDonors from "./pages/Admin/AllDonors";
 import AllBloodBanks from "./pages/Admin/AllBloodBanks";
 import Home from "./pages/Home";
 import HomeBloodTest from "./pages/Patient/HomeBloodTest";
+import Leaderboard from "./pages/Dashboard/Leaderboard";
+import Rewards from "./pages/Dashboard/Rewards";
+import BloodBankBookings from "./pages/BloodBank/BloodBankBookings";
 
 function App() {
   return (
@@ -64,6 +67,8 @@ function App() {
           <Route path="dashboard" element={<DonorDashboard />} />
           <Route path="history" element={<DonorDashboard />} />
           <Route path="schedule" element={<DonorDashboard />} />
+          <Route path="leaderboard" element={<Leaderboard />} />
+          <Route path="rewards" element={<Rewards />} />
           <Route path="settings" element={<DonorDashboard />} />
           <Route path="help" element={<DonorDashboard />} />
         </Route>
@@ -97,6 +102,7 @@ function App() {
         >
           <Route index element={<BloodBankDashboard />} />
           <Route path="requests" element={<BloodBankDashboard />} />
+          <Route path="test-bookings" element={<BloodBankBookings />} />
           <Route path="donations" element={<BloodBankDashboard />} />
           <Route path="settings" element={<BloodBankDashboard />} />
           <Route path="help" element={<BloodBankDashboard />} />

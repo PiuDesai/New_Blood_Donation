@@ -34,6 +34,7 @@ const Sidebar = ({ role }) => {
       bloodbank: [
         { to: "/bloodbank", icon: LayoutDashboard, label: "Inventory", end: true },
         { to: "/bloodbank/requests", icon: HeartPulse, label: "Incoming Requests" },
+        { to: "/bloodbank/test-bookings", icon: FlaskConical, label: "Home Test Requests" },
         { to: "/bloodbank/donations", icon: Droplets, label: "Donations" },
       ],
     };
