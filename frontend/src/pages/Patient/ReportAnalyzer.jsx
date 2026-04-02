@@ -68,11 +68,8 @@ const ReportAnalyzer = () => {
             <div style={{ width: "100%", maxWidth: "600px" }}>
 
                 {/* Header */}
-                <h2 style={{ color: "#111", marginBottom: "10px" }}>
-                    🧪 Report Analyzer
-                </h2>
                 <p style={{ color: "#666", marginBottom: "20px" }}>
-                    Upload your medical report for AI analysis
+                    Upload your Blood report for AI analysis
                 </p>
 
                 {/* Upload */}
