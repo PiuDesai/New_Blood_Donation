@@ -44,8 +44,42 @@ const bloodRequestSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Pending', 'Approved', 'Fulfilled', 'Cancelled'],
+      enum: ['Pending', 'Accepted', 'Cancelled', 'Completed'],
       default: 'Pending'
+    },
+    acceptedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    acceptedAt: {
+      type: Date,
+      default: null
+    },
+    acceptedByRole: {
+      type: String,
+      enum: ['donor', 'bloodbank', null],
+      default: null
+    },
+    cancelReason: {
+      type: String,
+      default: ''
+    },
+    isRated: {
+      type: Boolean,
+      default: false
+    },
+    isPatientConfirmed: {
+      type: Boolean,
+      default: false
+    },
+    isDonorConfirmed: {
+      type: Boolean,
+      default: false
+    },
+    isBloodBankConfirmed: {
+      type: Boolean,
+      default: false
     },
     assignedBloodBank: {
       type: mongoose.Schema.Types.ObjectId,

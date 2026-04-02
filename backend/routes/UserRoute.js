@@ -13,7 +13,8 @@ const {
   checkEligibility,
   recordDonation,
   logout,
-  getAllBloodBanks
+  getAllBloodBanks,
+  saveToken
 } = require('../controller/UserController.js');
 
 // ── Public routes (no token required) ────────────────────────
@@ -37,5 +38,7 @@ router.post('/record-donation', auth, requireRole('donor'), recordDonation);
 router.get('/blood-banks', auth, getAllBloodBanks);
 
 router.post('/logout', auth, logout);
+
+router.post("/save-token", saveToken);
 
 module.exports = router;

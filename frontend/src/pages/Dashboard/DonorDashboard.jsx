@@ -1,13 +1,15 @@
-import { Heart, Activity, Droplets, Calendar, Clock, MapPin, Search, Star, ShieldCheck, CheckCircle2, User, ArrowRight, Phone, ArrowLeft, HelpCircle } from "lucide-react";
+import { Heart, Activity, Droplets, Calendar, Clock, MapPin, Search, Star, ShieldCheck, CheckCircle2, User, ArrowRight, Phone, ArrowLeft, HelpCircle, Award, CheckCircle } from "lucide-react";
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
 import { useAuth } from "../../context/AuthContext";
-import { getDonorStats, getAllBloodRequests, getAllCamps } from "../../api/api";
+import { getDonorStats, getUrgentBloodRequests, getAllCamps, acceptBloodRequest, markDonorComplete } from "../../api/api";
+import { StarRating } from "../../components/Common/RatingComponent";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { dashboardPath } from "../../utils/rolePaths";
+import toast from "react-hot-toast";
 
 const DonorDashboard = () => {
   const { user } = useAuth();
@@ -20,6 +22,7 @@ const DonorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("requests");
+  const [accepting, setAccepting] = useState(null);
 
   const isHistoryPage = location.pathname.includes("/history");
   const isSchedulePage = location.pathname.includes("/schedule");
@@ -27,45 +30,49 @@ const DonorDashboard = () => {
   const isHelpPage = location.pathname.includes("/help");
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        let statsData = null;
-let requestsData = [];
-let campsData = [];
-
-try {
-  statsData = await getDonorStats();
-} catch (err) {
-  console.error("Stats failed");
-}
-
-try {
-  requestsData = await getAllBloodRequests();
-} catch (err) {
-  console.error("Requests failed (403 expected for donor)");
-}
-
-try {
-  campsData = await getAllCamps();
-} catch (err) {
-  console.error("Camps failed");
-}
-
-setStats(statsData);
-setRequests(requestsData);
-setCamps(campsData);
-        setStats(statsData);
-        setRequests(requestsData);
-        setCamps(campsData);
-      } catch (err) {
-        console.error("Failed to fetch donor data:", err);
-        setError(err?.response?.data?.message || err?.message || "Could not load dashboard data.");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      const [statsData, requestsData, campsData] = await Promise.all([
+        getDonorStats(),
+        getUrgentBloodRequests(),
+        getAllCamps()
+      ]);
+      setStats(statsData);
+      setRequests(requestsData);
+      setCamps(campsData);
+    } catch (err) {
+      console.error("Failed to fetch donor data:", err);
+      setError(err?.response?.data?.message || err?.message || "Could not load dashboard data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAcceptRequest = async (requestId) => {
+    setAccepting(requestId);
+    try {
+      await acceptBloodRequest(requestId);
+      toast.success("Request accepted successfully!");
+      fetchData(); // Refresh
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to accept request");
+    } finally {
+      setAccepting(null);
+    }
+  };
+
+  const handleMarkComplete = async (requestId) => {
+    try {
+      await markDonorComplete(requestId);
+      toast.success("Marked as completed! Waiting for patient confirmation.");
+      fetchData();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to mark as complete");
+    }
+  };
   const participateInCamp = async (campId) => {
   try {
     const token = localStorage.getItem("token");
@@ -105,7 +112,12 @@ setCamps(campsData);
     urgency: req.urgency,
     location: req.hospital,
     distance: "Near you",
-    time: new Date(req.createdAt).toLocaleTimeString()
+    time: new Date(req.createdAt).toLocaleTimeString(),
+    status: req.status,
+    requester: req.requester,
+    isDonorConfirmed: req.isDonorConfirmed,
+    isPatientConfirmed: req.isPatientConfirmed,
+    acceptedByRole: req.acceptedByRole
   }));
 
   const donationHistory = stats?.history || [];
@@ -251,24 +263,30 @@ setCamps(campsData);
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <StatsCard 
           title="Total Donations" 
-          value={stats?.totalDonations ?? 0} 
+          value={user?.donorInfo?.donationCount ?? 0} 
           icon={Droplets} 
           color="from-red-500 to-pink-600" 
         />
         <StatsCard 
-          title="Lives Saved" 
-          value={stats?.livesSaved ?? 0} 
-          icon={Activity} 
-          color="from-blue-500 to-indigo-600" 
+          title="My Points" 
+          value={user?.points ?? 0} 
+          icon={Star} 
+          color="from-yellow-400 to-amber-600" 
         />
         <StatsCard 
-          title="Next Eligible" 
-          value={stats?.nextEligible ?? "—"} 
-          icon={Calendar} 
-          color="from-emerald-500 to-teal-600" 
+          title="Rating" 
+          value={user?.rating?.toFixed(1) ?? "0.0"} 
+          icon={ShieldCheck} 
+          color="from-emerald-400 to-teal-600" 
+        />
+        <StatsCard 
+          title="Lives Saved" 
+          value={user?.donorInfo?.donationCount ? user.donorInfo.donationCount * 3 : 0} 
+          icon={Activity} 
+          color="from-blue-500 to-indigo-600" 
         />
       </div>
 
@@ -302,36 +320,64 @@ setCamps(campsData);
                 className="space-y-6"
               >
                 {pendingRequests.map((req, i) => (
-                  <div key={i} className="p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8 mb-6">
-                      <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-red-100 group-hover:scale-110 transition-transform">
-                          {req.bloodGroup}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-3 mb-1">
-                            <h4 className="font-black text-xl text-gray-900">{req.name}</h4>
-                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                              req.urgency === "Emergency" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
-                            }`}>
-                              {req.urgency}
-                            </span>
-                          </div>
-                          <p className="text-gray-400 font-bold text-sm flex items-center gap-1.5"><MapPin size={14} /> {req.location}</p>
-                        </div>
+                  <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group gap-8">
+                    <div className="flex items-center gap-8">
+                      <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-pink-600 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-red-200 group-hover:rotate-6 transition-transform">
+                        {req.bloodGroup}
                       </div>
-                      <div className="text-right">
-                        <p className="text-red-600 font-black text-lg">{req.distance}</p>
-                        <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">{req.time}</p>
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <p className="font-black text-2xl text-gray-900">{req.units}</p>
+                          <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${req.urgency === "Emergency" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>
+                            {req.urgency}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
+                          <span className="flex items-center gap-1.5"><MapPin size={14} /> {req.location}</span>
+                          <span className="flex items-center gap-1.5"><Clock size={14} /> {req.time}</span>
+                        </div>
+                        <p className="mt-2 text-xs text-gray-500 font-bold uppercase tracking-tighter flex items-center gap-1">
+                          <User size={12} className="text-red-600" /> Patient: {req.name}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex gap-4">
-                      <Button className="flex-1 h-14 rounded-2xl bg-red-600 hover:bg-red-700 font-black uppercase tracking-widest text-xs shadow-lg shadow-red-100">
-                        Accept Request
-                      </Button>
-                      <button className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all">
-                        <Phone size={20} />
-                      </button>
+                    
+                    <div className="flex flex-col gap-3 min-w-[150px]">
+                      {req.status === "Pending" ? (
+                        <Button 
+                          onClick={() => handleAcceptRequest(req.id)}
+                          disabled={accepting === req.id}
+                          className="bg-red-600 h-12 rounded-xl text-xs font-black uppercase tracking-widest"
+                        >
+                          {accepting === req.id ? "Accepting..." : "Accept Request"}
+                        </Button>
+                      ) : req.status === "Accepted" ? (
+                        <div className="space-y-3">
+                          <span className="block text-center px-4 py-2 rounded-xl bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest border border-emerald-100">Accepted by You</span>
+                          
+                          {req.requester?.phone && (
+                            <a href={`tel:${req.requester.phone}`} className="flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-blue-100 text-blue-600 font-black text-xs uppercase hover:bg-blue-50 transition-all">
+                              <Phone size={14} /> Call Patient
+                            </a>
+                          )}
+
+                          {!req.isDonorConfirmed ? (
+                            <Button 
+                              onClick={() => handleMarkComplete(req.id)}
+                              className="w-full bg-emerald-600 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                            >
+                              Mark Completed
+                            </Button>
+                          ) : (
+                            <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-gray-50 text-gray-400 border border-gray-100">
+                              <CheckCircle size={14} />
+                              <span className="text-[10px] font-black uppercase">Pending Confirmation</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="block text-center px-4 py-2 rounded-xl bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest border border-gray-200">{req.status}</span>
+                      )}
                     </div>
                   </div>
                 ))}

@@ -172,6 +172,31 @@ const userSchema = new mongoose.Schema(
       default: 0
     },
 
+    rating: {
+      type: Number,
+      default: 0
+    },
+
+    reviews: [
+      {
+        patientId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User'
+        },
+        rating: {
+          type: Number,
+          required: true,
+          min: 1,
+          max: 5
+        },
+        comment: String,
+        createdAt: {
+          type: Date,
+          default: Date.now
+        }
+      }
+    ],
+
     passwordResetToken: { type: String, select: false },
     passwordResetExpires: { type: Date, select: false },
 
