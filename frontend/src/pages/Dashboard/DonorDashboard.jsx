@@ -1,9 +1,17 @@
+<<<<<<< HEAD
 import { Heart, Activity, Droplets, Calendar, Clock, MapPin, Search, Star, ShieldCheck, CheckCircle2, User, ArrowRight, Phone, ArrowLeft, HelpCircle, Award, CheckCircle } from "lucide-react";
+=======
+import { Heart, Activity, Droplets, Calendar, Clock, MapPin, Search, Star, ShieldCheck, CheckCircle2, User, ArrowRight, Phone, ArrowLeft, HelpCircle, Award, CheckCircle, Building2 } from "lucide-react";
+>>>>>>> old-state
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
 import { useAuth } from "../../context/AuthContext";
+<<<<<<< HEAD
 import { getDonorStats, getUrgentBloodRequests, getAllCamps, acceptBloodRequest, markDonorComplete } from "../../api/api";
+=======
+import { getDonorStats, getUrgentBloodRequests, getAllCamps, acceptBloodRequest, verifyRequestCompletion } from "../../api/api";
+>>>>>>> old-state
 import { StarRating } from "../../components/Common/RatingComponent";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -66,7 +74,11 @@ const DonorDashboard = () => {
 
   const handleMarkComplete = async (requestId) => {
     try {
+<<<<<<< HEAD
       await markDonorComplete(requestId);
+=======
+      await verifyRequestCompletion(requestId, "donor");
+>>>>>>> old-state
       toast.success("Marked as completed! Waiting for patient confirmation.");
       fetchData();
     } catch (err) {
@@ -115,9 +127,16 @@ const DonorDashboard = () => {
     time: new Date(req.createdAt).toLocaleTimeString(),
     status: req.status,
     requester: req.requester,
+<<<<<<< HEAD
     isDonorConfirmed: req.isDonorConfirmed,
     isPatientConfirmed: req.isPatientConfirmed,
     acceptedByRole: req.acceptedByRole
+=======
+    isDonorConfirmed: req.completedByDonor,
+    isPatientConfirmed: req.completedByPatient,
+    acceptedByRole: req.acceptedByRole,
+    acceptedBy: req.acceptedBy
+>>>>>>> old-state
   }));
 
   const donationHistory = stats?.history || [];
@@ -275,6 +294,7 @@ const DonorDashboard = () => {
           value={user?.points ?? 0} 
           icon={Star} 
           color="from-yellow-400 to-amber-600" 
+<<<<<<< HEAD
         />
         <StatsCard 
           title="Rating" 
@@ -288,7 +308,58 @@ const DonorDashboard = () => {
           icon={Activity} 
           color="from-blue-500 to-indigo-600" 
         />
+=======
+        />
+        <StatsCard 
+          title="Rating" 
+          value={user?.rating?.toFixed(1) ?? "0.0"} 
+          icon={ShieldCheck} 
+          color="from-emerald-400 to-teal-600" 
+        />
+        <StatsCard 
+          title="Lives Saved" 
+          value={user?.donorInfo?.donationCount ? user.donorInfo.donationCount * 3 : 0} 
+          icon={Activity} 
+          color="from-blue-500 to-indigo-600" 
+        />
+>>>>>>> old-state
       </div>
+
+      {/* Eligibility & Rewards */}
+      {(user?.donorInfo?.nextEligibleAt || user?.donorInfo?.checkupEligible) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {user?.donorInfo?.nextEligibleAt && (
+            <Card variant="glass" className="p-8 border-none shadow-xl shadow-gray-100/50 flex items-center gap-6">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+                <Calendar size={32} />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-1">Next Eligibility</p>
+                <p className="text-xl font-black text-gray-900">
+                  {new Date(user.donorInfo.nextEligibleAt) > new Date() 
+                    ? new Date(user.donorInfo.nextEligibleAt).toLocaleDateString()
+                    : "Eligible Now"}
+                </p>
+                {new Date(user.donorInfo.nextEligibleAt) > new Date() && (
+                  <p className="text-[10px] text-blue-500 font-bold uppercase mt-1">3-Month Cooldown Active</p>
+                )}
+              </div>
+            </Card>
+          )}
+          {user?.donorInfo?.checkupEligible && (
+            <Card variant="glass" className="p-8 border-none shadow-xl shadow-gray-100/50 flex items-center gap-6 bg-emerald-50/50 border-emerald-100">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <Award size={32} />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-1">Available Rewards</p>
+                <p className="text-xl font-black text-emerald-600">Free Health Checkup</p>
+                <p className="text-[10px] text-emerald-500 font-bold uppercase mt-1">Earned via points!</p>
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Main Content Area */}
@@ -343,7 +414,11 @@ const DonorDashboard = () => {
                     </div>
                     
                     <div className="flex flex-col gap-3 min-w-[150px]">
+<<<<<<< HEAD
                       {req.status === "Pending" ? (
+=======
+                      {(req.status === "Pending" || req.status === "Rejected") ? (
+>>>>>>> old-state
                         <Button 
                           onClick={() => handleAcceptRequest(req.id)}
                           disabled={accepting === req.id}
@@ -351,7 +426,11 @@ const DonorDashboard = () => {
                         >
                           {accepting === req.id ? "Accepting..." : "Accept Request"}
                         </Button>
+<<<<<<< HEAD
                       ) : req.status === "Accepted" ? (
+=======
+                      ) : (req.status === "Accepted" && (req.acceptedBy === user?._id || req.acceptedBy?._id === user?._id)) ? (
+>>>>>>> old-state
                         <div className="space-y-3">
                           <span className="block text-center px-4 py-2 rounded-xl bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest border border-emerald-100">Accepted by You</span>
                           
@@ -375,6 +454,19 @@ const DonorDashboard = () => {
                             </div>
                           )}
                         </div>
+<<<<<<< HEAD
+=======
+                      ) : req.status === "Accepted" && req.acceptedByRole === "bloodbank" ? (
+                        <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
+                          <Building2 size={16} />
+                          <span className="text-[10px] font-black uppercase">Accepted by Blood Bank</span>
+                        </div>
+                      ) : req.status === "Accepted" && req.acceptedByRole === "donor" && (req.acceptedBy !== user?._id && req.acceptedBy?._id !== user?._id) ? (
+                        <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
+                          <User size={16} />
+                          <span className="text-[10px] font-black uppercase">Accepted by Another Donor</span>
+                        </div>
+>>>>>>> old-state
                       ) : (
                         <span className="block text-center px-4 py-2 rounded-xl bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest border border-gray-200">{req.status}</span>
                       )}

@@ -3,6 +3,7 @@ const router = express.Router();
 
 const auth = require('../middleware/authMiddleware.js');
 const { requireRole } = require('../middleware/roleMiddleware.js');
+
 const {
   registerUser,
   registerBloodBank,
@@ -20,25 +21,27 @@ const {
 // ── Public routes (no token required) ────────────────────────
 router.post('/user/register', registerUser);
 router.post('/bloodbank/register', registerBloodBank);
-
 router.post('/login', login);
 
 // ── Protected routes (JWT required) ──────────────────────────
-// ✅ Apply auth directly in each route
-
 router.get('/me', auth, getProfile);
 router.put('/me', auth, updateProfile);
 
 router.put('/change-password', auth, changePassword);
 
+// Donor specific
 router.get('/eligibility', auth, requireRole('donor'), checkEligibility);
-
 router.post('/record-donation', auth, requireRole('donor'), recordDonation);
 
+// Blood bank listing
 router.get('/blood-banks', auth, getAllBloodBanks);
 
+// Logout
 router.post('/logout', auth, logout);
 
-router.post("/save-token", saveToken);
+
+// Save FCM token
+router.post('/save-token', saveToken);
+
 
 module.exports = router;

@@ -59,13 +59,17 @@ const userSchema = new mongoose.Schema(
 
     dateOfBirth: {
       type: Date,
-      required: function() { return this.role === 'donor' || this.role === 'patient'; }
+      required: function () {
+        return this.role === 'donor' || this.role === 'patient';
+      }
     },
 
     gender: {
       type: String,
       enum: ['male', 'female', 'other'],
-      required: function() { return this.role === 'donor' || this.role === 'patient'; }
+      required: function () {
+        return this.role === 'donor' || this.role === 'patient';
+      }
     },
 
     role: {
@@ -77,13 +81,18 @@ const userSchema = new mongoose.Schema(
     bloodGroup: {
       type: String,
       enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-      required: function() { return this.role === 'donor' || this.role === 'patient'; }
+      required: function () {
+        return this.role === 'donor' || this.role === 'patient';
+      }
     },
 
+    // Blood bank specific
     licenseInfo: {
-       type: String,
-       required: function() { return this.role === 'bloodbank'; }
-     },
+      type: String,
+      required: function () {
+        return this.role === 'bloodbank';
+      }
+    },
 
     bloodStock: [
       {
@@ -98,7 +107,6 @@ const userSchema = new mongoose.Schema(
       }
     ],
 
-    // ✅ FIXED (removed duplicate index here)
     location: {
       type: locationSchema,
       required: true
@@ -144,6 +152,11 @@ const userSchema = new mongoose.Schema(
       isDonorAvailable: {
         type: Boolean,
         default: true
+      },
+
+      checkupEligible: {
+        type: Boolean,
+        default: false
       }
     },
 

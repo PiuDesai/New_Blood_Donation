@@ -3,6 +3,7 @@ const router = express.Router();
 
 const auth = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleMiddleware');
+
 const {
   createRequest,
   getMyRequests,
@@ -11,6 +12,8 @@ const {
   acceptRequest,
   updateRequest,
   deleteRequest,
+  rejectRequest,     // ✅ keep
+  issueBlood,        // ✅ keep
   verifyCompletion,
   completeDonation
 } = require('../controller/BloodRequestController');
@@ -27,6 +30,8 @@ router.delete('/:id', auth, requireRole('patient', 'donor'), deleteRequest);
 
 // ── Lifecycle Actions ────────────────────────
 router.post('/accept', auth, requireRole('donor', 'bloodbank'), acceptRequest);
+router.post('/reject', auth, requireRole('bloodbank'), rejectRequest); // ✅ added
+router.post('/issue', auth, requireRole('bloodbank'), issueBlood);     // ✅ added
 router.post('/verify-completion', auth, verifyCompletion);
 
 // ── Legacy / Compatibility Routes ────────────
@@ -34,10 +39,12 @@ router.post('/mark-donor-complete', auth, requireRole('donor'), (req, res, next)
   req.body.role = 'donor';
   verifyCompletion(req, res, next);
 });
+
 router.post('/confirm-patient', auth, requireRole('patient'), (req, res, next) => {
   req.body.role = 'patient';
   verifyCompletion(req, res, next);
 });
+
 router.post('/complete', auth, completeDonation);
 
 module.exports = router;

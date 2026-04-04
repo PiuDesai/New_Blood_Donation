@@ -26,7 +26,9 @@ const auth = (req, res, next) => {
 
     // 🔹 Verify
     if (!process.env.JWT_SECRET) {
-      return res.status(500).json({ message: "JWT_SECRET is not configured" });
+      return res.status(500).json({
+        message: "JWT_SECRET is not configured"
+      });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -35,14 +37,14 @@ const auth = (req, res, next) => {
       console.log("[auth] decoded token:", decoded);
     }
 
-    // ✅ Keep this (useful fix)
+    // ✅ Normalize role (IMPORTANT)
     if (decoded.role) {
       decoded.role = String(decoded.role).toLowerCase();
     }
 
     req.user = decoded;
 
-    next(); // ✅ MUST
+    next();
 
   } catch (error) {
     console.log("AUTH ERROR:", error.message);

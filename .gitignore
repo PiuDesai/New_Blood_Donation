@@ -36,6 +36,12 @@ lerna-debug.log*
 .env.*
 !.env.example
 *.local
+.env
+.env.local
+.env.*.local
+
+# ── Firebase Secrets (CRITICAL) ──────────────────
+backend/firebaseServiceAccountKey.json
 
 # ── Uploads / generated files ────────────────────
 /backend/uploads/
@@ -60,10 +66,15 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+.vite/
 
+<<<<<<< HEAD
 # ── Cache ────────────────────────────────────────
 .cache/
 *.tsbuildinfo
 
 # ── Misc ─────────────────────────────────────────
 coverage/
+=======
+backup_untracked/
+>>>>>>> old-state

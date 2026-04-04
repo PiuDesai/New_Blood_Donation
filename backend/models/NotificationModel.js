@@ -25,7 +25,9 @@ const notificationSchema = new mongoose.Schema(
         'report_ready',
         'nearby_donor_found',
         'system_alert',
-        'general'
+        'general',
+        'request_accepted',
+        'request_cancelled'
       ],
       required: true
     },

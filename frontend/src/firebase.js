@@ -3,6 +3,7 @@ import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 
 const firebaseConfig = {
+
   apiKey: "AIzaSyBCn0t-mozBEZ9VBJBoH0tnhPn-kUKg_aI",
   authDomain: "blood-6bb33.firebaseapp.com",
   projectId: "blood-6bb33",
@@ -10,6 +11,7 @@ const firebaseConfig = {
   messagingSenderId: "922808212199",
   appId: "1:922808212199:web:b31fa6367679a86ba82042",
   measurementId: "G-TNFDJ0RG3M"
+
 };
 
 const app = initializeApp(firebaseConfig);
@@ -28,19 +30,24 @@ export const getFCMToken = async (userId) => {
     }
 
     const token = await getToken(messaging, {
+
       vapidKey: "BEh47UKUnuUc-7vyh_OH43y5BpBORRdMD8oOYJlFQNJiVi6IwvPys4Y3sgy8GFLlYSpUI_s13a3VPeDTPClEscM" // 🔥 Replace with your actual VAPID key from Firebase Console
+
     });
 
     if (token) {
       console.log("✅ FCM Token Generated:", token);
 
-      // Save token to backend
-      const response = await fetch("http://localhost:5000/api/save-token", {
-        method: "POST",
+
+      // Save token to backend using relative path or base URL
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/notifications/fcm-token`, {
+        method: "PUT",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
         },
-        body: JSON.stringify({ userId, token })
+        body: JSON.stringify({ fcmToken: token })
+
       });
 
       if (response.ok) {

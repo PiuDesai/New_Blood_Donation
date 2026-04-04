@@ -21,6 +21,9 @@ import AllDonors from "./pages/Admin/AllDonors";
 import AllBloodBanks from "./pages/Admin/AllBloodBanks";
 import Home from "./pages/Home";
 import HomeBloodTest from "./pages/Patient/HomeBloodTest";
+import Leaderboard from "./pages/Dashboard/Leaderboard";
+import Rewards from "./pages/Dashboard/Rewards";
+import BloodBankBookings from "./pages/BloodBank/BloodBankBookings";
 
 // ✅ KEEP BOTH FEATURES
 import Leaderboard from "./pages/Dashboard/Leaderboard";

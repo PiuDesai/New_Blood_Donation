@@ -11,7 +11,6 @@ const createBooking = async (req, res, next) => {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    // Generate Google Maps link
     const mapLink = `https://www.google.com/maps?q=${encodeURIComponent(address)}`;
 
     const booking = await BloodTestBooking.create({
@@ -24,7 +23,6 @@ const createBooking = async (req, res, next) => {
       status: 'Pending'
     });
 
-    // 🎯 Notify all blood banks
     const bloodBanks = await User.find({ role: 'bloodbank', isActive: true }).select('_id fcmToken');
     const tokens = bloodBanks.map(b => b.fcmToken).filter(Boolean);
     const ids = bloodBanks.map(b => b._id);
@@ -33,7 +31,7 @@ const createBooking = async (req, res, next) => {
       await sendNotification(tokens, ids, {
         title: '🏠 New Home Blood Test Request',
         body: `${patientName} requested a ${testType} at ${address}`,
-        type: 'general',
+        type: 'booking_request',
         data: { bookingId: booking._id.toString() }
       });
     }
@@ -92,12 +90,11 @@ const acceptBooking = async (req, res, next) => {
     booking.status = 'Accepted';
     await booking.save();
 
-    // 🎯 Notify Patient
-    if (booking.patient.fcmToken) {
+    if (booking.patient?.fcmToken) {
       await sendNotification([booking.patient.fcmToken], [booking.patient._id], {
         title: '✅ Home Test Accepted',
-        body: `Your ${booking.testType} request was accepted. Technician: ${assignedPerson} (${assignedContact})`,
-        type: 'general',
+        body: `Technician: ${assignedPerson} (${assignedContact})`,
+        type: 'booking_confirmed',
         data: { bookingId: booking._id.toString() }
       });
     }
@@ -119,12 +116,11 @@ const rejectBooking = async (req, res, next) => {
     booking.status = 'Rejected';
     await booking.save();
 
-    // 🎯 Notify Patient
-    if (booking.patient.fcmToken) {
+    if (booking.patient?.fcmToken) {
       await sendNotification([booking.patient.fcmToken], [booking.patient._id], {
         title: '❌ Home Test Rejected',
-        body: `Your ${booking.testType} request was rejected by the blood bank.`,
-        type: 'general',
+        body: `Your ${booking.testType} request was rejected.`,
+        type: 'booking_cancelled',
         data: { bookingId: booking._id.toString() }
       });
     }
@@ -151,12 +147,11 @@ const uploadReport = async (req, res, next) => {
     booking.status = 'Completed';
     await booking.save();
 
-    // 🎯 Notify Patient
-    if (booking.patient.fcmToken) {
+    if (booking.patient?.fcmToken) {
       await sendNotification([booking.patient.fcmToken], [booking.patient._id], {
-        title: '📄 Test Report Uploaded',
-        body: `Your report for ${booking.testType} is now available.`,
-        type: 'general',
+        title: '📄 Report Ready',
+        body: `Your ${booking.testType} report is available.`,
+        type: 'report_ready',
         data: { bookingId: booking._id.toString() }
       });
     }
@@ -168,7 +163,6 @@ const uploadReport = async (req, res, next) => {
 };
 
 const getTestTypes = async (req, res) => {
-  // Simple test types
   const tests = [
     'Complete Blood Count (CBC)',
     'Liver Function Test (LFT)',
@@ -198,14 +192,14 @@ const cancelBooking = async (req, res, next) => {
   try {
     const booking = await BloodTestBooking.findById(req.params.id);
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
-    
-    // Only patient or admin can cancel
+
     if (booking.patient.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    booking.status = 'Rejected'; // Or a new status 'Cancelled'
+    booking.status = 'Rejected';
     await booking.save();
+
     res.json({ message: 'Booking cancelled successfully' });
   } catch (err) {
     next(err);

@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Building2, Droplets, Activity, Plus, Search, MapPin, MoreVertical, ShieldCheck, Bell, Users, Calendar, ArrowRight, TrendingUp, AlertTriangle, ArrowLeft, CheckCircle2, Clock, Settings, HelpCircle } from "lucide-react";
+import { Building2, Droplets, Activity, Plus, Search, MapPin, MoreVertical, ShieldCheck, Bell, Users, Calendar, ArrowRight, TrendingUp, AlertTriangle, ArrowLeft, CheckCircle2, Clock, Settings, HelpCircle, User } from "lucide-react";
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
-import { getBloodBankStats, getAllBloodRequests, getMyCamps, issueBlood } from "../../api/api";
+import { getBloodBankStats, getAllBloodRequests, getMyCamps, acceptBloodRequest, rejectBloodRequest, verifyRequestCompletion } from "../../api/api";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
 import { updateCamp, deleteCamp, getCampStats } from "../../api/api";
 
 const BloodBankDashboard = () => {
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
@@ -29,24 +31,25 @@ const BloodBankDashboard = () => {
 
   const path = location.pathname.split("/")[2] || "inventory";
 
+  const fetchData = async () => {
+    try {
+      const [statsData, requestsData, campsData] = await Promise.all([
+        getBloodBankStats(),
+        getAllBloodRequests(),
+        getMyCamps()
+      ]);
+      setStats(statsData);
+      setRequests(requestsData);
+      setCamps(campsData);
+    } catch (err) {
+      console.error("Failed to fetch blood bank data:", err);
+      setError(err?.response?.data?.message || err?.message || "Could not load dashboard data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [statsData, requestsData, campsData] = await Promise.all([
-          getBloodBankStats(),
-          getAllBloodRequests(),
-          getMyCamps()
-        ]);
-        setStats(statsData);
-        setRequests(requestsData);
-        setCamps(campsData);
-      } catch (err) {
-        console.error("Failed to fetch blood bank data:", err);
-        setError(err?.response?.data?.message || err?.message || "Could not load dashboard data.");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
@@ -90,19 +93,35 @@ const BloodBankDashboard = () => {
     registered: camp.registeredDonors?.length || 0
   }));
 
-  const handleFulfill = async (requestId) => {
+  const handleAcceptRequest = async (requestId) => {
     try {
-      await issueBlood({ requestId });
-      toast.success("Request fulfilled successfully!");
-      // Refresh data
-      const [statsData, requestsData] = await Promise.all([
-        getBloodBankStats(),
-        getAllBloodRequests()
-      ]);
-      setStats(statsData);
-      setRequests(requestsData);
+      await acceptBloodRequest(requestId);
+      toast.success("Request accepted! Please supply the blood.");
+      fetchData();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to fulfill request");
+      toast.error(err?.response?.data?.message || "Failed to accept request");
+    }
+  };
+
+  const handleRejectRequest = async (requestId) => {
+    const reason = window.prompt("Enter reason for rejection (e.g., Blood out of stock):");
+    if (!reason) return;
+    try {
+      await rejectBloodRequest(requestId, reason);
+      toast.success("Request rejected and donors notified.");
+      fetchData();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to reject request");
+    }
+  };
+
+  const handleSupplyBlood = async (requestId) => {
+    try {
+      await verifyRequestCompletion(requestId, "bloodbank");
+      toast.success("Blood marked as supplied! Waiting for patient to receive.");
+      fetchData();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to supply blood");
     }
   };
   const createCamp = async () => {
@@ -275,26 +294,87 @@ const BloodBankDashboard = () => {
     <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
       <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-10">Incoming Blood Requests</h3>
       <div className="space-y-6">
-        {incomingRequests.map((req, i) => (
+        {requests.map((req, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="flex flex-col sm:flex-row sm:items-center justify-between p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl transition-all group gap-8">
             <div className="flex items-center gap-8">
               <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-pink-600 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-red-200 group-hover:rotate-6 transition-transform">{req.bloodGroup}</div>
               <div>
-                <h4 className="font-black text-2xl text-gray-900 mb-1">{req.patient}</h4>
-                <p className="text-gray-400 font-bold text-sm flex items-center gap-1.5"><Building2 size={14} /> {req.hospital} • {req.time}</p>
+                <h4 className="font-black text-2xl text-gray-900 mb-1">{req.patientName}</h4>
+                <p className="text-gray-400 font-bold text-sm flex items-center gap-1.5"><Building2 size={14} /> {req.hospital} • {new Date(req.createdAt).toLocaleTimeString()}</p>
+                <p className="text-[10px] font-black uppercase text-gray-400 mt-2 tracking-widest">Status: <span className="text-blue-600">{req.status}</span></p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${req.urgency === "Emergency" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>{req.urgency}</span>
-              <Button
-                onClick={() => handleFulfill(req.id)}
-                className="h-12 bg-blue-600 hover:bg-blue-700"
-              >
-                Fulfill Request
-              </Button>
+              
+              {req.status === "Pending" && (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleAcceptRequest(req._id)}
+                    className="h-12 bg-emerald-600 hover:bg-emerald-700 text-xs"
+                  >
+                    Accept
+                  </Button>
+                  <Button
+                    onClick={() => handleRejectRequest(req._id)}
+                    variant="outline"
+                    className="h-12 border-red-200 text-red-600 hover:bg-red-50 text-xs"
+                  >
+                    Reject
+                  </Button>
+                </div>
+              )}
+
+              {req.status === "Accepted" && req.assignedBloodBank === user?._id && (
+                <div className="flex gap-2">
+                  {!req.suppliedByBloodBank ? (
+                    <Button
+                      onClick={() => handleSupplyBlood(req._id)}
+                      className="h-12 bg-blue-600 hover:bg-blue-700 text-xs"
+                    >
+                      Mark as Completed
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2 px-6 py-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
+                      <CheckCircle2 size={16} />
+                      <span className="text-xs font-black uppercase">Completed by You</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {req.status === "Accepted" && req.acceptedByRole === "donor" && (
+                <div className="flex items-center gap-2 px-6 py-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
+                  <User size={16} />
+                  <span className="text-xs font-black uppercase">Accepted by Donor</span>
+                </div>
+              )}
+
+              {req.status === "Accepted" && req.acceptedByRole === "bloodbank" && req.assignedBloodBank !== user?._id && (
+                <div className="flex items-center gap-2 px-6 py-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
+                  <Building2 size={16} />
+                  <span className="text-xs font-black uppercase">Accepted by Another Bank</span>
+                </div>
+              )}
+
+              {req.status === "Rejected" && req.bloodBankRejected && (
+                 <span className="text-xs font-black text-red-600 uppercase bg-red-50 px-4 py-2 rounded-xl border border-red-100">Rejected: {req.rejectionReason}</span>
+              )}
+
+              {req.status === "Completed" && (
+                <div className="flex items-center gap-2 px-6 py-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
+                  <CheckCircle2 size={16} />
+                  <span className="text-xs font-black uppercase">Completed</span>
+                </div>
+              )}
             </div>
           </motion.div>
         ))}
+        {requests.length === 0 && (
+          <div className="text-center py-20 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-100">
+            <p className="text-gray-400 font-black uppercase tracking-widest text-sm">No incoming requests</p>
+          </div>
+        )}
       </div>
     </Card>
   );

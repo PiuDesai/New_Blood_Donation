@@ -1,8 +1,3 @@
-/**
- * api.js – Central API layer for Smart Blood Donation
- * Cleaned version (NO duplicate /api)
- */
-
 import API from "./axios";
 
 // ═══════════════════════════════════════════════
@@ -142,44 +137,44 @@ export const getAllBloodRequests = async () => {
   return data;
 };
 
+export const getUrgentBloodRequests = async () => {
+  const { data } = await API.get("/requests/urgent");
+  return data;
+};
+
+export const acceptBloodRequest = async (requestId) => {
+  const { data } = await API.post("/requests/accept", { requestId });
+  return data;
+};
+
+// ✅ INCLUDED (from old-state)
+export const rejectBloodRequest = async (requestId, reason) => {
+  const { data } = await API.post("/requests/reject", { requestId, reason });
+  return data;
+};
+
 export const issueBlood = async (payload) => {
   const { data } = await API.post("/requests/issue", payload);
   return data;
 };
 
-// ═══════════════════════════════════════════════
-// ─── STATS ───────────────────────────────────
-// ═══════════════════════════════════════════════
-
-export const getAdminStats = async () => {
-  const { data } = await API.get("/admin/stats");
+export const verifyRequestCompletion = async (requestId, role) => {
+  const { data } = await API.post("/requests/verify-completion", { requestId, role });
   return data;
 };
 
-export const getPendingBloodBanks = async () => {
-  const { data } = await API.get("/admin/pending-blood-banks");
+export const updateBloodRequest = async (id, payload) => {
+  const { data } = await API.put(`/requests/${id}`, payload);
   return data;
 };
 
-export const approveBloodBank = async (id) => {
-  const { data } = await API.post(`/admin/approve-blood-bank/${id}`);
+export const deleteBloodRequest = async (id, cancelReason) => {
+  const { data } = await API.delete(`/requests/${id}`, { data: { cancelReason } });
   return data;
 };
 
-export const getBloodBankStats = async () => {
-  const { data } = await API.get("/bloodbank/stats");
-  return data;
-};
-
-export const getDonorStats = async () => {
-  // Backend StatsRoute is mounted at /api and defines GET /donor/stats
-  const { data } = await API.get("/donor/stats");
-  return data;
-};
-
-export const getPatientStats = async () => {
-  // Backend StatsRoute is mounted at /api and defines GET /patient/stats
-  const { data } = await API.get("/patient/stats");
+export const completeBloodDonation = async (requestId) => {
+  const { data } = await API.post("/requests/complete", { requestId });
   return data;
 };
 
@@ -235,75 +230,6 @@ export const uploadTestReport = async (payload) => {
   return data;
 };
 
-export const getUrgentBloodRequests = async () => {
-  const { data } = await API.get("/requests/urgent");
-  return data;
-};
-
-export const acceptBloodRequest = async (requestId) => {
-  const { data } = await API.post("/requests/accept", { requestId });
-  return data;
-};
-
-export const verifyRequestCompletion = async (requestId, role) => {
-  const { data } = await API.post("/requests/verify-completion", { requestId, role });
-  return data;
-};
-
-export const updateBloodRequest = async (id, payload) => {
-  const { data } = await API.put(`/requests/${id}`, payload);
-  return data;
-};
-
-export const deleteBloodRequest = async (id, cancelReason) => {
-  const { data } = await API.delete(`/requests/${id}`, { data: { cancelReason } });
-  return data;
-};
-
-export const markDonorComplete = async (requestId) => {
-  const { data } = await API.put("/requests/mark-donor-complete", { requestId });
-  return data;
-};
-
-export const confirmPatientReceived = async (requestId) => {
-  const { data } = await API.put("/requests/confirm-patient", { requestId });
-  return data;
-};
-
-export const completeBloodDonation = async (requestId) => {
-  const { data } = await API.post("/requests/complete", { requestId });
-  return data;
-};
-
-// ═══════════════════════════════════════════════
-// ─── GAMIFICATION ────────────────────────────
-// ═══════════════════════════════════════════════
-
-export const getLeaderboard = async () => {
-  const { data } = await API.get("/gamification/leaderboard");
-  return data;
-};
-
-export const getRewardsList = async () => {
-  const { data } = await API.get("/gamification/rewards");
-  return data;
-};
-
-export const claimReward = async (rewardId) => {
-  const { data } = await API.post("/gamification/claim-reward", { rewardId });
-  return data;
-};
-
-export const getMyRewards = async () => {
-  const { data } = await API.get("/gamification/my-rewards");
-  return data;
-};
-
-export const rateDonor = async (payload) => {
-  const { data } = await API.post("/gamification/rate", payload);
-  return data;
-};
-
 // ═══════════════════════════════════════════════
 // ─── NOTIFICATIONS ───────────────────────────
 // ═══════════════════════════════════════════════
@@ -330,21 +256,10 @@ export const deleteNotification = async (notificationId) => {
   return data;
 };
 
-export const sendEmergencyNotification = async (payload) => {
-  const { data } = await API.post("/notifications/emergency", payload);
-  return data;
-};
-
 export const updateFcmToken = async (fcmToken) => {
   const { data } = await API.put("/notifications/fcm-token", { fcmToken });
   return data;
 };
-
-export const updateNotificationPreferences = async (prefs) => {
-  const { data } = await API.put("/notifications/preferences", prefs);
-  return data;
-};
-
 
 // analyzer
 export const analyzeReport = (formData) =>
