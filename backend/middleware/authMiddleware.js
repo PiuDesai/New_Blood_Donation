@@ -4,6 +4,7 @@ const auth = (req, res, next) => {
   try {
     // 🔹 Get token
     const authHeader = req.headers.authorization;
+
     if (process.env.NODE_ENV !== "production") {
       console.log("[auth] authorization header:", authHeader);
     }
@@ -34,7 +35,7 @@ const auth = (req, res, next) => {
       console.log("[auth] decoded token:", decoded);
     }
 
-    // Standardize: ensure role is lowercase if present
+    // ✅ Keep this (useful fix)
     if (decoded.role) {
       decoded.role = String(decoded.role).toLowerCase();
     }
@@ -46,7 +47,6 @@ const auth = (req, res, next) => {
   } catch (error) {
     console.log("AUTH ERROR:", error.message);
 
-    // ❌ DO NOT USE next(error) here for now
     return res.status(401).json({
       message: "Invalid or expired token"
     });

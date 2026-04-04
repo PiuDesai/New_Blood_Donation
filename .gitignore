@@ -4,6 +4,7 @@
 # ── Dependencies ─────────────────────────────────
 /frontend/node_modules/
 /backend/node_modules/
+node_modules/
 
 # ── Builds / output ──────────────────────────────
 /frontend/dist/
@@ -11,10 +12,14 @@
 /frontend/build/
 /backend/dist/
 /backend/build/
+dist/
+build/
+.vite/
 
 # ── Logs ─────────────────────────────────────────
 /frontend/logs/
 /backend/logs/
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -27,89 +32,37 @@ lerna-debug.log*
 /frontend/.env.*
 /backend/.env
 /backend/.env.*
+.env
+.env.*
+!.env.example
 *.local
 
 # ── Uploads / generated files ────────────────────
 /backend/uploads/
+
+# ── Firebase / Secrets ───────────────────────────
+backend/firebaseServiceAccountKey.json
+
+# ── Backup folders ───────────────────────────────
+backup_untracked/
 
 # ── OS ───────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
 # ── IDE / editor ─────────────────────────────────
-/.vscode/
+.vscode/
 !/.vscode/extensions.json
-/.idea/
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# ======================
-# Node.js
-# ======================
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# ======================
-# Environment files (IMPORTANT)
-# ======================
-.env
-.env.*
-!.env.example
-
-# ======================
-# Logs
-# ======================
-logs
-*.log
-
-# ======================
-# OS Files
-# ======================
-.DS_Store
-Thumbs.db
-
-# ======================
-# Build / Dist
-# ======================
-dist/
-build/
-.vite/
-
-# ======================
-# Uploads (optional - if user files stored)
-# ======================
-backend/uploads/
-
-# ======================
-# Firebase / Secrets (VERY IMPORTANT)
-# ======================
-backend/firebaseServiceAccountKey.json
-
-# ======================
-# Backup folders
-# ======================
-backup_untracked/
-
-# ======================
-# Editor / IDE
-# ======================
-.vscode/
-.idea/
-
-# ======================
-# Cache
-# ======================
+# ── Cache ────────────────────────────────────────
 .cache/
 *.tsbuildinfo
 
-# ======================
-# Misc
-# ======================
+# ── Misc ─────────────────────────────────────────
 coverage/
-
-.vite/
