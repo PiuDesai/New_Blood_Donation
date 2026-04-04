@@ -39,6 +39,7 @@ lerna-debug.log*
 
 # ── Uploads / generated files ────────────────────
 /backend/uploads/
+/backend/eng.traineddata
 
 # ── Firebase / Secrets ───────────────────────────
 backend/firebaseServiceAccountKey.json

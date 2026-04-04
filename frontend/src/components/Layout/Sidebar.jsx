@@ -30,6 +30,7 @@ const Sidebar = ({ role }) => {
         { to: "/patient/requests", icon: HeartPulse, label: "My Requests" },
         { to: "/patient/find", icon: Droplets, label: "Search Blood" },
         { to: "/patient/lab", icon: FlaskConical, label: "Home Lab Tests" },
+        { to: "/patient/report-analyzer", icon: FlaskConical, label: "Report Analyzer" }
       ],
       bloodbank: [
         { to: "/bloodbank", icon: LayoutDashboard, label: "Inventory", end: true },

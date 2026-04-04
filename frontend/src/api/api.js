@@ -344,3 +344,12 @@ export const updateNotificationPreferences = async (prefs) => {
   const { data } = await API.put("/notifications/preferences", prefs);
   return data;
 };
+
+
+// analyzer
+export const analyzeReport = (formData) =>
+  API.post("/report/analyze", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });

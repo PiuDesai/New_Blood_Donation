@@ -21,9 +21,13 @@ import AllDonors from "./pages/Admin/AllDonors";
 import AllBloodBanks from "./pages/Admin/AllBloodBanks";
 import Home from "./pages/Home";
 import HomeBloodTest from "./pages/Patient/HomeBloodTest";
+
+// ✅ KEEP BOTH FEATURES
 import Leaderboard from "./pages/Dashboard/Leaderboard";
 import Rewards from "./pages/Dashboard/Rewards";
 import BloodBankBookings from "./pages/BloodBank/BloodBankBookings";
+import ReportAnalyzer from "./pages/Patient/ReportAnalyzer";
+
 
 function App() {
   return (
@@ -89,6 +93,7 @@ function App() {
           <Route path="lab" element={<HomeBloodTest />} />
           <Route path="settings" element={<PatientDashboard />} />
           <Route path="help" element={<PatientDashboard />} />
+          <Route path="report-analyzer" element={<ReportAnalyzer />} />
         </Route>
 
         {/* Blood Bank Routes */}
