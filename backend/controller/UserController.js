@@ -1,35 +1,28 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/UserModel.js');
+const { addPointsForDonation } = require('./GamificationController.js');
 
-// ── Helper: sign JWT ──────────────────────────────────────────
+// ── Helper: sign JWT ──────────────────────────
 const signToken = (id, role) =>
   jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
 
-<<<<<<< HEAD
-// ───────────────── REGISTER USER (Donor/Patient) ─────────────────
+// ───────────────── REGISTER USER ─────────────────
 const registerUser = async (req, res, next) => {
-=======
-// ───────────────── REGISTER ─────────────────
-const register = async (req, res, next) => {
->>>>>>> 87a3729 (User model done)
   try {
     const {
       name, email, phone, password, role,
       bloodGroup, dateOfBirth, gender, location
     } = req.body;
 
-<<<<<<< HEAD
     if (!name || !email || !phone || !password || !bloodGroup || !dateOfBirth || !gender) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
     if (!location || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
-      return res.status(400).json({ message: 'location with type Point and coordinates [lng, lat] is required' });
+      return res.status(400).json({ message: 'Valid location required [lng, lat]' });
     }
 
-=======
->>>>>>> 87a3729 (User model done)
     const existing = await User.findOne({ $or: [{ email }, { phone }] });
     if (existing)
       return res.status(400).json({ message: 'Email or phone already registered' });
@@ -46,7 +39,6 @@ const register = async (req, res, next) => {
     });
 
   } catch (err) {
-<<<<<<< HEAD
     next(err);
   }
 };
@@ -55,16 +47,14 @@ const register = async (req, res, next) => {
 // ───────────────── REGISTER BLOOD BANK ─────────────────
 const registerBloodBank = async (req, res, next) => {
   try {
-    const {
-      name, email, phone, password, location, licenseInfo
-    } = req.body;
+    const { name, email, phone, password, location, licenseInfo } = req.body;
 
     if (!name || !email || !phone || !password || !location || !licenseInfo) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    if (!location || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
-      return res.status(400).json({ message: 'location with type Point and coordinates [lng, lat] is required' });
+    if (!Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
+      return res.status(400).json({ message: 'Valid location required [lng, lat]' });
     }
 
     const existing = await User.findOne({ $or: [{ email }, { phone }] });
@@ -85,9 +75,6 @@ const registerBloodBank = async (req, res, next) => {
 
   } catch (err) {
     next(err);
-=======
-    next(err); // ✅ FIX
->>>>>>> 87a3729 (User model done)
   }
 };
 
@@ -107,9 +94,7 @@ const login = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid email or password' });
 
     if (user.isLocked())
-      return res.status(403).json({
-        message: `Account locked. Try later`
-      });
+      return res.status(403).json({ message: 'Account locked. Try later' });
 
     const isMatch = await user.comparePassword(password);
 
@@ -144,7 +129,7 @@ const login = async (req, res, next) => {
     });
 
   } catch (err) {
-    next(err); // ✅ FIX
+    next(err);
   }
 };
 
@@ -153,14 +138,12 @@ const login = async (req, res, next) => {
 const getProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
-
-    if (!user)
-      return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.json({ user: user.toJSON() });
 
   } catch (err) {
-    next(err); // ✅ FIX
+    next(err);
   }
 };
 
@@ -168,17 +151,7 @@ const getProfile = async (req, res, next) => {
 // ───────────────── UPDATE PROFILE ─────────────────
 const updateProfile = async (req, res, next) => {
   try {
-    const allowed = [
-      'name', 'gender', 'dateOfBirth', 'location',
-      'bloodGroup', 'fcmToken', 'notificationPreferences',
-      'donorInfo.weight', 'donorInfo.isDonorAvailable',
-      'donorInfo.medicalConditions', 'profilePhoto'
-    ];
-
-    const updates = {};
-    allowed.forEach(field => {
-      if (req.body[field] !== undefined) updates[field] = req.body[field];
-    });
+    const updates = req.body;
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
@@ -189,7 +162,7 @@ const updateProfile = async (req, res, next) => {
     res.json({ message: 'Profile updated', user: user.toJSON() });
 
   } catch (err) {
-    next(err); // ✅ FIX
+    next(err);
   }
 };
 
@@ -199,14 +172,10 @@ const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
-    if (!currentPassword || !newPassword)
-      return res.status(400).json({ message: 'All fields required' });
-
     const user = await User.findById(req.user.id).select('+password');
 
     const isMatch = await user.comparePassword(currentPassword);
-    if (!isMatch)
-      return res.status(400).json({ message: 'Wrong password' });
+    if (!isMatch) return res.status(400).json({ message: 'Wrong password' });
 
     user.password = newPassword;
     await user.save();
@@ -214,7 +183,7 @@ const changePassword = async (req, res, next) => {
     res.json({ message: 'Password changed' });
 
   } catch (err) {
-    next(err); // ✅ FIX
+    next(err);
   }
 };
 
@@ -224,61 +193,31 @@ const checkEligibility = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
 
-    if (!user)
-      return res.status(404).json({ message: 'User not found' });
-
     res.json({
       canDonate: user.canDonate,
       age: user.age
     });
 
   } catch (err) {
-    next(err); // ✅ FIX
+    next(err);
   }
 };
 
 
-<<<<<<< HEAD
-const { addPointsForDonation } = require('./GamificationController.js');
-
-=======
->>>>>>> 87a3729 (User model done)
 // ───────────────── RECORD DONATION ─────────────────
 const recordDonation = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
 
-    if (!user)
-      return res.status(404).json({ message: 'User not found' });
-
-<<<<<<< HEAD
-    // Awards points and updates donation count + badges
-    await addPointsForDonation(user._id, 50);
-
-    const updatedUser = await User.findById(user._id);
-
-    res.json({ 
-      message: 'Donation recorded and points awarded!', 
-      points: updatedUser.points,
-      donationCount: updatedUser.donorInfo.donationCount 
-    });
-
-  } catch (err) {
-    next(err);
-=======
     if (!user.canDonate)
       return res.status(400).json({ message: 'Not eligible' });
 
-    user.donorInfo.lastDonatedAt = new Date();
-    user.donorInfo.donationCount += 1;
+    await addPointsForDonation(user._id, 50);
 
-    await user.save();
-
-    res.json({ message: 'Donation recorded' });
+    res.json({ message: 'Donation recorded & points added' });
 
   } catch (err) {
-    next(err); // ✅ FIX
->>>>>>> 87a3729 (User model done)
+    next(err);
   }
 };
 
@@ -291,13 +230,12 @@ const logout = async (req, res, next) => {
     res.json({ message: 'Logged out successfully' });
 
   } catch (err) {
-<<<<<<< HEAD
     next(err);
   }
 };
 
 
-// ───────────────── VIEW BLOOD BANKS (For Users) ─────────────
+// ───────────────── BLOOD BANK LIST ─────────────────
 const getAllBloodBanks = async (req, res, next) => {
   try {
     const bloodBanks = await User.find({ role: 'bloodbank', isActive: true })
@@ -310,48 +248,32 @@ const getAllBloodBanks = async (req, res, next) => {
   }
 };
 
+
+// ───────────────── SAVE TOKEN ─────────────────
 const saveToken = async (req, res) => {
   try {
     const { userId, token } = req.body;
 
-    const user = await User.findByIdAndUpdate(userId, {
-      fcmToken: token
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    await User.findByIdAndUpdate(userId, { fcmToken: token });
 
     res.json({ message: "Token saved" });
 
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Server error" });
-=======
-    next(err); // ✅ FIX
->>>>>>> 87a3729 (User model done)
   }
 };
 
 
 module.exports = {
-<<<<<<< HEAD
   registerUser,
   registerBloodBank,
-=======
-  register,
->>>>>>> 87a3729 (User model done)
   login,
   getProfile,
   updateProfile,
   changePassword,
   checkEligibility,
   recordDonation,
-<<<<<<< HEAD
   logout,
   getAllBloodBanks,
   saveToken
-=======
-  logout
->>>>>>> 87a3729 (User model done)
 };

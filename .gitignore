@@ -54,3 +54,4 @@ Thumbs.db
 *.sw?
 .vite/
 
+backup_untracked/

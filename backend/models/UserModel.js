@@ -59,21 +59,17 @@ const userSchema = new mongoose.Schema(
 
     dateOfBirth: {
       type: Date,
-<<<<<<< HEAD
-      required: function() { return this.role === 'donor' || this.role === 'patient'; }
-=======
-      required: true
->>>>>>> 87a3729 (User model done)
+      required: function () {
+        return this.role === 'donor' || this.role === 'patient';
+      }
     },
 
     gender: {
       type: String,
       enum: ['male', 'female', 'other'],
-<<<<<<< HEAD
-      required: function() { return this.role === 'donor' || this.role === 'patient'; }
-=======
-      required: true
->>>>>>> 87a3729 (User model done)
+      required: function () {
+        return this.role === 'donor' || this.role === 'patient';
+      }
     },
 
     role: {
@@ -85,14 +81,18 @@ const userSchema = new mongoose.Schema(
     bloodGroup: {
       type: String,
       enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-<<<<<<< HEAD
-      required: function() { return this.role === 'donor' || this.role === 'patient'; }
+      required: function () {
+        return this.role === 'donor' || this.role === 'patient';
+      }
     },
 
+    // Blood bank specific
     licenseInfo: {
-       type: String,
-       required: function() { return this.role === 'bloodbank'; }
-     },
+      type: String,
+      required: function () {
+        return this.role === 'bloodbank';
+      }
+    },
 
     bloodStock: [
       {
@@ -107,12 +107,6 @@ const userSchema = new mongoose.Schema(
       }
     ],
 
-=======
-      required: true
-    },
-
->>>>>>> 87a3729 (User model done)
-    // ✅ FIXED (removed duplicate index here)
     location: {
       type: locationSchema,
       required: true
@@ -158,14 +152,11 @@ const userSchema = new mongoose.Schema(
       isDonorAvailable: {
         type: Boolean,
         default: true
-<<<<<<< HEAD
       },
 
       checkupEligible: {
         type: Boolean,
         default: false
-=======
->>>>>>> 87a3729 (User model done)
       }
     },
 
@@ -194,7 +185,6 @@ const userSchema = new mongoose.Schema(
       default: 0
     },
 
-<<<<<<< HEAD
     rating: {
       type: Number,
       default: 0
@@ -220,8 +210,6 @@ const userSchema = new mongoose.Schema(
       }
     ],
 
-=======
->>>>>>> 87a3729 (User model done)
     passwordResetToken: { type: String, select: false },
     passwordResetExpires: { type: Date, select: false },
 
