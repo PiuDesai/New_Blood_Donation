@@ -31,6 +31,7 @@ lerna-debug.log*
 
 # ── Uploads / generated files ────────────────────
 /backend/uploads/
+/backend/eng.traineddata
 
 # ── OS ───────────────────────────────────────────
 .DS_Store

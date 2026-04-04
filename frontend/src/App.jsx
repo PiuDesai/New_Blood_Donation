@@ -21,6 +21,7 @@ import AllDonors from "./pages/Admin/AllDonors";
 import AllBloodBanks from "./pages/Admin/AllBloodBanks";
 import Home from "./pages/Home";
 import HomeBloodTest from "./pages/Patient/HomeBloodTest";
+import ReportAnalyzer from "./pages/Patient/ReportAnalyzer";
 
 function App() {
   return (
@@ -84,6 +85,7 @@ function App() {
           <Route path="lab" element={<HomeBloodTest />} />
           <Route path="settings" element={<PatientDashboard />} />
           <Route path="help" element={<PatientDashboard />} />
+          <Route path="report-analyzer" element={<ReportAnalyzer />} />
         </Route>
 
         {/* Blood Bank Routes */}

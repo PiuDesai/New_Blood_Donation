@@ -40,10 +40,11 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/bloodbank", bloodBankRoutes);
 app.use("/api/camps", campRoutes);
 app.use("/api/requests", bloodRequestRoutes);
-app.use("/api", analyzeRoutes);
+app.use("/api/report", analyzeRoutes);
 app.use("/api/bookings", bloodTestRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api", statsRoutes);
+
 
 // ───── 404 Handler (Optional but Recommended) ─────
 app.use((req, res) => {
