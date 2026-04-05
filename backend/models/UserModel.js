@@ -59,13 +59,17 @@ const userSchema = new mongoose.Schema(
 
     dateOfBirth: {
       type: Date,
-      required: function() { return this.role === 'donor' || this.role === 'patient'; }
+      required: function () {
+        return this.role === 'donor' || this.role === 'patient';
+      }
     },
 
     gender: {
       type: String,
       enum: ['male', 'female', 'other'],
-      required: function() { return this.role === 'donor' || this.role === 'patient'; }
+      required: function () {
+        return this.role === 'donor' || this.role === 'patient';
+      }
     },
 
     role: {
@@ -77,13 +81,18 @@ const userSchema = new mongoose.Schema(
     bloodGroup: {
       type: String,
       enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-      required: function() { return this.role === 'donor' || this.role === 'patient'; }
+      required: function () {
+        return this.role === 'donor' || this.role === 'patient';
+      }
     },
 
+    // Blood bank specific
     licenseInfo: {
-       type: String,
-       required: function() { return this.role === 'bloodbank'; }
-     },
+      type: String,
+      required: function () {
+        return this.role === 'bloodbank';
+      }
+    },
 
     bloodStock: [
       {
@@ -98,7 +107,6 @@ const userSchema = new mongoose.Schema(
       }
     ],
 
-    // ✅ FIXED (removed duplicate index here)
     location: {
       type: locationSchema,
       required: true
@@ -144,6 +152,11 @@ const userSchema = new mongoose.Schema(
       isDonorAvailable: {
         type: Boolean,
         default: true
+      },
+
+      checkupEligible: {
+        type: Boolean,
+        default: false
       }
     },
 
@@ -171,6 +184,31 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+
+    rating: {
+      type: Number,
+      default: 0
+    },
+
+    reviews: [
+      {
+        patientId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User'
+        },
+        rating: {
+          type: Number,
+          required: true,
+          min: 1,
+          max: 5
+        },
+        comment: String,
+        createdAt: {
+          type: Date,
+          default: Date.now
+        }
+      }
+    ],
 
     passwordResetToken: { type: String, select: false },
     passwordResetExpires: { type: Date, select: false },
@@ -243,6 +281,16 @@ userSchema.virtual('canDonate').get(function () {
 
   const age = this.age;
   if (age < 18 || age > 65) return false;
+
+  const now = new Date();
+  if (this.donorInfo.nextEligibleAt && new Date(this.donorInfo.nextEligibleAt) > now) {
+    return false;
+  }
+  if (this.donorInfo.lastDonatedAt) {
+    const eligibleAfter = new Date(this.donorInfo.lastDonatedAt);
+    eligibleAfter.setDate(eligibleAfter.getDate() + 90);
+    if (eligibleAfter > now) return false;
+  }
 
   return true;
 });

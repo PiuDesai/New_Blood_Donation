@@ -4,7 +4,8 @@ const router = express.Router();
 const {
   getBloodBankProfile,
   updateBloodStock,
-  getBloodRequests
+  getBloodRequests,
+  getDonorsNearby,
 } = require("../controller/bloodBankController");
 
 const auth = require("../middleware/authMiddleware");
@@ -19,5 +20,7 @@ router.post("/stock", auth, requireRole('bloodbank'), updateBloodStock);
 // 🔴 Blood Requests
 router.get("/requests", auth, requireRole('bloodbank'), getBloodRequests);
 
+// 🔴 Donors in same city / pincode (for contact when needed)
+router.get("/donors/nearby", auth, requireRole('bloodbank'), getDonorsNearby);
 
 module.exports = router;

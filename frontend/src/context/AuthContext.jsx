@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getProfile, logoutUser as apiLogout } from "../api/api";
 import { dashboardPath } from "../utils/rolePaths";
+import { getFCMToken } from "../firebase";
 
 const AuthContext = createContext();
 
@@ -48,11 +49,19 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
+    
+
     init();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+  if (user && user._id) {
+    getFCMToken(user._id);  // 🔥 STEP 7 TRIGGER HERE
+  }
+}, [user]);
 
   const login = (userData, userToken) => {
     setUser(userData);

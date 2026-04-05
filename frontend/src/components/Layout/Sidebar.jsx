@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, Users, HeartPulse, Droplets,
-  User, HelpCircle, Activity, FlaskConical
+  User, Settings, HelpCircle, Activity, FlaskConical, Award
 } from "lucide-react";
 import { cn } from "../../utils/cn";
 
@@ -22,19 +22,21 @@ const Sidebar = ({ role }) => {
       ],
       donor: [
         { to: "/donor/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true },
-        { to: "/donor/history", icon: Activity, label: "Donation History" },
         { to: "/donor/schedule", icon: HeartPulse, label: "Find Camps" },
+        { to: "/donor/certificates", icon: Award, label: "Certificates" },
       ],
       patient: [
         { to: "/patient/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true },
         { to: "/patient/requests", icon: HeartPulse, label: "My Requests" },
         { to: "/patient/find", icon: Droplets, label: "Search Blood" },
         { to: "/patient/lab", icon: FlaskConical, label: "Home Lab Tests" },
+        { to: "/patient/report-analyzer", icon: FlaskConical, label: "Report Analyzer" }
       ],
       bloodbank: [
         { to: "/bloodbank", icon: LayoutDashboard, label: "Inventory", end: true },
         { to: "/bloodbank/requests", icon: HeartPulse, label: "Incoming Requests" },
-        { to: "/bloodbank/donations", icon: Droplets, label: "Donations" },
+        { to: "/bloodbank/test-bookings", icon: FlaskConical, label: "Home Test Requests" },
+        { to: "/bloodbank/nearby-donors", icon: Users, label: "Donors in city" },
       ],
     };
 

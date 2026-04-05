@@ -1,0 +1,27 @@
+{
+  "name": "bloodmatrix",
+  "version": "1.0.0",
+  "description": "Full-stack Blood Donation and Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "server": "cd backend && npm start",
+    "client": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build"
+  },
+  "keywords": [
+    "mern",
+    "blood-donation",
+    "react",
+    "node",
+    "mongodb",
+    "firebase"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -2,8 +2,22 @@
 # Root: New_Blood_Donation/
 
 # ── Dependencies ─────────────────────────────────
+node_modules/
 /frontend/node_modules/
 /backend/node_modules/
+
+# ── Environment files ───────────────────────────
+.env
+.env.*
+*.env
+/frontend/.env
+/frontend/.env.*
+/backend/.env
+/backend/.env.*
+*.local
+
+# ── Firebase ────────────────────────────────────
+backend/firebaseServiceAccountKey.json
 
 # ── Builds / output ──────────────────────────────
 /frontend/dist/
@@ -22,13 +36,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# ── Environment files (never commit secrets) ─────
-/frontend/.env
-/frontend/.env.*
-/backend/.env
-/backend/.env.*
-*.local
-
 # ── Uploads / generated files ────────────────────
 /backend/uploads/
 
@@ -45,4 +52,8 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+.vite/
+
+# Local backups (do not push)
+backup_untracked/
 
