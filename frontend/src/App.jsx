@@ -21,6 +21,7 @@ import AllDonors from "./pages/Admin/AllDonors";
 import AllBloodBanks from "./pages/Admin/AllBloodBanks";
 import Home from "./pages/Home";
 import HomeBloodTest from "./pages/Patient/HomeBloodTest";
+import Profile from "./pages/Common/Profile";
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
           <Route path="pending-bloodbanks" element={<PendingBloodBanks />} />
           <Route path="donors" element={<AllDonors />} />
           <Route path="bloodbanks" element={<AllBloodBanks />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
 
         {/* Donor Routes */}
@@ -64,7 +66,8 @@ function App() {
           <Route path="dashboard" element={<DonorDashboard />} />
           <Route path="history" element={<DonorDashboard />} />
           <Route path="schedule" element={<DonorDashboard />} />
-          <Route path="settings" element={<DonorDashboard />} />
+          <Route path="settings" element={<Profile />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="help" element={<DonorDashboard />} />
         </Route>
 
@@ -82,7 +85,8 @@ function App() {
           <Route path="requests" element={<PatientDashboard />} />
           <Route path="find" element={<PatientDashboard />} />
           <Route path="lab" element={<HomeBloodTest />} />
-          <Route path="settings" element={<PatientDashboard />} />
+          <Route path="settings" element={<Profile />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="help" element={<PatientDashboard />} />
         </Route>
 
@@ -98,7 +102,8 @@ function App() {
           <Route index element={<BloodBankDashboard />} />
           <Route path="requests" element={<BloodBankDashboard />} />
           <Route path="donations" element={<BloodBankDashboard />} />
-          <Route path="settings" element={<BloodBankDashboard />} />
+          <Route path="settings" element={<Profile />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="help" element={<BloodBankDashboard />} />
         </Route>
 
