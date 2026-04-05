@@ -37,6 +37,40 @@ export const logoutUser = async () => {
 };
 
 // ═══════════════════════════════════════════════
+// ─── ADMIN ────────────────────────────────────
+// ═══════════════════════════════════════════════
+
+export const getAdminStats = async () => {
+  const { data } = await API.get("/admin/stats");
+  return data;
+};
+
+export const getPendingBloodBanks = async () => {
+  const { data } = await API.get("/admin/pending-blood-banks");
+  return data;
+};
+
+export const approveBloodBank = async (id) => {
+  const { data } = await API.post(`/admin/approve-blood-bank/${id}`);
+  return data;
+};
+
+export const getPendingDonors = async () => {
+  const { data } = await API.get("/admin/pending-donors");
+  return data;
+};
+
+export const approveDonor = async (id) => {
+  const { data } = await API.put(`/admin/approve-donor/${id}`);
+  return data;
+};
+
+export const removeUser = async (id) => {
+  const { data } = await API.delete(`/admin/users/${id}`);
+  return data;
+};
+
+// ═══════════════════════════════════════════════
 // ─── USER PROFILE ────────────────────────────
 // ═══════════════════════════════════════════════
 
@@ -84,6 +118,14 @@ export const getBloodRequests = async () => {
   return data;
 };
 
+/** Donors in the same city (or pincode) as the logged-in blood bank; optional bloodGroup filter */
+export const getDonorsNearby = async (bloodGroup) => {
+  const { data } = await API.get("/bloodbank/donors/nearby", {
+    params: bloodGroup ? { bloodGroup } : {},
+  });
+  return data;
+};
+
 // ═══════════════════════════════════════════════
 // ─── CAMPS ────────────────────────────────────
 // ═══════════════════════════════════════════════
@@ -115,6 +157,46 @@ export const updateCamp = async (id, payload) => {
 
 export const deleteCamp = async (id) => {
   const { data } = await API.delete(`/camps/delete/${id}`);
+  return data;
+};
+
+export const registerForCamp = async (campId) => {
+  const { data } = await API.post("/camps/register-donor", { campId });
+  return data;
+};
+
+export const getCampBankDetail = async (campId) => {
+  const { data } = await API.get(`/camps/bank/detail/${campId}`);
+  return data;
+};
+
+export const markCampDonation = async ({ campId, donorId, units = 1 }) => {
+  const { data } = await API.post("/camps/bank/mark-donated", { campId, donorId, units });
+  return data;
+};
+
+export const confirmCampDonation = async (campId) => {
+  const { data } = await API.post("/camps/donor/confirm-donation", { campId });
+  return data;
+};
+
+export const declineCampDonation = async (campId) => {
+  const { data } = await API.post("/camps/donor/decline-donation", { campId });
+  return data;
+};
+
+export const getMyCampRegistrations = async () => {
+  const { data } = await API.get("/camps/my-registrations");
+  return data;
+};
+
+export const getCampCertificateData = async (campId) => {
+  const { data } = await API.get(`/camps/certificate/${campId}`);
+  return data;
+};
+
+export const completeCampEvent = async (campId) => {
+  const { data } = await API.put(`/camps/complete-event/${campId}`);
   return data;
 };
 
@@ -183,12 +265,12 @@ export const completeBloodDonation = async (requestId) => {
 // ═══════════════════════════════════════════════
 
 export const getTestTypes = async () => {
-  const { data } = await API.get("/bookings/tests/types");
+  const { data } = await API.get("/tests/types");
   return data;
 };
 
 export const bookBloodTest = async (payload) => {
-  const { data } = await API.post("/bookings/tests/book", payload);
+  const { data } = await API.post("/tests/book", payload);
   return data;
 };
 
@@ -196,37 +278,37 @@ export const getMyBookings = async ({ status, page = 1, limit = 10 } = {}) => {
   const params = { page, limit };
   if (status) params.status = status;
 
-  const { data } = await API.get("/bookings/tests/my-bookings", { params });
+  const { data } = await API.get("/tests/my-bookings", { params });
   return data;
 };
 
 export const getBookingById = async (bookingId) => {
-  const { data } = await API.get(`/bookings/tests/${bookingId}`);
+  const { data } = await API.get(`/tests/${bookingId}`);
   return data;
 };
 
 export const cancelBooking = async (bookingId) => {
-  const { data } = await API.put(`/bookings/tests/${bookingId}/cancel`);
+  const { data } = await API.put(`/tests/${bookingId}/cancel`);
   return data;
 };
 
 export const getAllTestBookings = async (status) => {
-  const { data } = await API.get("/bookings/tests/all", { params: { status } });
+  const { data } = await API.get("/tests/all", { params: { status } });
   return data;
 };
 
 export const acceptTestBooking = async (payload) => {
-  const { data } = await API.post("/bookings/tests/accept", payload);
+  const { data } = await API.post("/tests/accept", payload);
   return data;
 };
 
 export const rejectTestBooking = async (payload) => {
-  const { data } = await API.post("/bookings/tests/reject", payload);
+  const { data } = await API.post("/tests/reject", payload);
   return data;
 };
 
 export const uploadTestReport = async (payload) => {
-  const { data } = await API.post("/bookings/tests/upload-report", payload);
+  const { data } = await API.post("/tests/upload-report", payload);
   return data;
 };
 
@@ -268,3 +350,52 @@ export const analyzeReport = (formData) =>
       "Content-Type": "multipart/form-data",
     },
   });
+
+// ═══════════════════════════════════════════════
+// ─── STATS ────────────────────────────────────
+// ═══════════════════════════════════════════════
+
+export const getPatientStats = async () => {
+  const { data } = await API.get("/patient/stats");
+  return data;
+};
+
+export const getDonorStats = async () => {
+  const { data } = await API.get("/donor/stats");
+  return data;
+};
+
+export const getBloodBankStats = async () => {
+  const { data } = await API.get("/bloodbank/stats");
+  return data;
+};
+
+// ═══════════════════════════════════════════════
+// ─── GAMIFICATION ────────────────────────────
+// ═══════════════════════════════════════════════
+
+export const getLeaderboard = async () => {
+  const { data } = await API.get("/gamification/leaderboard");
+  return data;
+};
+
+export const getRewards = async () => {
+  const { data } = await API.get("/gamification/rewards");
+  return data;
+};
+
+export const claimReward = async (rewardId) => {
+  const { data } = await API.post("/gamification/claim-reward", { rewardId });
+  return data;
+};
+
+export const getMyRewards = async () => {
+  const { data } = await API.get("/gamification/my-rewards");
+  return data;
+};
+
+export const rateDonor = async (payload) => {
+  const { data } = await API.post("/gamification/rate", payload);
+  return data;
+};
+

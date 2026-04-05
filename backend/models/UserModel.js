@@ -282,6 +282,16 @@ userSchema.virtual('canDonate').get(function () {
   const age = this.age;
   if (age < 18 || age > 65) return false;
 
+  const now = new Date();
+  if (this.donorInfo.nextEligibleAt && new Date(this.donorInfo.nextEligibleAt) > now) {
+    return false;
+  }
+  if (this.donorInfo.lastDonatedAt) {
+    const eligibleAfter = new Date(this.donorInfo.lastDonatedAt);
+    eligibleAfter.setDate(eligibleAfter.getDate() + 90);
+    if (eligibleAfter > now) return false;
+  }
+
   return true;
 });
 

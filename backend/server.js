@@ -44,7 +44,7 @@ app.use("/api/bloodbank", bloodBankRoutes);
 app.use("/api/camps", campRoutes);
 app.use("/api/requests", bloodRequestRoutes);
 app.use("/api/report", analyzeRoutes);
-app.use("/api/bookings", bloodTestRoutes);
+app.use("/api", bloodTestRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/gamification", gamificationRoutes);
 app.use("/api", statsRoutes);

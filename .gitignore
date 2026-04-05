@@ -2,9 +2,22 @@
 # Root: New_Blood_Donation/
 
 # ── Dependencies ─────────────────────────────────
+node_modules/
 /frontend/node_modules/
 /backend/node_modules/
-node_modules/
+
+# ── Environment files ───────────────────────────
+.env
+.env.*
+*.env
+/frontend/.env
+/frontend/.env.*
+/backend/.env
+/backend/.env.*
+*.local
+
+# ── Firebase ────────────────────────────────────
+backend/firebaseServiceAccountKey.json
 
 # ── Builds / output ──────────────────────────────
 /frontend/dist/
@@ -12,14 +25,10 @@ node_modules/
 /frontend/build/
 /backend/dist/
 /backend/build/
-dist/
-build/
-.vite/
 
 # ── Logs ─────────────────────────────────────────
 /frontend/logs/
 /backend/logs/
-logs
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -27,40 +36,17 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# ── Environment files (never commit secrets) ─────
-/frontend/.env
-/frontend/.env.*
-/backend/.env
-/backend/.env.*
-.env
-.env.*
-!.env.example
-*.local
-.env
-.env.local
-.env.*.local
-
-# ── Firebase Secrets (CRITICAL) ──────────────────
-backend/firebaseServiceAccountKey.json
-
 # ── Uploads / generated files ────────────────────
 /backend/uploads/
-/backend/eng.traineddata
-
-# ── Firebase / Secrets ───────────────────────────
-backend/firebaseServiceAccountKey.json
-
-# ── Backup folders ───────────────────────────────
-backup_untracked/
 
 # ── OS ───────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
 # ── IDE / editor ─────────────────────────────────
-.vscode/
+/.vscode/
 !/.vscode/extensions.json
-.idea/
+/.idea/
 *.suo
 *.ntvs*
 *.njsproj
@@ -68,13 +54,6 @@ Thumbs.db
 *.sw?
 .vite/
 
-<<<<<<< HEAD
-# ── Cache ────────────────────────────────────────
-.cache/
-*.tsbuildinfo
-
-# ── Misc ─────────────────────────────────────────
-coverage/
-=======
+# Local backups (do not push)
 backup_untracked/
->>>>>>> old-state
+

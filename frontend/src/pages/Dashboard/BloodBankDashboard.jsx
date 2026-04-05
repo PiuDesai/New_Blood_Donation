@@ -4,7 +4,18 @@ import { Building2, Droplets, Activity, Plus, Search, MapPin, MoreVertical, Shie
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
-import { getBloodBankStats, getAllBloodRequests, getMyCamps, acceptBloodRequest, rejectBloodRequest, verifyRequestCompletion } from "../../api/api";
+import {
+  getBloodBankStats,
+  getAllBloodRequests,
+  getMyCamps,
+  acceptBloodRequest,
+  rejectBloodRequest,
+  verifyRequestCompletion,
+  createCamp,
+  getCampBankDetail,
+  markCampDonation,
+  completeCampEvent,
+} from "../../api/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
@@ -28,6 +39,10 @@ const BloodBankDashboard = () => {
     date: "",
     location: ""
   });
+  const [manageCampId, setManageCampId] = useState(null);
+  const [campDetail, setCampDetail] = useState(null);
+  const [campDetailLoading, setCampDetailLoading] = useState(false);
+  const [campReportModal, setCampReportModal] = useState(null);
 
   const path = location.pathname.split("/")[2] || "inventory";
 
@@ -90,8 +105,57 @@ const BloodBankDashboard = () => {
     date: new Date(camp.date).toLocaleDateString(),
     location: camp.location,
     target: "N/A",
-    registered: camp.registeredDonors?.length || 0
+    registered: camp.registeredCount ?? camp.registeredDonors?.length ?? camp.participations?.length ?? 0,
+    unitsCollected: camp.unitsCollected ?? 0,
+    campStatus: camp.campStatus || "scheduled",
+    summaryReport: camp.summaryReport || null,
   }));
+
+  const openCampManage = async (campId) => {
+    setManageCampId(campId);
+    setCampDetailLoading(true);
+    setCampDetail(null);
+    try {
+      const d = await getCampBankDetail(campId);
+      setCampDetail(d);
+    } catch {
+      toast.error("Could not load camp donors");
+      setManageCampId(null);
+    } finally {
+      setCampDetailLoading(false);
+    }
+  };
+
+  const handleMarkCampDonated = async (donorId) => {
+    if (!manageCampId) return;
+    try {
+      await markCampDonation({ campId: manageCampId, donorId, units: 1 });
+      toast.success("Donor notified — they must confirm to complete donation");
+      const d = await getCampBankDetail(manageCampId);
+      setCampDetail(d);
+      fetchData();
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Could not record donation");
+    }
+  };
+
+  const handleCloseCampEvent = async () => {
+    if (!manageCampId) return;
+    try {
+      const data = await completeCampEvent(manageCampId);
+      const report = data?.summaryReport || data?.camp?.summaryReport;
+      const title = data?.camp?.name || campDetail?.name || "Camp";
+      if (report) {
+        setCampReportModal({ report, title });
+      }
+      toast.success("Camp completed — summary report generated");
+      setManageCampId(null);
+      setCampDetail(null);
+      fetchData();
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Failed to close camp");
+    }
+  };
 
   const handleAcceptRequest = async (requestId) => {
     try {
@@ -124,30 +188,15 @@ const BloodBankDashboard = () => {
       toast.error(err?.response?.data?.message || "Failed to supply blood");
     }
   };
-  const createCamp = async () => {
+  const submitCreateCamp = async () => {
     try {
-      const token = localStorage.getItem("token"); // ✅ ADD THIS
-
-      const res = await fetch("http://localhost:5000/api/camps/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` // ✅ VERY IMPORTANT
-        },
-        body: JSON.stringify(campForm)
-      });
-
-      const data = await res.json();
-
+      await createCamp(campForm);
       toast.success("Camp created successfully!");
       setShowCampForm(false);
-
-      // refresh camps
       const updatedCamps = await getMyCamps();
       setCamps(updatedCamps);
-
     } catch (err) {
-      toast.error("Failed to create camp");
+      toast.error(err?.response?.data?.message || "Failed to create camp");
     }
   };
   const handleDeleteCamp = async (id) => {
@@ -245,13 +294,31 @@ const BloodBankDashboard = () => {
         </p>
 
         <p className="text-xs text-blue-600 font-bold mt-1">
-          Donors: {camp.registered}
+          Registered: {camp.registered} · Units completed: {camp.unitsCollected} · {camp.campStatus}
         </p>
       </div>
     </div>
 
     {/* RIGHT */}
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2 justify-end">
+
+      {camp.campStatus === "completed" && camp.summaryReport && (
+        <button
+          type="button"
+          onClick={() => setCampReportModal({ report: camp.summaryReport, title: camp.title })}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-black uppercase"
+        >
+          Camp report
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={() => openCampManage(camp.id)}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-black uppercase"
+      >
+        {camp.campStatus === "completed" ? "View roster" : "Manage donors"}
+      </button>
 
       {editingCampId === camp.id ? (
         <button
@@ -379,23 +446,6 @@ const BloodBankDashboard = () => {
     </Card>
   );
 
-  const renderDonations = () => (
-    <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
-      <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-10">Recent Donations</h3>
-      <div className="space-y-6">
-        {recentDonations.map((donation, i) => (
-          <div key={i} className="flex items-center justify-between p-8 rounded-[2.5rem] bg-gray-50/50 border border-transparent hover:border-blue-100 hover:bg-white hover:shadow-xl transition-all group">
-            <div className="flex items-center gap-6">
-              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-xl shadow-blue-50 group-hover:bg-blue-600 group-hover:text-white transition-all"><CheckCircle2 size={24} /></div>
-              <div><p className="font-black text-gray-900 text-lg">{donation.donor}</p><p className="text-gray-400 font-bold text-sm uppercase tracking-widest">{donation.date} • {donation.bloodGroup} • {donation.type}</p></div>
-            </div>
-            <button className="text-blue-600 font-black text-xs uppercase tracking-widest hover:underline">Print Label</button>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-
   const renderSettings = () => (
     <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
       <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Bank Settings</h3>
@@ -446,10 +496,155 @@ const BloodBankDashboard = () => {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         {path === "inventory" && renderInventory()}
         {path === "requests" && renderRequests()}
-        {path === "donations" && renderDonations()}
         {path === "settings" && renderSettings()}
         {path === "help" && renderHelp()}
       </motion.div>
+      {manageCampId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white p-8 rounded-2xl w-full max-w-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start gap-4">
+              <h2 className="text-xl font-black">Camp donors & status</h2>
+              <button type="button" className="text-gray-400 font-bold text-sm" onClick={() => { setManageCampId(null); setCampDetail(null); }}>Close</button>
+            </div>
+            {campDetailLoading && <p className="text-gray-500 font-bold text-sm">Loading…</p>}
+            {!campDetailLoading && campDetail && (
+              <>
+                <p className="text-sm text-gray-600 font-bold">
+                  {campDetail.name} · Units collected (confirmed): <span className="text-blue-600">{campDetail.unitsCollected ?? 0}</span>
+                </p>
+                <div className="border rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 text-left">
+                      <tr>
+                        <th className="p-3 font-black text-xs uppercase">Donor</th>
+                        <th className="p-3 font-black text-xs uppercase">Phone</th>
+                        <th className="p-3 font-black text-xs uppercase">Status</th>
+                        <th className="p-3 font-black text-xs uppercase">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(campDetail.participations || []).map((p) => {
+                        const d = p.donor;
+                        const id = d?._id || d;
+                        const statusLabel = p.status === "completed" ? "Completed" : p.status === "awaiting_donor_confirm" ? "Awaiting donor yes" : p.status === "declined" ? "Declined" : "Registered";
+                        return (
+                          <tr key={p._id || id} className="border-t border-gray-100">
+                            <td className="p-3 font-bold text-gray-900">{d?.name || "—"}</td>
+                            <td className="p-3 font-bold text-gray-600">{d?.phone ? <a href={`tel:${d.phone}`} className="text-blue-600">{d.phone}</a> : "—"}</td>
+                            <td className="p-3 text-xs font-black uppercase text-gray-500">{statusLabel}</td>
+                            <td className="p-3">
+                              {p.status === "registered" && campDetail.campStatus !== "completed" && (
+                                <button type="button" className="text-xs font-black uppercase bg-emerald-600 text-white px-3 py-2 rounded-lg" onClick={() => handleMarkCampDonated(id)}>
+                                  Mark donated
+                                </button>
+                              )}
+                              {p.status === "awaiting_donor_confirm" && <span className="text-[10px] text-amber-600 font-black uppercase">Waiting donor</span>}
+                              {p.status === "completed" && <span className="text-[10px] text-green-600 font-black uppercase">Done</span>}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {campDetail.campStatus !== "completed" && (
+                    <Button variant="outline" onClick={handleCloseCampEvent} className="text-xs">
+                      Mark camp event complete
+                    </Button>
+                  )}
+                  {campDetail.campStatus === "completed" && campDetail.summaryReport && (
+                    <Button
+                      className="text-xs bg-indigo-600"
+                      onClick={() =>
+                        setCampReportModal({
+                          report: campDetail.summaryReport,
+                          title: campDetail.name,
+                        })
+                      }
+                    >
+                      Open summary report
+                    </Button>
+                  )}
+                  {campDetail.campStatus === "completed" ? (
+                    <p className="text-[10px] text-gray-500 font-bold w-full">This camp is closed. Donors no longer see it in public camp listings.</p>
+                  ) : (
+                    <p className="text-[10px] text-gray-400 font-bold w-full">Inventory increases only after the donor confirms the donation in their app.</p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {campReportModal && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl print:shadow-none">
+            <div id="camp-summary-print" className="p-8 space-y-4 border-b border-gray-100 print:border-0">
+              <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Camp summary report</p>
+              <h2 className="text-2xl font-black text-gray-900">{campReportModal.title}</h2>
+              {(() => {
+                const r = campReportModal.report;
+                if (!r) return null;
+                return (
+                  <dl className="space-y-3 text-sm">
+                    <div className="flex justify-between gap-4 border-b border-gray-50 pb-2">
+                      <dt className="text-gray-500 font-bold">Place</dt>
+                      <dd className="font-black text-gray-900 text-right">{r.place}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4 border-b border-gray-50 pb-2">
+                      <dt className="text-gray-500 font-bold">Scheduled camp date</dt>
+                      <dd className="font-black text-gray-900 text-right">
+                        {r.campScheduledDate ? new Date(r.campScheduledDate).toLocaleDateString() : "—"}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-4 border-b border-gray-50 pb-2">
+                      <dt className="text-gray-500 font-bold">Report generated</dt>
+                      <dd className="font-black text-gray-900 text-right">
+                        {r.generatedAt ? new Date(r.generatedAt).toLocaleString() : "—"}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-4 border-b border-gray-50 pb-2">
+                      <dt className="text-gray-500 font-bold">Days (camp on system)</dt>
+                      <dd className="font-black text-indigo-600 text-right">{r.daysCampRun}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4 border-b border-gray-50 pb-2">
+                      <dt className="text-gray-500 font-bold">Registered donors</dt>
+                      <dd className="font-black text-gray-900 text-right">{r.registeredDonorsCount}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4 border-b border-gray-50 pb-2">
+                      <dt className="text-gray-500 font-bold">Completed donations</dt>
+                      <dd className="font-black text-emerald-600 text-right">{r.completedDonationsCount}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4 border-b border-gray-50 pb-2">
+                      <dt className="text-gray-500 font-bold">Awaiting donor confirm</dt>
+                      <dd className="font-black text-amber-600 text-right">{r.awaitingDonorConfirmationCount}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4 border-b border-gray-50 pb-2">
+                      <dt className="text-gray-500 font-bold">Registered only (no donation)</dt>
+                      <dd className="font-black text-gray-900 text-right">{r.stillRegisteredOnlyCount}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4 pt-2">
+                      <dt className="text-gray-500 font-bold">Total units collected</dt>
+                      <dd className="font-black text-red-600 text-xl text-right">{r.totalUnitsCollected}</dd>
+                    </div>
+                  </dl>
+                );
+              })()}
+            </div>
+            <div className="p-4 flex gap-3 print:hidden">
+              <Button variant="outline" className="flex-1" onClick={() => setCampReportModal(null)}>
+                Close
+              </Button>
+              <Button className="flex-1 bg-indigo-600" onClick={() => window.print()}>
+                Print
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showCampForm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-2xl w-[400px] space-y-4">
@@ -482,7 +677,8 @@ const BloodBankDashboard = () => {
 
             <div className="flex gap-2">
               <button
-                onClick={createCamp}
+                type="button"
+                onClick={submitCreateCamp}
                 className="bg-blue-600 text-white px-4 py-2 rounded"
               >
                 Create

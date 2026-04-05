@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getRewardsList, claimReward, getMyRewards } from '../../api/api';
+import { getRewards, claimReward, getMyRewards } from '../../api/api';
 import { Card } from '../../components/Common/Card';
 import { Button } from '../../components/Common/Button';
 import { Loader2, Gift, Star, Award, CheckCircle2 } from 'lucide-react';
@@ -20,7 +20,7 @@ const Rewards = () => {
   const fetchData = async () => {
     try {
       const [rewardData, claimData] = await Promise.all([
-        getRewardsList(),
+        getRewards(),
         getMyRewards()
       ]);
       setRewards(rewardData);

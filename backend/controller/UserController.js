@@ -1,13 +1,12 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/UserModel.js');
-const { addPointsForDonation } = require('./GamificationController.js');
 
-// ── Helper: sign JWT ──────────────────────────
+// ── Helper: sign JWT ──────────────────────────────────────────
 const signToken = (id, role) =>
-  jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
 
-// ───────────────── REGISTER USER ─────────────────
+// ───────────────── REGISTER USER (Donor/Patient) ─────────────────
 const registerUser = async (req, res, next) => {
   try {
     const {
@@ -20,7 +19,7 @@ const registerUser = async (req, res, next) => {
     }
 
     if (!location || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
-      return res.status(400).json({ message: 'Valid location required [lng, lat]' });
+      return res.status(400).json({ message: 'location with type Point and coordinates [lng, lat] is required' });
     }
 
     const existing = await User.findOne({ $or: [{ email }, { phone }] });
@@ -47,14 +46,16 @@ const registerUser = async (req, res, next) => {
 // ───────────────── REGISTER BLOOD BANK ─────────────────
 const registerBloodBank = async (req, res, next) => {
   try {
-    const { name, email, phone, password, location, licenseInfo } = req.body;
+    const {
+      name, email, phone, password, location, licenseInfo
+    } = req.body;
 
     if (!name || !email || !phone || !password || !location || !licenseInfo) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    if (!Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
-      return res.status(400).json({ message: 'Valid location required [lng, lat]' });
+    if (!location || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
+      return res.status(400).json({ message: 'location with type Point and coordinates [lng, lat] is required' });
     }
 
     const existing = await User.findOne({ $or: [{ email }, { phone }] });
@@ -94,7 +95,9 @@ const login = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid email or password' });
 
     if (user.isLocked())
-      return res.status(403).json({ message: 'Account locked. Try later' });
+      return res.status(403).json({
+        message: `Account locked. Try later`
+      });
 
     const isMatch = await user.comparePassword(password);
 
@@ -129,7 +132,7 @@ const login = async (req, res, next) => {
     });
 
   } catch (err) {
-    next(err);
+    next(err); // ✅ FIX
   }
 };
 
@@ -138,12 +141,14 @@ const login = async (req, res, next) => {
 const getProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (!user)
+      return res.status(404).json({ message: 'User not found' });
 
     res.json({ user: user.toJSON() });
 
   } catch (err) {
-    next(err);
+    next(err); // ✅ FIX
   }
 };
 
@@ -151,16 +156,28 @@ const getProfile = async (req, res, next) => {
 // ───────────────── UPDATE PROFILE ─────────────────
 const updateProfile = async (req, res, next) => {
   try {
+    const allowed = [
+      'name', 'gender', 'dateOfBirth', 'location',
+      'bloodGroup', 'fcmToken', 'notificationPreferences',
+      'donorInfo.weight', 'donorInfo.isDonorAvailable',
+      'donorInfo.medicalConditions', 'profilePhoto'
+    ];
+
+    const updates = {};
+    allowed.forEach(field => {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    });
+
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { $set: req.body },
+      { $set: updates },
       { new: true, runValidators: true }
     );
 
     res.json({ message: 'Profile updated', user: user.toJSON() });
 
   } catch (err) {
-    next(err);
+    next(err); // ✅ FIX
   }
 };
 
@@ -170,10 +187,14 @@ const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
+    if (!currentPassword || !newPassword)
+      return res.status(400).json({ message: 'All fields required' });
+
     const user = await User.findById(req.user.id).select('+password');
 
     const isMatch = await user.comparePassword(currentPassword);
-    if (!isMatch) return res.status(400).json({ message: 'Wrong password' });
+    if (!isMatch)
+      return res.status(400).json({ message: 'Wrong password' });
 
     user.password = newPassword;
     await user.save();
@@ -181,7 +202,7 @@ const changePassword = async (req, res, next) => {
     res.json({ message: 'Password changed' });
 
   } catch (err) {
-    next(err);
+    next(err); // ✅ FIX
   }
 };
 
@@ -191,16 +212,21 @@ const checkEligibility = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
 
+    if (!user)
+      return res.status(404).json({ message: 'User not found' });
+
     res.json({
       canDonate: user.canDonate,
       age: user.age
     });
 
   } catch (err) {
-    next(err);
+    next(err); // ✅ FIX
   }
 };
 
+
+const { addPointsForDonation } = require('./GamificationController.js');
 
 // ───────────────── RECORD DONATION ─────────────────
 const recordDonation = async (req, res, next) => {
@@ -210,17 +236,15 @@ const recordDonation = async (req, res, next) => {
     if (!user)
       return res.status(404).json({ message: 'User not found' });
 
-    if (!user.canDonate)
-      return res.status(400).json({ message: 'Not eligible' });
-
+    // Awards points and updates donation count + badges
     await addPointsForDonation(user._id, 50);
 
     const updatedUser = await User.findById(user._id);
 
-    res.json({
-      message: 'Donation recorded and points awarded!',
+    res.json({ 
+      message: 'Donation recorded and points awarded!', 
       points: updatedUser.points,
-      donationCount: updatedUser.donorInfo?.donationCount || 0
+      donationCount: updatedUser.donorInfo.donationCount 
     });
 
   } catch (err) {
@@ -233,14 +257,16 @@ const recordDonation = async (req, res, next) => {
 const logout = async (req, res, next) => {
   try {
     await User.findByIdAndUpdate(req.user.id, { fcmToken: '' });
+
     res.json({ message: 'Logged out successfully' });
+
   } catch (err) {
     next(err);
   }
 };
 
 
-// ───────────────── BLOOD BANK LIST ─────────────────
+// ───────────────── VIEW BLOOD BANKS (For Users) ─────────────
 const getAllBloodBanks = async (req, res, next) => {
   try {
     const bloodBanks = await User.find({ role: 'bloodbank', isActive: true })
@@ -253,19 +279,22 @@ const getAllBloodBanks = async (req, res, next) => {
   }
 };
 
-
-// ───────────────── SAVE TOKEN ─────────────────
 const saveToken = async (req, res) => {
   try {
     const { userId, token } = req.body;
 
-    const user = await User.findByIdAndUpdate(userId, { fcmToken: token });
+    const user = await User.findByIdAndUpdate(userId, {
+      fcmToken: token
+    });
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     res.json({ message: "Token saved" });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };

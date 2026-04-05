@@ -24,16 +24,18 @@ const createBooking = async (req, res, next) => {
     });
 
     const bloodBanks = await User.find({ role: 'bloodbank', isActive: true }).select('_id fcmToken');
-    const tokens = bloodBanks.map(b => b.fcmToken).filter(Boolean);
-    const ids = bloodBanks.map(b => b._id);
+    const dbRecipientIds = bloodBanks.map((b) => b._id);
+    const fcmTokens = bloodBanks.map((b) => b.fcmToken).filter((t) => typeof t === 'string' && t.length > 0);
 
-    if (tokens.length > 0) {
-      await sendNotification(tokens, ids, {
+    try {
+      await sendNotification(fcmTokens, dbRecipientIds, {
         title: '🏠 New Home Blood Test Request',
         body: `${patientName} requested a ${testType} at ${address}`,
         type: 'booking_request',
         data: { bookingId: booking._id.toString() }
       });
+    } catch (notifErr) {
+      console.error('Notification Error:', notifErr.message);
     }
 
     res.status(201).json({ message: 'Blood test booked successfully', booking });
@@ -90,13 +92,25 @@ const acceptBooking = async (req, res, next) => {
     booking.status = 'Accepted';
     await booking.save();
 
-    if (booking.patient?.fcmToken) {
-      await sendNotification([booking.patient.fcmToken], [booking.patient._id], {
-        title: '✅ Home Test Accepted',
-        body: `Technician: ${assignedPerson} (${assignedContact})`,
-        type: 'booking_confirmed',
-        data: { bookingId: booking._id.toString() }
-      });
+    const patientId = booking.patient?._id || booking.patient;
+    const patientToken = booking.patient?.fcmToken;
+    try {
+      await sendNotification(
+        patientToken ? [patientToken] : [],
+        patientId ? [patientId] : [],
+        {
+          title: '✅ Home Test Accepted',
+          body: `Your ${booking.testType} request was accepted. Technician: ${assignedPerson} (${assignedContact})`,
+          type: 'booking_confirmed',
+          data: {
+            bookingId: booking._id.toString(),
+            assignedPerson,
+            assignedContact
+          }
+        }
+      );
+    } catch (notifErr) {
+      console.error('Notification Error:', notifErr.message);
     }
 
     res.json({ message: 'Booking accepted', booking });
@@ -116,13 +130,21 @@ const rejectBooking = async (req, res, next) => {
     booking.status = 'Rejected';
     await booking.save();
 
-    if (booking.patient?.fcmToken) {
-      await sendNotification([booking.patient.fcmToken], [booking.patient._id], {
-        title: '❌ Home Test Rejected',
-        body: `Your ${booking.testType} request was rejected.`,
-        type: 'booking_cancelled',
-        data: { bookingId: booking._id.toString() }
-      });
+    const patientId = booking.patient?._id || booking.patient;
+    const patientToken = booking.patient?.fcmToken;
+    try {
+      await sendNotification(
+        patientToken ? [patientToken] : [],
+        patientId ? [patientId] : [],
+        {
+          title: '❌ Home Test Rejected',
+          body: `Your ${booking.testType} request was rejected by the blood bank.`,
+          type: 'booking_cancelled',
+          data: { bookingId: booking._id.toString() }
+        }
+      );
+    } catch (notifErr) {
+      console.error('Notification Error:', notifErr.message);
     }
 
     res.json({ message: 'Booking rejected', booking });
@@ -147,13 +169,21 @@ const uploadReport = async (req, res, next) => {
     booking.status = 'Completed';
     await booking.save();
 
-    if (booking.patient?.fcmToken) {
-      await sendNotification([booking.patient.fcmToken], [booking.patient._id], {
-        title: '📄 Report Ready',
-        body: `Your ${booking.testType} report is available.`,
-        type: 'report_ready',
-        data: { bookingId: booking._id.toString() }
-      });
+    const patientId = booking.patient?._id || booking.patient;
+    const patientToken = booking.patient?.fcmToken;
+    try {
+      await sendNotification(
+        patientToken ? [patientToken] : [],
+        patientId ? [patientId] : [],
+        {
+          title: '📄 Report Ready',
+          body: `Your ${booking.testType} report is available.`,
+          type: 'report_ready',
+          data: { bookingId: booking._id.toString(), reportUrl: String(reportUrl || '') }
+        }
+      );
+    } catch (notifErr) {
+      console.error('Notification Error:', notifErr.message);
     }
 
     res.json({ message: 'Report uploaded', booking });
@@ -190,15 +220,39 @@ const getBookingById = async (req, res, next) => {
 
 const cancelBooking = async (req, res, next) => {
   try {
-    const booking = await BloodTestBooking.findById(req.params.id);
+    const booking = await BloodTestBooking.findById(req.params.id)
+      .populate('patient', 'name phone fcmToken')
+      .populate('bloodBank', 'name phone fcmToken');
+
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    if (booking.patient.toString() !== req.user.id && req.user.role !== 'admin') {
+    const patientRef = booking.patient?._id || booking.patient;
+    if (patientRef.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
+    const hadBank = booking.bloodBank && booking.status === 'Accepted';
     booking.status = 'Rejected';
     await booking.save();
+
+    if (hadBank && booking.bloodBank) {
+      const bankId = booking.bloodBank._id || booking.bloodBank;
+      const bankToken = booking.bloodBank.fcmToken;
+      try {
+        await sendNotification(
+          bankToken ? [bankToken] : [],
+          [bankId],
+          {
+            title: 'Home test cancelled',
+            body: `${booking.patientName || 'A patient'} cancelled their ${booking.testType} booking.`,
+            type: 'booking_cancelled',
+            data: { bookingId: booking._id.toString() }
+          }
+        );
+      } catch (notifErr) {
+        console.error('Notification Error:', notifErr.message);
+      }
+    }
 
     res.json({ message: 'Booking cancelled successfully' });
   } catch (err) {

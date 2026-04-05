@@ -99,16 +99,18 @@ const claimReward = async (req, res, next) => {
 
     // Notify Blood Banks (if applicable) or Admin
     const bloodBanks = await User.find({ role: 'bloodbank', isActive: true }).select('_id fcmToken');
-    const tokens = bloodBanks.map(b => b.fcmToken).filter(Boolean);
-    const ids = bloodBanks.map(b => b._id);
+    const ids = bloodBanks.map((b) => b._id);
+    const tokens = bloodBanks.map((b) => b.fcmToken).filter((t) => typeof t === 'string' && t.length > 0);
 
-    if (tokens.length > 0) {
+    try {
       await sendNotification(tokens, ids, {
         title: '🎁 Reward Claimed',
         body: `${user.name} has claimed the reward: ${reward.title}.`,
         type: 'general',
         data: { claimId: claim._id.toString() }
       });
+    } catch (notifErr) {
+      console.error('Notification Error:', notifErr.message);
     }
 
     res.json({ message: 'Reward claimed successfully', claim, remainingPoints: user.points });
@@ -146,18 +148,23 @@ const addPointsForDonation = async (userId, pointsToAdd = 50) => {
   if (count === 10) newBadge = { name: 'Silver Donor', icon: '🥈' };
   if (count === 20) newBadge = { name: 'Gold Donor', icon: '🥇' };
 
-  if (newBadge) {
-    user.badges.push({ ...newBadge, awardedAt: new Date() });
-    
-    // Notify user about new badge
-    if (user.fcmToken) {
-      await sendNotification([user.fcmToken], [user._id], {
-        title: '🎉 New Badge Earned!',
-        body: `Congratulations! You've earned the ${newBadge.name} badge.`,
-        type: 'general'
-      });
+    if (newBadge) {
+      user.badges.push({ ...newBadge, awardedAt: new Date() });
+
+      try {
+        await sendNotification(
+          user.fcmToken ? [user.fcmToken] : [],
+          [user._id],
+          {
+            title: '🎉 New Badge Earned!',
+            body: `Congratulations! You've earned the ${newBadge.name} badge.`,
+            type: 'general'
+          }
+        );
+      } catch (notifErr) {
+        console.error('Notification Error:', notifErr.message);
+      }
     }
-  }
 
   await user.save();
 };

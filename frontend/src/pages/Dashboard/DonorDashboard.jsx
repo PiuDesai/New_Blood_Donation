@@ -1,17 +1,19 @@
-<<<<<<< HEAD
-import { Heart, Activity, Droplets, Calendar, Clock, MapPin, Search, Star, ShieldCheck, CheckCircle2, User, ArrowRight, Phone, ArrowLeft, HelpCircle, Award, CheckCircle } from "lucide-react";
-=======
 import { Heart, Activity, Droplets, Calendar, Clock, MapPin, Search, Star, ShieldCheck, CheckCircle2, User, ArrowRight, Phone, ArrowLeft, HelpCircle, Award, CheckCircle, Building2 } from "lucide-react";
->>>>>>> old-state
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
 import { useAuth } from "../../context/AuthContext";
-<<<<<<< HEAD
-import { getDonorStats, getUrgentBloodRequests, getAllCamps, acceptBloodRequest, markDonorComplete } from "../../api/api";
-=======
-import { getDonorStats, getUrgentBloodRequests, getAllCamps, acceptBloodRequest, verifyRequestCompletion } from "../../api/api";
->>>>>>> old-state
+import {
+  getDonorStats,
+  getUrgentBloodRequests,
+  getAllCamps,
+  acceptBloodRequest,
+  verifyRequestCompletion,
+  registerForCamp,
+  getMyCampRegistrations,
+  confirmCampDonation,
+  declineCampDonation,
+} from "../../api/api";
 import { StarRating } from "../../components/Common/RatingComponent";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +33,8 @@ const DonorDashboard = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("requests");
   const [accepting, setAccepting] = useState(null);
+  const [eligibilityModal, setEligibilityModal] = useState(null);
+  const [myCampRegs, setMyCampRegs] = useState({});
 
   const isHistoryPage = location.pathname.includes("/history");
   const isSchedulePage = location.pathname.includes("/schedule");
@@ -51,6 +55,16 @@ const DonorDashboard = () => {
       setStats(statsData);
       setRequests(requestsData);
       setCamps(campsData);
+      try {
+        const regs = await getMyCampRegistrations();
+        const map = {};
+        (regs || []).forEach((r) => {
+          map[String(r.camp._id)] = r.participation;
+        });
+        setMyCampRegs(map);
+      } catch {
+        setMyCampRegs({});
+      }
     } catch (err) {
       console.error("Failed to fetch donor data:", err);
       setError(err?.response?.data?.message || err?.message || "Could not load dashboard data.");
@@ -66,7 +80,15 @@ const DonorDashboard = () => {
       toast.success("Request accepted successfully!");
       fetchData(); // Refresh
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to accept request");
+      const d = err?.response?.data;
+      if (d?.code === "NOT_ELIGIBLE") {
+        setEligibilityModal({
+          daysRemaining: d.daysRemaining,
+          nextEligibleAt: d.nextEligibleAt,
+        });
+      } else {
+        toast.error(d?.message || "Failed to accept request");
+      }
     } finally {
       setAccepting(null);
     }
@@ -74,11 +96,7 @@ const DonorDashboard = () => {
 
   const handleMarkComplete = async (requestId) => {
     try {
-<<<<<<< HEAD
-      await markDonorComplete(requestId);
-=======
       await verifyRequestCompletion(requestId, "donor");
->>>>>>> old-state
       toast.success("Marked as completed! Waiting for patient confirmation.");
       fetchData();
     } catch (err) {
@@ -86,31 +104,58 @@ const DonorDashboard = () => {
     }
   };
   const participateInCamp = async (campId) => {
-  try {
-    const token = localStorage.getItem("token");
-
-    const res = await fetch("http://localhost:5000/api/camps/register-donor", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ campId })
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      alert("Successfully registered for camp!");
-    } else {
-      alert(data.message);
+    try {
+      await registerForCamp(campId);
+      toast.success("Registered for camp!");
+      const regs = await getMyCampRegistrations();
+      const map = {};
+      (regs || []).forEach((r) => {
+        map[String(r.camp._id)] = r.participation;
+      });
+      setMyCampRegs(map);
+    } catch (err) {
+      const d = err?.response?.data;
+      if (d?.code === "NOT_ELIGIBLE") {
+        setEligibilityModal({
+          daysRemaining: d.daysRemaining,
+          nextEligibleAt: d.nextEligibleAt,
+        });
+      } else {
+        toast.error(d?.message || "Could not register for camp");
+      }
     }
+  };
 
-  } catch (err) {
-    console.error(err);
-    alert("Error registering for camp");
-  }
-};
+  const handleConfirmCampDonation = async (campId) => {
+    try {
+      await confirmCampDonation(campId);
+      toast.success("Thank you! Your certificate is available under Certificates.");
+      const regs = await getMyCampRegistrations();
+      const map = {};
+      (regs || []).forEach((r) => {
+        map[String(r.camp._id)] = r.participation;
+      });
+      setMyCampRegs(map);
+      fetchData();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not confirm");
+    }
+  };
+
+  const handleDeclineCampDonation = async (campId) => {
+    try {
+      await declineCampDonation(campId);
+      toast.success("Blood bank has been notified.");
+      const regs = await getMyCampRegistrations();
+      const map = {};
+      (regs || []).forEach((r) => {
+        map[String(r.camp._id)] = r.participation;
+      });
+      setMyCampRegs(map);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not decline");
+    }
+  };
 
   if (user && String(user.role).toLowerCase() !== "donor") {
     return <Navigate to={dashboardPath(user.role)} replace />;
@@ -127,16 +172,10 @@ const DonorDashboard = () => {
     time: new Date(req.createdAt).toLocaleTimeString(),
     status: req.status,
     requester: req.requester,
-<<<<<<< HEAD
-    isDonorConfirmed: req.isDonorConfirmed,
-    isPatientConfirmed: req.isPatientConfirmed,
-    acceptedByRole: req.acceptedByRole
-=======
     isDonorConfirmed: req.completedByDonor,
     isPatientConfirmed: req.completedByPatient,
     acceptedByRole: req.acceptedByRole,
     acceptedBy: req.acceptedBy
->>>>>>> old-state
   }));
 
   const donationHistory = stats?.history || [];
@@ -146,7 +185,9 @@ const DonorDashboard = () => {
     title: camp.name,
     date: new Date(camp.date).toLocaleDateString(),
     location: camp.location,
-    time: "All Day"
+    time: "All Day",
+    campStatus: camp.campStatus,
+    bankName: camp.createdBy?.name,
   }));
 
   if (loading) return (
@@ -185,32 +226,76 @@ const DonorDashboard = () => {
 
   if (isSchedulePage) {
     return (
-      <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate(dashboardPath("donor"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Button>
-        <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
-          <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-10">Upcoming Donation Camps</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {nearbyCamps.map((camp, i) => (
-              <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }} className="p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group relative overflow-hidden">
-                <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 font-black text-xl mb-6 group-hover:bg-red-600 group-hover:text-white transition-all duration-300"><Calendar size={28} /></div>
-                <h4 className="font-black text-2xl text-gray-900 mb-2">{camp.title}</h4>
-                <div className="space-y-2 mb-8">
-                  <p className="text-gray-400 font-bold text-sm flex items-center gap-2"><MapPin size={16} /> {camp.location}</p>
-                  <p className="text-gray-400 font-bold text-sm flex items-center gap-2"><Clock size={16} /> {camp.time}</p>
-                </div>
-<Button
-  onClick={() => participateInCamp(camp.id)}
-  className="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 shadow-lg shadow-red-100 font-black uppercase tracking-widest text-[10px]"
->
-  Participate
-</Button>
-              </motion.div>
-            ))}
+      <>
+        <div className="space-y-10 pb-20">
+          <Button onClick={() => navigate(dashboardPath("donor"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+            <ArrowLeft size={16} /> Back to Dashboard
+          </Button>
+          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
+            <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-10">Upcoming Donation Camps</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {nearbyCamps.map((camp, i) => {
+                const part = myCampRegs[String(camp.id)];
+                const canRegister = camp.campStatus !== "completed" && !part;
+                return (
+                  <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }} className="p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group relative overflow-hidden">
+                    <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 font-black text-xl mb-6 group-hover:bg-red-600 group-hover:text-white transition-all duration-300"><Calendar size={28} /></div>
+                    <h4 className="font-black text-2xl text-gray-900 mb-2">{camp.title}</h4>
+                    {camp.bankName && <p className="text-xs text-blue-600 font-black uppercase mb-2">By {camp.bankName}</p>}
+                    <div className="space-y-2 mb-6">
+                      <p className="text-gray-400 font-bold text-sm flex items-center gap-2"><MapPin size={16} /> {camp.location}</p>
+                      <p className="text-gray-400 font-bold text-sm flex items-center gap-2"><Clock size={16} /> {camp.time}</p>
+                    </div>
+                    {part?.status === "awaiting_donor_confirm" && (
+                      <div className="space-y-3 mb-4 p-4 rounded-2xl bg-amber-50 border border-amber-100">
+                        <p className="text-xs font-black text-amber-800 uppercase">Blood bank marked your donation — confirm only if you actually donated.</p>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button onClick={() => handleConfirmCampDonation(camp.id)} className="flex-1 h-11 bg-emerald-600 text-[10px] font-black uppercase">Yes, I donated</Button>
+                          <Button variant="outline" onClick={() => handleDeclineCampDonation(camp.id)} className="flex-1 h-11 text-[10px] font-black uppercase border-red-200 text-red-600">No, correct this</Button>
+                        </div>
+                      </div>
+                    )}
+                    {part?.status === "completed" && (
+                      <p className="text-xs font-black text-emerald-600 uppercase mb-4">Completed — view certificate under Certificates in the sidebar.</p>
+                    )}
+                    {part?.status === "registered" && (
+                      <p className="text-xs font-bold text-gray-500 mb-4">Registered — attend on camp day. The bank will record your donation after.</p>
+                    )}
+                    {canRegister && (
+                      <Button
+                        onClick={() => participateInCamp(camp.id)}
+                        className="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 shadow-lg shadow-red-100 font-black uppercase tracking-widest text-[10px]"
+                      >
+                        Participate
+                      </Button>
+                    )}
+                    {camp.campStatus === "completed" && !part && (
+                      <p className="text-xs text-gray-400 font-bold">This camp is closed.</p>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
+        {eligibilityModal && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-8 max-w-md shadow-2xl">
+              <h4 className="text-xl font-black text-gray-900 mb-2">Not eligible yet</h4>
+              <p className="text-gray-600 font-bold text-sm mb-4">
+                Whole blood donations require a <strong>90-day</strong> gap. You can donate again in{" "}
+                <strong>{eligibilityModal.daysRemaining}</strong> day(s).
+              </p>
+              {eligibilityModal.nextEligibleAt && (
+                <p className="text-xs text-gray-400 font-bold mb-6">
+                  Earliest date: {new Date(eligibilityModal.nextEligibleAt).toLocaleDateString()}
+                </p>
+              )}
+              <Button className="w-full bg-red-600" onClick={() => setEligibilityModal(null)}>OK</Button>
+            </div>
           </div>
-        </Card>
-      </div>
+        )}
+      </>
     );
   }
 
@@ -257,6 +342,23 @@ const DonorDashboard = () => {
 
   return (
     <div className="space-y-10 pb-20">
+      {eligibilityModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-md shadow-2xl">
+            <h4 className="text-xl font-black text-gray-900 mb-2">Not eligible yet</h4>
+            <p className="text-gray-600 font-bold text-sm mb-4">
+              Whole blood donations require a <strong>90-day</strong> gap. You can donate again in{" "}
+              <strong>{eligibilityModal.daysRemaining}</strong> day(s).
+            </p>
+            {eligibilityModal.nextEligibleAt && (
+              <p className="text-xs text-gray-400 font-bold mb-6">
+                Earliest date: {new Date(eligibilityModal.nextEligibleAt).toLocaleDateString()}
+              </p>
+            )}
+            <Button className="w-full bg-red-600" onClick={() => setEligibilityModal(null)}>OK</Button>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
@@ -294,7 +396,6 @@ const DonorDashboard = () => {
           value={user?.points ?? 0} 
           icon={Star} 
           color="from-yellow-400 to-amber-600" 
-<<<<<<< HEAD
         />
         <StatsCard 
           title="Rating" 
@@ -308,21 +409,6 @@ const DonorDashboard = () => {
           icon={Activity} 
           color="from-blue-500 to-indigo-600" 
         />
-=======
-        />
-        <StatsCard 
-          title="Rating" 
-          value={user?.rating?.toFixed(1) ?? "0.0"} 
-          icon={ShieldCheck} 
-          color="from-emerald-400 to-teal-600" 
-        />
-        <StatsCard 
-          title="Lives Saved" 
-          value={user?.donorInfo?.donationCount ? user.donorInfo.donationCount * 3 : 0} 
-          icon={Activity} 
-          color="from-blue-500 to-indigo-600" 
-        />
->>>>>>> old-state
       </div>
 
       {/* Eligibility & Rewards */}
@@ -414,11 +500,7 @@ const DonorDashboard = () => {
                     </div>
                     
                     <div className="flex flex-col gap-3 min-w-[150px]">
-<<<<<<< HEAD
-                      {req.status === "Pending" ? (
-=======
                       {(req.status === "Pending" || req.status === "Rejected") ? (
->>>>>>> old-state
                         <Button 
                           onClick={() => handleAcceptRequest(req.id)}
                           disabled={accepting === req.id}
@@ -426,11 +508,7 @@ const DonorDashboard = () => {
                         >
                           {accepting === req.id ? "Accepting..." : "Accept Request"}
                         </Button>
-<<<<<<< HEAD
-                      ) : req.status === "Accepted" ? (
-=======
                       ) : (req.status === "Accepted" && (req.acceptedBy === user?._id || req.acceptedBy?._id === user?._id)) ? (
->>>>>>> old-state
                         <div className="space-y-3">
                           <span className="block text-center px-4 py-2 rounded-xl bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest border border-emerald-100">Accepted by You</span>
                           
@@ -454,8 +532,6 @@ const DonorDashboard = () => {
                             </div>
                           )}
                         </div>
-<<<<<<< HEAD
-=======
                       ) : req.status === "Accepted" && req.acceptedByRole === "bloodbank" ? (
                         <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
                           <Building2 size={16} />
@@ -466,7 +542,6 @@ const DonorDashboard = () => {
                           <User size={16} />
                           <span className="text-[10px] font-black uppercase">Accepted by Another Donor</span>
                         </div>
->>>>>>> old-state
                       ) : (
                         <span className="block text-center px-4 py-2 rounded-xl bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest border border-gray-200">{req.status}</span>
                       )}

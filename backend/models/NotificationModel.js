@@ -20,6 +20,7 @@ const notificationSchema = new mongoose.Schema(
         'emergency_blood_request',
         'blood_request_fulfilled',
         'donation_reminder',
+        'booking_request',
         'booking_confirmed',
         'booking_cancelled',
         'report_ready',
@@ -27,7 +28,10 @@ const notificationSchema = new mongoose.Schema(
         'system_alert',
         'general',
         'request_accepted',
-        'request_cancelled'
+        'request_cancelled',
+        'blood_request_rejected',
+        'camp_donation_pending',
+        'camp_certificate_ready'
       ],
       required: true
     },
