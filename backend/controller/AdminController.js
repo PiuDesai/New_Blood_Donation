@@ -29,10 +29,9 @@ exports.adminLogin = (req, res) => {
 
 exports.getAllDonors = async (req, res) => {
   try {
-    const donors = await User.find({ role: "donor" })
+    const donors = await User.find({ role: "donor", isApproved: true })
       .select("-password")
       .sort({ createdAt: -1 });
-
     res.json({ success: true, donors });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -66,8 +65,7 @@ exports.removeUser = async (req, res) => {
     const { id } = req.params;
     const user = await User.findByIdAndUpdate(
       id,
-      { isActive: false },
-      { new: true }
+      { isActive: false }
     ).select("-password");
 
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
