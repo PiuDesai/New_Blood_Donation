@@ -19,6 +19,7 @@ import {
   getAdminStats,
   getPendingBloodBanks,
   approveBloodBank,
+  removeUser,
 } from "../../api/api";
 
 import toast from "react-hot-toast";
@@ -47,7 +48,7 @@ const AdminDashboard = () => {
         // ✅ HANDLE DIFFERENT API STRUCTURES
         const banks = Array.isArray(pendingRes)
           ? pendingRes
-          : pendingRes?.data || pendingRes?.pendingBanks || [];
+          : pendingRes?.data || pendingRes?.pendingBanks || pendingRes?.bloodbanks || [];
 
         // ✅ MAP SAFELY
         const formatted = banks.map((u) => ({
@@ -87,6 +88,18 @@ const AdminDashboard = () => {
       toast.error(
         err?.response?.data?.message || "Approval failed"
       );
+    }
+  };
+
+  // ✅ REJECT FUNCTION
+  const handleReject = async (id) => {
+    if (!window.confirm("Are you sure you want to reject and deactivate this blood bank?")) return;
+    try {
+      await removeUser(id);
+      toast.success("Blood bank rejected and deactivated");
+      setPendingUsers((prev) => prev.filter((u) => u.id !== id));
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Rejection failed");
     }
   };
 
@@ -175,7 +188,10 @@ const AdminDashboard = () => {
                     <UserCheck size={16} /> Approve
                   </button>
 
-                  <button className="px-4 py-2 bg-red-500 text-white rounded-lg flex items-center gap-2">
+                  <button 
+                    onClick={() => handleReject(item.id)}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg flex items-center gap-2"
+                  >
                     <UserX size={16} /> Reject
                   </button>
                 </div>
