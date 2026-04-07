@@ -12,6 +12,7 @@ import Register from "./pages/Auth/Register";
 import RegisterBloodBank from "./pages/Auth/RegisterBloodBank";
 import AdminDashboard from "./pages/Dashboard/AdminDashboard";
 import DonorDashboard from "./pages/Dashboard/DonorDashboard";
+import DonorCertificates from "./pages/Dashboard/DonorCertificates";
 import PatientDashboard from "./pages/Dashboard/PatientDashboard";
 import BloodBankDashboard from "./pages/Dashboard/BloodBankDashboard";
 import AdminLogin from "./pages/Auth/AdminLogin";
@@ -20,16 +21,20 @@ import PendingBloodBanks from "./pages/Admin/PendingBloodBanks";
 import AllDonors from "./pages/Admin/AllDonors";
 import AllBloodBanks from "./pages/Admin/AllBloodBanks";
 import Home from "./pages/Home";
-import HomeBloodTest from "./pages/Patient/HomeBloodTest";
+import HomeBloodTest from "./pages/Patient/HomeBloodTest
 import Profile from "./pages/Common/Profile";
 import Leaderboard from "./pages/Dashboard/Leaderboard";
 import Rewards from "./pages/Dashboard/Rewards";
-import DonorCertificates from "./pages/Dashboard/DonorCertificates";
+
+import Leaderboard from "./pages/Dashboard/Leaderboard";
+
+
 import BloodBankBookings from "./pages/BloodBank/BloodBankBookings";
 import BloodBankNearbyDonors from "./pages/BloodBank/BloodBankNearbyDonors";
 
 
 import ReportAnalyzer from "./pages/Patient/ReportAnalyzer";
+
 
 function App() {
   return (
@@ -100,6 +105,7 @@ function App() {
           <Route path="settings" element={<Profile />} />
           <Route path="profile" element={<Profile />} />
           <Route path="help" element={<PatientDashboard />} />
+          <Route path="report-analyzer" element={<ReportAnalyzer />} />
         </Route>
 
         {/* Blood Bank Routes */}
