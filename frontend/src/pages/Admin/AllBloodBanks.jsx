@@ -60,19 +60,25 @@ const AllBloodBanks = () => {
   };
 
   const handleRemove = async (id) => {
-    const ok = window.confirm("Deactivate this blood bank?");
-    if (!ok) return;
+  const ok = window.confirm("Move Blood Bank to pending?");
+  if (!ok) return;
 
-    try {
-      const res = await removeUser(id);
-      if (!res?.success) throw new Error(res?.message || "Remove failed");
-      toast.success("Blood bank deactivated");
-      setBanks((prev) => prev.map((u) => (u._id === id ? { ...u, isActive: false } : u)));
-      if (selected?._id === id) setSelected((s) => (s ? { ...s, isActive: false } : s));
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
-  };
+  try {
+    const res = await removeUser(id);
+
+    if (!res?.success) throw new Error(res?.message);
+
+    toast.success("Moved to pending approvals");
+
+    // ✅ REMOVE FROM UI
+    setDonors((prev) => prev.filter((u) => u._id !== id));
+
+    if (selected?._id === id) setSelected(null);
+
+  } catch (err) {
+    toast.error(getErrorMessage(err));
+  }
+};
 
   return (
     <div className="space-y-8">

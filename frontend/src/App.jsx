@@ -12,6 +12,7 @@ import Register from "./pages/Auth/Register";
 import RegisterBloodBank from "./pages/Auth/RegisterBloodBank";
 import AdminDashboard from "./pages/Dashboard/AdminDashboard";
 import DonorDashboard from "./pages/Dashboard/DonorDashboard";
+import DonorCertificates from "./pages/Dashboard/DonorCertificates";
 import PatientDashboard from "./pages/Dashboard/PatientDashboard";
 import BloodBankDashboard from "./pages/Dashboard/BloodBankDashboard";
 import AdminLogin from "./pages/Auth/AdminLogin";
@@ -21,7 +22,14 @@ import AllDonors from "./pages/Admin/AllDonors";
 import AllBloodBanks from "./pages/Admin/AllBloodBanks";
 import Home from "./pages/Home";
 import HomeBloodTest from "./pages/Patient/HomeBloodTest";
+import Leaderboard from "./pages/Dashboard/Leaderboard";
+import Rewards from "./pages/Dashboard/Rewards";
+import BloodBankBookings from "./pages/BloodBank/BloodBankBookings";
+import BloodBankNearbyDonors from "./pages/BloodBank/BloodBankNearbyDonors";
+
+
 import ReportAnalyzer from "./pages/Patient/ReportAnalyzer";
+
 
 function App() {
   return (
@@ -65,6 +73,9 @@ function App() {
           <Route path="dashboard" element={<DonorDashboard />} />
           <Route path="history" element={<DonorDashboard />} />
           <Route path="schedule" element={<DonorDashboard />} />
+          <Route path="certificates" element={<DonorCertificates />} />
+          <Route path="leaderboard" element={<Leaderboard />} />
+          <Route path="rewards" element={<Rewards />} />
           <Route path="settings" element={<DonorDashboard />} />
           <Route path="help" element={<DonorDashboard />} />
         </Route>
@@ -99,7 +110,8 @@ function App() {
         >
           <Route index element={<BloodBankDashboard />} />
           <Route path="requests" element={<BloodBankDashboard />} />
-          <Route path="donations" element={<BloodBankDashboard />} />
+          <Route path="test-bookings" element={<BloodBankBookings />} />
+          <Route path="nearby-donors" element={<BloodBankNearbyDonors />} />
           <Route path="settings" element={<BloodBankDashboard />} />
           <Route path="help" element={<BloodBankDashboard />} />
         </Route>

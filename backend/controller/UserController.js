@@ -3,7 +3,7 @@ const User = require('../models/UserModel.js');
 
 // ── Helper: sign JWT ──────────────────────────────────────────
 const signToken = (id, role) =>
-  jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
 
 // ───────────────── REGISTER USER (Donor/Patient) ─────────────────
@@ -226,6 +226,8 @@ const checkEligibility = async (req, res, next) => {
 };
 
 
+const { addPointsForDonation } = require('./GamificationController.js');
+
 // ───────────────── RECORD DONATION ─────────────────
 const recordDonation = async (req, res, next) => {
   try {
@@ -234,18 +236,19 @@ const recordDonation = async (req, res, next) => {
     if (!user)
       return res.status(404).json({ message: 'User not found' });
 
-    if (!user.canDonate)
-      return res.status(400).json({ message: 'Not eligible' });
+    // Awards points and updates donation count + badges
+    await addPointsForDonation(user._id, 50);
 
-    user.donorInfo.lastDonatedAt = new Date();
-    user.donorInfo.donationCount += 1;
+    const updatedUser = await User.findById(user._id);
 
-    await user.save();
-
-    res.json({ message: 'Donation recorded' });
+    res.json({ 
+      message: 'Donation recorded and points awarded!', 
+      points: updatedUser.points,
+      donationCount: updatedUser.donorInfo.donationCount 
+    });
 
   } catch (err) {
-    next(err); // ✅ FIX
+    next(err);
   }
 };
 
@@ -276,6 +279,26 @@ const getAllBloodBanks = async (req, res, next) => {
   }
 };
 
+const saveToken = async (req, res) => {
+  try {
+    const { userId, token } = req.body;
+
+    const user = await User.findByIdAndUpdate(userId, {
+      fcmToken: token
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ message: "Token saved" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 module.exports = {
   registerUser,
@@ -287,5 +310,6 @@ module.exports = {
   checkEligibility,
   recordDonation,
   logout,
-  getAllBloodBanks
+  getAllBloodBanks,
+  saveToken
 };

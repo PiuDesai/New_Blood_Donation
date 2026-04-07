@@ -60,19 +60,25 @@ const AllDonors = () => {
   };
 
   const handleRemove = async (id) => {
-    const ok = window.confirm("Deactivate this donor?");
-    if (!ok) return;
+  const ok = window.confirm("Move Donor to pending?");
+  if (!ok) return;
 
-    try {
-      const res = await removeUser(id);
-      if (!res?.success) throw new Error(res?.message || "Remove failed");
-      toast.success("Donor deactivated");
-      setDonors((prev) => prev.map((u) => (u._id === id ? { ...u, isActive: false } : u)));
-      if (selected?._id === id) setSelected((s) => (s ? { ...s, isActive: false } : s));
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
-  };
+  try {
+    const res = await removeUser(id);
+
+    if (!res?.success) throw new Error(res?.message);
+
+    toast.success("Moved to pending approvals");
+
+    // ✅ REMOVE FROM UI
+    setBanks((prev) => prev.filter((u) => u._id !== id));
+
+    if (selected?._id === id) setSelected(null);
+
+  } catch (err) {
+    toast.error(getErrorMessage(err));
+  }
+};
 
   return (
     <div className="space-y-8">

@@ -1,199 +1,260 @@
 const BloodTestBooking = require('../models/BloodTestBookingModel.js');
-const Notification = require('../models/NotificationModel.js');
 const User = require('../models/UserModel.js');
+const sendNotification = require('../utils/sendNotification.js');
 
-// ── Test price map ──────────────────────────────────────────────
-const TEST_PRICES = {
-  'Complete Blood Count (CBC)': 299,
-  'Liver Function Test (LFT)': 599,
-  'Kidney Function Test (KFT)': 599,
-  'Blood Sugar (Fasting)': 149,
-  'Blood Sugar (Random)': 149,
-  'HbA1c': 399,
-  'Lipid Profile': 499,
-  'Thyroid Function Test (TFT)': 699,
-  'HIV Test': 499,
-  'Hepatitis B': 399,
-  'Hepatitis C': 399,
-  'Blood Group & Rh Typing': 199,
-  'Malaria Test': 299,
-  'Dengue Test': 499,
-  'Widal Test': 249,
-  'Vitamin D': 799,
-  'Vitamin B12': 599,
-  'Iron Studies': 449,
-  'ESR': 149,
-  'CRP (C-Reactive Protein)': 349
-};
-
-// ── Create Booking ──────────────────────────────────────────────
+// ── Create Booking (Patient) ───────────────────────────────────
 const createBooking = async (req, res, next) => {
   try {
-    const {
-      testType, preferredDate, preferredTimeSlot,
-      collectionType, address, patientName, patientAge, contactPhone, notes
-    } = req.body;
+    const { patientName, address, phone, testType } = req.body;
 
-    if (!testType || !preferredDate || !patientName || !patientAge || !contactPhone) {
-      return res.status(400).json({ message: 'All required fields must be provided' });
+    if (!patientName || !address || !phone || !testType) {
+      return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const bookingDate = new Date(preferredDate);
-    if (bookingDate < new Date()) {
-      return res.status(400).json({ message: 'Preferred date must be in the future' });
-    }
+    const mapLink = `https://www.google.com/maps?q=${encodeURIComponent(address)}`;
 
     const booking = await BloodTestBooking.create({
-      user: req.user.id,
-      testType,
-      preferredDate: bookingDate,
-      preferredTimeSlot: preferredTimeSlot || '8:00 AM - 10:00 AM',
-      collectionType: collectionType || 'home_collection',
-      address,
+      patient: req.user.id,
       patientName,
-      patientAge,
-      contactPhone,
-      notes: notes || '',
-      price: TEST_PRICES[testType] || 299
+      address,
+      mapLink,
+      phone,
+      testType,
+      status: 'Pending'
     });
 
-    // Send confirmation notification
-    await Notification.create({
-      recipient: req.user.id,
-      type: 'booking_confirmed',
-      title: '🧪 Blood Test Booking Confirmed',
-      message: `Your ${testType} has been booked for ${bookingDate.toDateString()} (${preferredTimeSlot || '8:00 AM - 10:00 AM'}). Our technician will contact you shortly.`,
-      data: { bookingId: booking._id, testType },
-      isEmergency: false
-    });
+    const bloodBanks = await User.find({ role: 'bloodbank', isActive: true }).select('_id fcmToken');
+    const dbRecipientIds = bloodBanks.map((b) => b._id);
+    const fcmTokens = bloodBanks.map((b) => b.fcmToken).filter((t) => typeof t === 'string' && t.length > 0);
 
-    res.status(201).json({
-      message: 'Blood test booked successfully',
-      booking
-    });
+    try {
+      await sendNotification(fcmTokens, dbRecipientIds, {
+        title: '🏠 New Home Blood Test Request',
+        body: `${patientName} requested a ${testType} at ${address}`,
+        type: 'booking_request',
+        data: { bookingId: booking._id.toString() }
+      });
+    } catch (notifErr) {
+      console.error('Notification Error:', notifErr.message);
+    }
 
+    res.status(201).json({ message: 'Blood test booked successfully', booking });
   } catch (err) {
     next(err);
   }
 };
 
-// ── Get My Bookings ─────────────────────────────────────────────
+// ── Get My Bookings (Patient) ──────────────────────────────────
 const getMyBookings = async (req, res, next) => {
   try {
-    const { status, page = 1, limit = 10 } = req.query;
+    const bookings = await BloodTestBooking.find({ patient: req.user.id })
+      .populate('bloodBank', 'name phone')
+      .sort({ createdAt: -1 });
 
-    const filter = { user: req.user.id };
+    res.json(bookings);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── Get All Bookings (Blood Bank) ─────────────────────────────
+const getAllBookings = async (req, res, next) => {
+  try {
+    const { status } = req.query;
+    const filter = {};
     if (status) filter.status = status;
 
     const bookings = await BloodTestBooking.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .populate('patient', 'name phone email')
+      .sort({ createdAt: -1 });
 
-    const total = await BloodTestBooking.countDocuments(filter);
-
-    res.json({
-      bookings,
-      total,
-      page: Number(page),
-      pages: Math.ceil(total / limit)
-    });
-
+    res.json(bookings);
   } catch (err) {
     next(err);
   }
 };
 
-// ── Get Single Booking ──────────────────────────────────────────
-const getBooking = async (req, res, next) => {
+// ── Accept Booking (Blood Bank) ──────────────────────────────
+const acceptBooking = async (req, res, next) => {
   try {
-    const booking = await BloodTestBooking.findOne({
-      _id: req.params.id,
-      user: req.user.id
-    });
+    const { bookingId, assignedPerson, assignedContact } = req.body;
 
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-
-    res.json({ booking });
-
-  } catch (err) {
-    next(err);
-  }
-};
-
-// ── Cancel Booking ──────────────────────────────────────────────
-const cancelBooking = async (req, res, next) => {
-  try {
-    const booking = await BloodTestBooking.findOne({
-      _id: req.params.id,
-      user: req.user.id
-    });
-
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-
-    if (['sample_collected', 'processing', 'report_ready'].includes(booking.status)) {
-      return res.status(400).json({ message: 'Cannot cancel at this stage' });
+    if (!bookingId || !assignedPerson || !assignedContact) {
+      return res.status(400).json({ message: 'Technician details are required' });
     }
 
-    booking.status = 'cancelled';
+    const booking = await BloodTestBooking.findById(bookingId).populate('patient');
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    booking.bloodBank = req.user.id;
+    booking.assignedPerson = assignedPerson;
+    booking.assignedContact = assignedContact;
+    booking.status = 'Accepted';
     await booking.save();
 
-    await Notification.create({
-      recipient: req.user.id,
-      type: 'booking_cancelled',
-      title: 'Booking Cancelled',
-      message: `Your ${booking.testType} booking has been cancelled.`,
-      data: { bookingId: booking._id },
-      isEmergency: false
-    });
-
-    res.json({ message: 'Booking cancelled', booking });
-
-  } catch (err) {
-    next(err);
-  }
-};
-
-// ── Get Available Test Types ────────────────────────────────────
-const getTestTypes = async (req, res, next) => {
-  try {
-    const tests = Object.entries(TEST_PRICES).map(([name, price]) => ({ name, price }));
-    res.json({ tests });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// ── Admin: Update Booking Status ────────────────────────────────
-const updateBookingStatus = async (req, res, next) => {
-  try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Admin access required' });
+    const patientId = booking.patient?._id || booking.patient;
+    const patientToken = booking.patient?.fcmToken;
+    try {
+      await sendNotification(
+        patientToken ? [patientToken] : [],
+        patientId ? [patientId] : [],
+        {
+          title: '✅ Home Test Accepted',
+          body: `Your ${booking.testType} request was accepted. Technician: ${assignedPerson} (${assignedContact})`,
+          type: 'booking_confirmed',
+          data: {
+            bookingId: booking._id.toString(),
+            assignedPerson,
+            assignedContact
+          }
+        }
+      );
+    } catch (notifErr) {
+      console.error('Notification Error:', notifErr.message);
     }
 
-    const { status, assignedTechnician, reportUrl } = req.body;
+    res.json({ message: 'Booking accepted', booking });
+  } catch (err) {
+    next(err);
+  }
+};
 
-    const booking = await BloodTestBooking.findByIdAndUpdate(
-      req.params.id,
-      { $set: { status, assignedTechnician, reportUrl } },
-      { new: true }
-    ).populate('user', 'name email');
+// ── Reject Booking (Blood Bank) ──────────────────────────────
+const rejectBooking = async (req, res, next) => {
+  try {
+    const { bookingId } = req.body;
+
+    const booking = await BloodTestBooking.findById(bookingId).populate('patient');
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    booking.status = 'Rejected';
+    await booking.save();
+
+    const patientId = booking.patient?._id || booking.patient;
+    const patientToken = booking.patient?.fcmToken;
+    try {
+      await sendNotification(
+        patientToken ? [patientToken] : [],
+        patientId ? [patientId] : [],
+        {
+          title: '❌ Home Test Rejected',
+          body: `Your ${booking.testType} request was rejected by the blood bank.`,
+          type: 'booking_cancelled',
+          data: { bookingId: booking._id.toString() }
+        }
+      );
+    } catch (notifErr) {
+      console.error('Notification Error:', notifErr.message);
+    }
+
+    res.json({ message: 'Booking rejected', booking });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── Upload Report (Blood Bank) ───────────────────────────────
+const uploadReport = async (req, res, next) => {
+  try {
+    const { bookingId, reportUrl } = req.body;
+
+    if (!bookingId || !reportUrl) {
+      return res.status(400).json({ message: 'Report URL is required' });
+    }
+
+    const booking = await BloodTestBooking.findById(bookingId).populate('patient');
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    booking.reportUrl = reportUrl;
+    booking.status = 'Completed';
+    await booking.save();
+
+    const patientId = booking.patient?._id || booking.patient;
+    const patientToken = booking.patient?.fcmToken;
+    try {
+      await sendNotification(
+        patientToken ? [patientToken] : [],
+        patientId ? [patientId] : [],
+        {
+          title: '📄 Report Ready',
+          body: `Your ${booking.testType} report is available.`,
+          type: 'report_ready',
+          data: { bookingId: booking._id.toString(), reportUrl: String(reportUrl || '') }
+        }
+      );
+    } catch (notifErr) {
+      console.error('Notification Error:', notifErr.message);
+    }
+
+    res.json({ message: 'Report uploaded', booking });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getTestTypes = async (req, res) => {
+  const tests = [
+    'Complete Blood Count (CBC)',
+    'Liver Function Test (LFT)',
+    'Kidney Function Test (KFT)',
+    'Blood Sugar (Fasting)',
+    'Thyroid Function Test (TFT)',
+    'HIV Test',
+    'Vitamin D'
+  ];
+  res.json({ tests });
+};
+
+const getBookingById = async (req, res, next) => {
+  try {
+    const booking = await BloodTestBooking.findById(req.params.id)
+      .populate('patient', 'name phone email')
+      .populate('bloodBank', 'name phone email location');
+
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    res.json(booking);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const cancelBooking = async (req, res, next) => {
+  try {
+    const booking = await BloodTestBooking.findById(req.params.id)
+      .populate('patient', 'name phone fcmToken')
+      .populate('bloodBank', 'name phone fcmToken');
 
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    if (status === 'report_ready') {
-      await Notification.create({
-        recipient: booking.user._id,
-        type: 'report_ready',
-        title: '📋 Report Ready!',
-        message: `Your ${booking.testType} report is ready. Please check your bookings.`,
-        data: { bookingId: booking._id, reportUrl },
-        isEmergency: false
-      });
+    const patientRef = booking.patient?._id || booking.patient;
+    if (patientRef.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    res.json({ message: 'Booking status updated', booking });
+    const hadBank = booking.bloodBank && booking.status === 'Accepted';
+    booking.status = 'Rejected';
+    await booking.save();
 
+    if (hadBank && booking.bloodBank) {
+      const bankId = booking.bloodBank._id || booking.bloodBank;
+      const bankToken = booking.bloodBank.fcmToken;
+      try {
+        await sendNotification(
+          bankToken ? [bankToken] : [],
+          [bankId],
+          {
+            title: 'Home test cancelled',
+            body: `${booking.patientName || 'A patient'} cancelled their ${booking.testType} booking.`,
+            type: 'booking_cancelled',
+            data: { bookingId: booking._id.toString() }
+          }
+        );
+      } catch (notifErr) {
+        console.error('Notification Error:', notifErr.message);
+      }
+    }
+
+    res.json({ message: 'Booking cancelled successfully' });
   } catch (err) {
     next(err);
   }
@@ -202,8 +263,11 @@ const updateBookingStatus = async (req, res, next) => {
 module.exports = {
   createBooking,
   getMyBookings,
-  getBooking,
-  cancelBooking,
+  getAllBookings,
+  acceptBooking,
+  rejectBooking,
+  uploadReport,
   getTestTypes,
-  updateBookingStatus
+  getBookingById,
+  cancelBooking
 };

@@ -2,87 +2,66 @@ const mongoose = require('mongoose');
 
 const bloodTestBookingSchema = new mongoose.Schema(
   {
-    user: {
+    patient: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      required: true,
+      index: true
+    },
+
+    bloodBank: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true
+    },
+
+    patientName: {
+      type: String,
+      required: true,
+      trim: true
+    },
+
+    address: {
+      type: String,
+      required: true,
+      trim: true
+    },
+
+    mapLink: {
+      type: String,
+      default: ''
+    },
+
+    phone: {
+      type: String,
+      required: true,
+      trim: true
     },
 
     testType: {
       type: String,
       required: [true, 'Test type is required'],
-      enum: [
-        'Complete Blood Count (CBC)',
-        'Liver Function Test (LFT)',
-        'Kidney Function Test (KFT)',
-        'Blood Sugar (Fasting)',
-        'Blood Sugar (Random)',
-        'HbA1c',
-        'Lipid Profile',
-        'Thyroid Function Test (TFT)',
-        'HIV Test',
-        'Hepatitis B',
-        'Hepatitis C',
-        'Blood Group & Rh Typing',
-        'Malaria Test',
-        'Dengue Test',
-        'Widal Test',
-        'Vitamin D',
-        'Vitamin B12',
-        'Iron Studies',
-        'ESR',
-        'CRP (C-Reactive Protein)'
-      ]
-    },
-
-    preferredDate: {
-      type: Date,
-      required: [true, 'Preferred date is required']
-    },
-
-    preferredTimeSlot: {
-      type: String,
-      enum: ['6:00 AM - 8:00 AM', '8:00 AM - 10:00 AM', '10:00 AM - 12:00 PM', '12:00 PM - 2:00 PM', '2:00 PM - 4:00 PM', '4:00 PM - 6:00 PM'],
-      default: '8:00 AM - 10:00 AM'
-    },
-
-    collectionType: {
-      type: String,
-      enum: ['home_collection', 'lab_visit'],
-      default: 'home_collection'
-    },
-
-    address: {
-      type: String,
-      required: function () {
-        return this.collectionType === 'home_collection';
-      }
-    },
-
-    patientName: {
-      type: String,
-      required: true
-    },
-
-    patientAge: {
-      type: Number,
-      required: true
-    },
-
-    contactPhone: {
-      type: String,
-      required: true
+      trim: true
     },
 
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'sample_collected', 'processing', 'report_ready', 'cancelled'],
-      default: 'pending'
+      enum: ['Pending', 'Accepted', 'Rejected', 'Completed'],
+      default: 'Pending',
+      index: true
     },
 
-    assignedTechnician: {
+    assignedPerson: {
       type: String,
-      default: ''
+      default: '',
+      trim: true
+    },
+
+    assignedContact: {
+      type: String,
+      default: '',
+      trim: true
     },
 
     reportUrl: {
@@ -90,14 +69,17 @@ const bloodTestBookingSchema = new mongoose.Schema(
       default: ''
     },
 
+    // 🔥 EXTRA IMPROVEMENTS
     notes: {
       type: String,
-      default: ''
+      default: '',
+      trim: true
     },
 
     price: {
       type: Number,
-      default: 0
+      default: 0,
+      min: 0
     },
 
     paymentStatus: {
@@ -109,7 +91,13 @@ const bloodTestBookingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-bloodTestBookingSchema.index({ user: 1, createdAt: -1 });
+// ✅ Indexes for performance
+bloodTestBookingSchema.index({ patient: 1, createdAt: -1 });
 bloodTestBookingSchema.index({ status: 1 });
+
+// ✅ Optional: Virtual for quick check
+bloodTestBookingSchema.virtual('isCompleted').get(function () {
+  return this.status === 'Completed';
+});
 
 module.exports = mongoose.model('BloodTestBooking', bloodTestBookingSchema);

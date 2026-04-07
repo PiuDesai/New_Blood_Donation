@@ -8,12 +8,30 @@ const ReportAnalyzer = () => {
     const [copied, setCopied] = useState(false);
     const [dragging, setDragging] = useState(false);
 
-    // Submit
+    // ✅ File validation
+    const isValidFile = (file) => {
+        const allowedTypes = [
+            "application/pdf",
+            "text/plain",
+            "image/jpeg",
+            "image/png",
+            "image/jpg",
+            "image/webp"
+        ];
+        return allowedTypes.includes(file.type);
+    };
+
+    // ✅ Submit
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!file) {
             alert("Please select a file");
+            return;
+        }
+
+        if (!isValidFile(file)) {
+            alert("Unsupported file type! Please upload PDF, TXT, JPG, PNG or WEBP.");
             return;
         }
 
@@ -33,7 +51,7 @@ const ReportAnalyzer = () => {
         }
     };
 
-    // Drag
+    // ✅ Drag handlers
     const handleDragOver = (e) => {
         e.preventDefault();
         setDragging(true);
@@ -44,11 +62,18 @@ const ReportAnalyzer = () => {
     const handleDrop = (e) => {
         e.preventDefault();
         setDragging(false);
+
         const droppedFile = e.dataTransfer.files[0];
+
+        if (droppedFile && !isValidFile(droppedFile)) {
+            alert("Unsupported file type! Please upload PDF, TXT, JPG, PNG or WEBP.");
+            return;
+        }
+
         if (droppedFile) setFile(droppedFile);
     };
 
-    // Copy
+    // ✅ Copy
     const handleCopy = () => {
         navigator.clipboard.writeText(result);
         setCopied(true);
@@ -94,7 +119,16 @@ const ReportAnalyzer = () => {
                             type="file"
                             accept=".pdf,.txt,image/*"
                             style={{ display: "none" }}
-                            onChange={(e) => setFile(e.target.files[0])}
+                            onChange={(e) => {
+                                const selectedFile = e.target.files[0];
+
+                                if (selectedFile && !isValidFile(selectedFile)) {
+                                    alert("Unsupported file type! Please upload PDF, TXT, JPG, PNG or WEBP.");
+                                    return;
+                                }
+
+                                setFile(selectedFile);
+                            }}
                         />
 
                         <div style={{ fontSize: "30px" }}>
@@ -106,7 +140,7 @@ const ReportAnalyzer = () => {
                         </p>
 
                         <p style={{ fontSize: "12px", color: "#888" }}>
-                            PDF · TXT · JPG · PNG
+                            PDF · TXT · JPG · PNG · WEBP
                         </p>
                     </div>
 
@@ -205,18 +239,9 @@ const ReportAnalyzer = () => {
 
                                 if (!clean) return null;
 
-                                // Section Titles
                                 if (clean.toLowerCase().includes("abnormal findings")) {
                                     return (
-                                        <h4
-                                            key={index}
-                                            style={{
-                                                marginTop: "15px",
-                                                color: "#dc2626",
-                                                borderBottom: "1px solid #eee",
-                                                paddingBottom: "5px",
-                                            }}
-                                        >
+                                        <h4 key={index} style={{ marginTop: "15px", color: "#dc2626" }}>
                                             ⚠️ Abnormal Findings
                                         </h4>
                                     );
@@ -224,69 +249,22 @@ const ReportAnalyzer = () => {
 
                                 if (clean.toLowerCase().includes("summary")) {
                                     return (
-                                        <h4
-                                            key={index}
-                                            style={{
-                                                marginTop: "20px",
-                                                color: "#111",
-                                                borderBottom: "1px solid #eee",
-                                                paddingBottom: "5px",
-                                            }}
-                                        >
+                                        <h4 key={index} style={{ marginTop: "20px", color: "#111" }}>
                                             📝 Summary
                                         </h4>
                                     );
                                 }
 
-                                // Bullet Points
                                 if (clean.startsWith("•") || clean.startsWith("-")) {
-                                    const isAbnormal =
-                                        clean.toLowerCase().includes("low") ||
-                                        clean.toLowerCase().includes("high") ||
-                                        clean.toLowerCase().includes("below") ||
-                                        clean.toLowerCase().includes("above");
-
-                                    const parts = clean.replace(/[•-]/g, "").split(":");
-
                                     return (
-                                        <div
-                                            key={index}
-                                            style={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                padding: "10px",
-                                                marginTop: "8px",
-                                                background: "#fafafa",
-                                                borderRadius: "8px",
-                                                border: isAbnormal ? "1px solid #fecaca" : "1px solid #eee",
-                                            }}
-                                        >
-                                            <span style={{ fontWeight: "500", color: "#333" }}>
-                                                {parts[0]}
-                                            </span>
-
-                                            <span
-                                                style={{
-                                                    color: isAbnormal ? "#dc2626" : "#555",
-                                                    fontWeight: isAbnormal ? "600" : "400",
-                                                }}
-                                            >
-                                                {parts.slice(1).join(":")}
-                                            </span>
-                                        </div>
+                                        <p key={index} style={{ marginTop: "10px", color: "#444" }}>
+                                            {clean}
+                                        </p>
                                     );
                                 }
 
-                                // Paragraph (Summary)
                                 return (
-                                    <p
-                                        key={index}
-                                        style={{
-                                            marginTop: "12px",
-                                            lineHeight: "1.6",
-                                            color: "#444",
-                                        }}
-                                    >
+                                    <p key={index} style={{ marginTop: "12px", color: "#444" }}>
                                         {clean}
                                     </p>
                                 );
