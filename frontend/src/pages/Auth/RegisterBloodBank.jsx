@@ -5,9 +5,11 @@ import { getErrorMessage } from "../../api/axios";
 import { Card } from "../../components/Common/Card";
 import { Input } from "../../components/Common/Input";
 import { Button } from "../../components/Common/Button";
-import { Building2, Mail, Lock, Phone, MapPin, FileText, Loader2, ArrowRight } from "lucide-react";
+import { Building2, Mail, Lock, Phone, MapPin, FileText, Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+import BackButton from "../../components/Common/BackButton";
+import BloodMatrixLogo from "../../components/Common/BloodMatrixLogo";
 
 const RegisterBloodBank = () => {
   const navigate = useNavigate();
@@ -24,6 +26,7 @@ const RegisterBloodBank = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,19 +69,22 @@ const RegisterBloodBank = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-blue-50 via-white to-red-50 flex items-center justify-center p-6 py-20">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="max-w-4xl w-full"
-      >
-        <Card variant="glass" className="p-10 md:p-16" hover={false}>
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Blood Bank Registration</h2>
-            <p className="text-gray-400 font-bold uppercase text-xs tracking-[0.2em]">
-              Partner with us to save lives
-            </p>
-          </div>
+    <>
+      <BackButton />
+      <BloodMatrixLogo />
+      <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-blue-50 via-white to-red-50 flex items-center justify-center p-6 py-20">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-4xl w-full"
+        >
+          <Card variant="glass" className="p-10 md:p-16" hover={false}>
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Blood Bank Registration</h2>
+              <p className="text-gray-400 font-bold uppercase text-xs tracking-[0.2em]">
+                Partner with us to save lives
+              </p>
+            </div>
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <div className="md:col-span-2">
@@ -111,15 +117,29 @@ const RegisterBloodBank = () => {
               placeholder="9876543210"
             />
 
-            <Input
-              label="Password"
-              type="password"
-              icon={Lock}
-              required
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder="••••••••"
-            />
+            <div className="w-full space-y-2">
+              <label className="text-sm font-bold text-gray-700 ml-1 uppercase tracking-tight">Password</label>
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-500 transition-colors">
+                  <Lock size={20} />
+                </div>
+                <input
+                  type={passwordVisible ? "text" : "password"}
+                  placeholder="••••••••"
+                  required
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full bg-white border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500 transition-all placeholder:text-gray-300 py-3.5 shadow-sm shadow-gray-100 pl-12 pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPasswordVisible(!passwordVisible)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors p-1 rounded"
+                >
+                  {passwordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
 
             <Input
               label="License/Verification Info"
@@ -182,6 +202,7 @@ const RegisterBloodBank = () => {
         </Card>
       </motion.div>
     </div>
+    </>
   );
 };
 

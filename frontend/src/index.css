@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+/* Disable default browser password visibility icons across all browsers */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-password-toggle,
+input[type="password"]::-webkit-textfield-decoration-container {
+  display: none !important;
+}
+
+input[type="password"]::-webkit-outer-spin-button,
+input[type="password"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Additional Firefox support */
+input[type="password"]::-moz-reveal {
+  display: none !important;
+}

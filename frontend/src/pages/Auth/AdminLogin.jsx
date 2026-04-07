@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Eye, EyeOff } from "lucide-react";
+import BackButton from "../../components/Common/BackButton";
+import BloodMatrixLogo from "../../components/Common/BloodMatrixLogo";
 
 const AdminLogin = () => {
   const [form, setForm] = useState({ email: "", password: "" });
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -29,35 +33,48 @@ const AdminLogin = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2>Admin Login</h2>
+    <>
+      <BackButton />
+      <BloodMatrixLogo />
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <h2>Admin Login</h2>
 
-        <form onSubmit={handleSubmit}>
-          <input
-            type="email"
-            name="email"
-            placeholder="Enter Email"
-            onChange={handleChange}
-            required
-            style={styles.input}
-          />
+          <form onSubmit={handleSubmit}>
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter Email"
+              onChange={handleChange}
+              required
+              style={styles.input}
+            />
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Enter Password"
-            onChange={handleChange}
-            required
-            style={styles.input}
-          />
+            <div style={styles.passwordContainer}>
+              <input
+                type={passwordVisible ? "text" : "password"}
+                name="password"
+                placeholder="Enter Password"
+                onChange={handleChange}
+                required
+                style={{ ...styles.input, paddingRight: "40px" }}
+              />
+              <button
+                type="button"
+                onClick={() => setPasswordVisible(!passwordVisible)}
+                style={styles.eyeButton}
+              >
+                {passwordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
 
-          <button type="submit" style={styles.button}>
-            Login
-          </button>
-        </form>
+            <button type="submit" style={styles.button}>
+              Login
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
@@ -83,6 +100,26 @@ const styles = {
     margin: "10px 0",
     borderRadius: "6px",
     border: "1px solid #ccc",
+  },
+  passwordContainer: {
+    position: "relative",
+    width: "100%",
+    margin: "10px 0",
+  },
+  eyeButton: {
+    position: "absolute",
+    right: "10px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    color: "#666",
+    padding: "5px",
+    borderRadius: "4px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   button: {
     width: "100%",

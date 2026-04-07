@@ -5,9 +5,11 @@ import { getErrorMessage } from "../../api/axios";
 import { Card } from "../../components/Common/Card";
 import { Input } from "../../components/Common/Input";
 import { Button } from "../../components/Common/Button";
-import { User, Mail, Lock, Phone, MapPin, Droplets, Calendar, Loader2, ArrowRight } from "lucide-react";
+import { User, Mail, Lock, Phone, MapPin, Droplets, Calendar, Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import BackButton from "../../components/Common/BackButton";
+import BloodMatrixLogo from "../../components/Common/BloodMatrixLogo";
 
 const genderToApi = (g) => {
   const m = { Male: "male", Female: "female", Other: "other" };
@@ -25,6 +27,7 @@ const Register = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -118,8 +121,29 @@ const Register = () => {
             <Input label="Phone Number" icon={Phone} placeholder="+91 9876543210" required
               value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
 
-            <Input label="Password" icon={Lock} type="password" placeholder="••••••••" required
-              value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
+            <div className="w-full space-y-2">
+              <label className="text-sm font-bold text-gray-700 ml-1 uppercase tracking-tight">Password</label>
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-500 transition-colors">
+                  <Lock size={20} />
+                </div>
+                <input
+                  type={passwordVisible ? "text" : "password"}
+                  placeholder="••••••••"
+                  required
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full bg-white border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500 transition-all placeholder:text-gray-300 py-3.5 shadow-sm shadow-gray-100 pl-12 pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPasswordVisible(!passwordVisible)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors p-1 rounded"
+                >
+                  {passwordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700 ml-1 uppercase tracking-tight">Blood Group</label>
