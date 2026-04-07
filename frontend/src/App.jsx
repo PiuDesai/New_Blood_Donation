@@ -21,12 +21,11 @@ import PendingBloodBanks from "./pages/Admin/PendingBloodBanks";
 import AllDonors from "./pages/Admin/AllDonors";
 import AllBloodBanks from "./pages/Admin/AllBloodBanks";
 import Home from "./pages/Home";
-import HomeBloodTest from "./pages/Patient/HomeBloodTest
+import HomeBloodTest from "./pages/Patient/HomeBloodTest";
 import Profile from "./pages/Common/Profile";
 import Leaderboard from "./pages/Dashboard/Leaderboard";
 import Rewards from "./pages/Dashboard/Rewards";
 
-import Leaderboard from "./pages/Dashboard/Leaderboard";
 
 
 import BloodBankBookings from "./pages/BloodBank/BloodBankBookings";
