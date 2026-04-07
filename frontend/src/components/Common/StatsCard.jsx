@@ -1,14 +1,9 @@
 import { Card } from "./Card";
 import { cn } from "../../utils/cn";
-import { motion } from "framer-motion";
 
 export const StatsCard = ({ title, value, icon: Icon, color, trend, trendValue }) => {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ y: -5 }}
-    >
+    <div>
       <Card className="flex items-center gap-6 p-8 group border-none shadow-md shadow-gray-200/40 relative overflow-hidden bg-white hover:shadow-xl transition-all duration-300">
         <div className={cn(
           "w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-gray-200/50 relative z-10",
@@ -32,8 +27,8 @@ export const StatsCard = ({ title, value, icon: Icon, color, trend, trendValue }
           </div>
         </div>
 
-        <Icon size={120} className="absolute -bottom-10 -right-10 text-gray-50 group-hover:scale-110 group-hover:text-gray-100 transition-all duration-500 opacity-50" />
+        {Icon && <Icon size={120} className="absolute -bottom-10 -right-10 text-gray-50 group-hover:scale-110 group-hover:text-gray-100 transition-all duration-500 opacity-50" />}
       </Card>
-    </motion.div>
+    </div>
   );
 };
