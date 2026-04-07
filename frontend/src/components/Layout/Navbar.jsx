@@ -2,9 +2,11 @@ import { useAuth } from "../../context/AuthContext";
 import { Button } from "../Common/Button";
 import { LogOut, User, Search } from "lucide-react";
 import NotificationBell from "../NotificationBell";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <nav className="h-24 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-10 flex items-center justify-between sticky top-0 z-40">
@@ -30,23 +32,30 @@ const Navbar = () => {
         {/* Live notification bell */}
         <NotificationBell />
 
-        <div className="flex items-center gap-5 pl-6 border-l border-gray-100">
+        <div 
+          onClick={() => navigate(`/${user?.role}/profile`)}
+          className="flex items-center gap-5 pl-6 border-l border-gray-100 cursor-pointer group hover:bg-gray-50 transition-all rounded-2xl p-2"
+        >
           <div className="text-right hidden sm:block">
             <p className="text-sm font-black text-gray-900 tracking-tight">{user?.name}</p>
             <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">{user?.role}</p>
           </div>
-          <div className="w-12 h-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl flex items-center justify-center text-gray-600 border border-gray-200 shadow-sm overflow-hidden">
-            <User size={24} />
+          <div className="w-12 h-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl flex items-center justify-center text-gray-600 border border-gray-200 shadow-sm overflow-hidden group-hover:border-red-200 group-hover:shadow-red-50 transition-all">
+            {user?.profilePhoto ? (
+              <img src={user.profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <User size={24} />
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={logout}
-            className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-xl"
-          >
-            <LogOut size={24} />
-          </Button>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={logout}
+          className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-xl ml-2"
+        >
+          <LogOut size={24} />
+        </Button>
       </div>
     </nav>
   );

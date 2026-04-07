@@ -59,8 +59,25 @@ const NotificationBell = () => {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+
+    // Listen for real-time foreground notifications from firebase.js
+    const handleNewNotification = (e) => {
+      console.log("🔔 NotificationBell: Real-time update received", e.detail);
+      // Immediately add to list or just refetch
+      fetchNotifications();
+      
+      // Optionally show a toast if not already shown by firebase.js
+      // toast.success("New notification received!");
+    };
+
+    window.addEventListener('new-notification', handleNewNotification);
+
+    const interval = setInterval(fetchNotifications, 60000); // Poll every 1 minute as fallback
+    
+    return () => {
+      window.removeEventListener('new-notification', handleNewNotification);
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {

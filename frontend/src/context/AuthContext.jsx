@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getProfile, logoutUser as apiLogout } from "../api/api";
 import { dashboardPath } from "../utils/rolePaths";
+import { getFCMToken } from "../firebase";
 
 const AuthContext = createContext();
 
@@ -48,11 +49,19 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
+    
+
     init();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+  if (user && user._id) {
+    getFCMToken(user._id);  // 🔥 STEP 7 TRIGGER HERE
+  }
+}, [user]);
 
   const login = (userData, userToken) => {
     setUser(userData);
@@ -63,6 +72,11 @@ export const AuthProvider = ({ children }) => {
     const role = String(userData.role || "").toLowerCase();
     console.log("[Auth] login success, role:", role, "userId:", userData._id || userData.id);
     navigate(dashboardPath(role));
+  };
+
+  const updateUser = (userData) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
   };
 
   const logout = async () => {
@@ -79,7 +93,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );

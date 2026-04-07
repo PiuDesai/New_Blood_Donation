@@ -42,15 +42,82 @@ const bloodRequestSchema = new mongoose.Schema(
       enum: ['Normal', 'Urgent', 'Emergency'],
       default: 'Normal'
     },
+
+    // ✅ Merge both enums
     status: {
       type: String,
-      enum: ['Pending', 'Approved', 'Fulfilled', 'Cancelled'],
+      enum: ['Pending', 'Accepted', 'Cancelled', 'Completed', 'Rejected', 'Supplied'],
       default: 'Pending'
     },
+
+    acceptedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    acceptedAt: {
+      type: Date,
+      default: null
+    },
+    acceptedByRole: {
+      type: String,
+      enum: ['donor', 'bloodbank', null],
+      default: null
+    },
+
+    cancelReason: {
+      type: String,
+      default: ''
+    },
+
+    // ✅ Keep advanced flow (better logic)
+    rejectionReason: {
+      type: String,
+      default: ''
+    },
+    donorAccepted: {
+      type: Boolean,
+      default: false
+    },
+    bloodBankAccepted: {
+      type: Boolean,
+      default: false
+    },
+    bloodBankRejected: {
+      type: Boolean,
+      default: false
+    },
+    completedByDonor: {
+      type: Boolean,
+      default: false
+    },
+    completedByPatient: {
+      type: Boolean,
+      default: false
+    },
+    suppliedByBloodBank: {
+      type: Boolean,
+      default: false
+    },
+    receivedByPatient: {
+      type: Boolean,
+      default: false
+    },
+    donorContact: {
+      type: String,
+      default: ''
+    },
+
+    isRated: {
+      type: Boolean,
+      default: false
+    },
+
     assignedBloodBank: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
     },
+
     issuedAt: Date,
     remarks: String
   },

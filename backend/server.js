@@ -13,6 +13,7 @@ const statsRoutes = require("./routes/StatsRoute.js");
 const bloodBankRoutes = require("./routes/bloodBankRoutes.js");
 const campRoutes = require("./routes/campRoutes.js");
 const bloodRequestRoutes = require("./routes/BloodRequestRoute.js");
+const gamificationRoutes = require("./routes/GamificationRoute.js");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,6 +26,8 @@ app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.originalUrl}`);
   next();
 });
+
+
 
 // ───── Database ─────
 Database();
@@ -40,10 +43,12 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/bloodbank", bloodBankRoutes);
 app.use("/api/camps", campRoutes);
 app.use("/api/requests", bloodRequestRoutes);
-app.use("/api", analyzeRoutes);
-app.use("/api/bookings", bloodTestRoutes);
+app.use("/api/report", analyzeRoutes);
+app.use("/api", bloodTestRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/gamification", gamificationRoutes);
 app.use("/api", statsRoutes);
+
 
 // ───── 404 Handler (Optional but Recommended) ─────
 app.use((req, res) => {

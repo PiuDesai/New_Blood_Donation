@@ -10,7 +10,7 @@ exports.adminLogin = (req, res) => {
   ) {
     const token = jwt.sign(
       { role: "admin" },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'secret',
       { expiresIn: "1d" }
     );
 
