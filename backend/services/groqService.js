@@ -5,7 +5,6 @@ const groq = new Groq({
 });
 
 
-
 exports.analyzeWithAI = async (text) => {
   try {
     const response = await groq.chat.completions.create({

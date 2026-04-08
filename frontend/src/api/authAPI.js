@@ -184,13 +184,13 @@ export const approveDonor = async (id) => {
 
 // ✅ GET BLOOD BANK REQUESTS
 export const getPendingBloodBanks = async () => {
-  const res = await API.get("/admin/pending-bloodbanks");
+  const res = await API.get("/admin/pending-blood-banks");
   return res.data;
 };
 
 // ✅ APPROVE BLOOD BANK
 export const approveBloodBank = async (id) => {
-  const res = await API.put(`/admin/approve-bloodbank/${id}`);
+  const res = await API.put(`/admin/approve-blood-bank/${id}`);
   return res.data;
 };
 
