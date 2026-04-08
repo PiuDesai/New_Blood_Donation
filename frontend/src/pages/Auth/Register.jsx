@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import BackButton from "../../components/Common/BackButton";
 import BloodMatrixLogo from "../../components/Common/BloodMatrixLogo";
+import { useAuth } from "../../context/AuthContext";
 
 const genderToApi = (g) => {
   const m = { Male: "male", Female: "female", Other: "other" };
@@ -18,6 +19,7 @@ const genderToApi = (g) => {
 
 const Register = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "", email: "", phone: "", password: "",
@@ -28,11 +30,224 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [nameError, setNameError] = useState("");
+  const [cityStateError, setCityStateError] = useState("");
+
+  // State-City mapping data
+  const stateCityData = {
+    "Andhra Pradesh": [
+      "Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool", "Rajahmundry", 
+      "Tirupati", "Kakinada", "Anantapur", "Eluru", "Ongole", "Vizianagaram"
+    ],
+    "Arunachal Pradesh": [
+      "Itanagar", "Tawang", "Ziro", "Pasighat", "Bomdila", "Tezu", "Anini", "Khonsa"
+    ],
+    "Assam": [
+      "Guwahati", "Silchar", "Dibrugarh", "Jorhat", "Nagaon", "Tinsukia", "Tezpur", 
+      "Bongaigaon", "Goalpara", "Karimganj", "Sivasagar", "Lakhimpur"
+    ],
+    "Bihar": [
+      "Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia", "Darbhanga", "Bihar Sharif", 
+      "Arrah", "Begusarai", "Katihar", "Monghyr", "Chapra", "Dehri", "Siwan"
+    ],
+    "Chhattisgarh": [
+      "Raipur", "Bhilai", "Bilaspur", "Durg", "Korba", "Rajnandgaon", "Jagdalpur", 
+      "Ambikapur", "Raigarh", "Mahasamund", "Dhamtari"
+    ],
+    "Goa": [
+      "Panaji", "Margao", "Vasco da Gama", "Mapusa", "Ponda", "Bicholim", "Curchorem", "Sanquelim"
+    ],
+    "Gujarat": [
+      "Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", 
+      "Gandhinagar", "Anand", "Nadiad", "Mehsana", "Surendranagar", "Porbandar", "Bharuch"
+    ],
+    "Haryana": [
+      "Gurgaon", "Faridabad", "Panipat", "Ambala", "Yamunanagar", "Rohtak", "Hisar", 
+      "Karnal", "Sonipat", "Panchkula", "Bhiwani", "Sirsa", "Bahadurgarh", "Jind"
+    ],
+    "Himachal Pradesh": [
+      "Shimla", "Solan", "Dharamshala", "Mandi", "Kullu", "Palampur", "Bilaspur", 
+      "Una", "Sirmaur", "Chamba", "Hamirpur", "Kinnaur", "Lahaul and Spiti"
+    ],
+    "Jharkhand": [
+      "Ranchi", "Jamshedpur", "Dhanbad", "Bokaro", "Deoghar", "Phusro", "Hazaribagh", 
+      "Giridih", "Ramgarh", "Medininagar", "Chakradharpur", "Jamtara", "Chatra", "Koderma"
+    ],
+    "Karnataka": [
+      "Bangalore", "Mysore", "Hubli", "Mangalore", "Belgaum", "Gulbarga", "Davanagere", 
+      "Bellary", "Bijapur", "Shimoga", "Tumkur", "Raichur", "Bidar", "Hospet", "Kolar"
+    ],
+    "Kerala": [
+      "Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kollam", "Alappuzha", 
+      "Palakkad", "Malappuram", "Kannur", "Kasaragod", "Kottayam", "Idukki", "Pathanamthitta", "Wayanad"
+    ],
+    "Madhya Pradesh": [
+      "Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain", "Guna", "Sagar", "Ratlam", 
+      "Satna", "Morena", "Khandwa", "Burhanpur", "Ashoknagar", "Katni", "Rewa", "Vidisha"
+    ],
+    "Maharashtra": [
+      "Mumbai", "Pune", "Nagpur", "Thane", "Nashik", "Aurangabad", "Solapur", "Amravati", 
+      "Navi Mumbai", "Kolhapur", "Sangli", "Malegaon", "Akola", "Dhule", "Ahmednagar", 
+      "Chandrapur", "Parbhani", "Jalgaon", "Bhiwandi", "Ambernath", "Nanded", "Panvel", 
+      "Bhusawal", "Ulhasnagar", "Nandurbar", "Wardha", "Yavatmal", "Latur", "Gondia"
+    ],
+    "Manipur": [
+      "Imphal", "Thoubal", "Churachandpur", "Bishnupur", "Kakching", "Ukhrul", "Senapati", "Tamenglong"
+    ],
+    "Meghalaya": [
+      "Shillong", "Tura", "Nongstoin", "Jowai", "Baghmara", "Resubelpara", "Mairang", "Nongpoh"
+    ],
+    "Mizoram": [
+      "Aizawl", "Lunglei", "Champhai", "Serchhip", "Kolasib", "Mamit", "Saiha", "Lawngtlai"
+    ],
+    "Nagaland": [
+      "Kohima", "Dimapur", "Mokokchung", "Tuensang", "Wokha", "Zunheboto", "Phek", "Kiphire", "Longleng", "Peren"
+    ],
+    "Odisha": [
+      "Bhubaneswar", "Cuttack", "Rourkela", "Berhampur", "Sambalpur", "Puri", "Balasore", 
+      "Bhawanipatna", "Cuttack", "Dhenkanal", "Baripada", "Jharsuguda", "Koraput", "Rayagada", "Sundargarh"
+    ],
+    "Punjab": [
+      "Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda", "Mohali", "Pathankot", 
+      "Hoshiarpur", "Batala", "Moga", "Firozpur", "Kapurthala", "Phagwara", "Muktsar", "Barnala"
+    ],
+    "Rajasthan": [
+      "Jaipur", "Jodhpur", "Udaipur", "Kota", "Bikaner", "Ajmer", "Bhilwara", "Alwar", 
+      "Bharatpur", "Sikar", "Pali", "Kishangarh", "Beawar", "Tonk", "Sawai Madhopur", "Nagaur"
+    ],
+    "Sikkim": [
+      "Gangtok", "Namchi", "Mangan", "Gyalshing", "Rangpo", "Jorethang", "Pelling", "Singtam"
+    ],
+    "Tamil Nadu": [
+      "Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tirunelveli", "Tirupur", 
+      "Vellore", "Erode", "Thoothukudi", "Dindigul", "Thanjavur", "Ranipet", "Sivakasi", "Karur", 
+      "Udhagamandalam", "Hosur", "Rajapalayam", "Kanchipuram", "Kumbakonam", "Tiruvannamalai", 
+      "Nagercoil", "Viluppuram", "Cuddalore", "Dharmapuri", "Ariyalur", "Perambalur", "Nagapattinam", 
+      "Krishnagiri", "Namakkal", "Tiruvarur", "Theni", "Virudhunagar"
+    ],
+    "Telangana": [
+      "Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Khammam", "Ramagundam", 
+      "Mahbubnagar", "Nalgonda", "Adilabad", "Miryalaguda", "Suryapet", "Jagtial", 
+      "Bhadradri Kothagudem", "Jangaon", "Kamareddy", "Sircilla", "Medak", "Siddipet", 
+      "Yadadri Bhuvanagiri", "Medchal Malkajgiri", "Komaram Bheem Asifabad", "Mancherial", "Nirmal"
+    ],
+    "Tripura": [
+      "Agartala", "Udaipur", "Dharmanagar", "Pratapgarh", "Kailashahar", "Belonia", 
+      "Khowai", "Ranirbazar", "Sonamura", "Kamalpur"
+    ],
+    "Uttar Pradesh": [
+      "Lucknow", "Kanpur", "Ghaziabad", "Agra", "Varanasi", "Meerut", "Allahabad", 
+      "Bareilly", "Aligarh", "Moradabad", "Saharanpur", "Noida", "Gorakhpur", "Firozabad", 
+      "Jhansi", "Mughalsarai", "Mathura", "Rampur", "Shahjahanpur", "Fatehpur", "Barabanki", 
+      "Modinagar", "Hapur", "Rae Bareli", "Etawah", "Lakhimpur", "Sitapur", "Unnao", 
+      "Mainpuri", "Bulandshahr", "Badaun", "Bijnor", "Amroha", "Hathras", "Kasganj"
+    ],
+    "Uttarakhand": [
+      "Dehradun", "Haridwar", "Roorkee", "Haldwani", "Rishikesh", "Kashipur", "Rudrapur", 
+      "Kotdwar", "Pithoragarh", "Udham Singh Nagar", "Champawat", "Bageshwar", "Uttarkashi"
+    ],
+    "West Bengal": [
+      "Kolkata", "Howrah", "Durgapur", "Siliguri", "Asansol", "Raniganj", "Burdwan", 
+      "Barrackpore", "Kalyani", "Salt Lake City", "Haldia", "Kharagpur", "Bally", "Baharampur", 
+      "Krishnanagar", "Barasat", "Naihati", "Dankuni", "Bansberia", "Baranagar", "South Dum Dum", 
+      "North Dum Dum", "Panihati", "Rishra", "Konnagar", "Uttarpara", "Bhatpara", "Chandannagar", 
+      "Serampore", "Ulubaria", "Budge Budge", "Hooghly-Chinsurah", "Arambagh", "Kalna", "Memari"
+    ]
+  };
+
+  // Get all states for dropdown
+  const allStates = Object.keys(stateCityData);
+
+  // Get cities based on selected state
+  const getCitiesForState = (state) => {
+    return stateCityData[state] || [];
+  };
+
+  // Handle state change
+  const handleStateChange = (e) => {
+    const selectedState = e.target.value;
+    setFormData({ 
+      ...formData, 
+      state: selectedState,
+      city: "" // Reset city when state changes
+    });
+    setCityStateError("");
+  };
+
+  // Handle city change
+  const handleCityChange = (e) => {
+    const selectedCity = e.target.value;
+    setFormData({ ...formData, city: selectedCity });
+    setCityStateError("");
+  };
+
+  // Validate city-state relationship
+  const handleCityStateBlur = () => {
+    if (formData.state && formData.city) {
+      const validCities = getCitiesForState(formData.state);
+      if (!validCities.includes(formData.city)) {
+        setCityStateError("City does not belong to the selected state");
+      } else {
+        setCityStateError("");
+      }
+    }
+  };
+
+  // Validate name field - only letters allowed
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+    // Only allow letters (including spaces for full names)
+    const lettersOnly = value.replace(/[^a-zA-Z\s]/g, '');
+    
+    setFormData({ ...formData, name: lettersOnly });
+    
+    // Clear error if valid
+    if (lettersOnly.trim().length >= 2) {
+      setNameError("");
+    }
+  };
+
+  const handleNameBlur = () => {
+    const name = formData.name.trim();
+    if (name.length < 2) {
+      setNameError("Name must be at least 2 characters long");
+    } else if (!/^[a-zA-Z\s]+$/.test(name)) {
+      setNameError("Name can only contain letters");
+    } else {
+      setNameError("");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // Validate name field
+    const name = formData.name.trim();
+    if (name.length < 2) {
+      setError("Name must be at least 2 characters long");
+      setLoading(false);
+      toast.error("Invalid name");
+      return;
+    }
+    if (!/^[a-zA-Z\s]+$/.test(name)) {
+      setError("Name can only contain letters");
+      setLoading(false);
+      toast.error("Name can only contain letters");
+      return;
+    }
+
+    // Validate city-state relationship
+    if (formData.state && formData.city) {
+      const validCities = getCitiesForState(formData.state);
+      if (!validCities.includes(formData.city)) {
+        setError("City does not belong to the selected state");
+        setLoading(false);
+        toast.error("City does not belong to the selected state");
+        return;
+      }
+    }
 
     const phoneDigits = String(formData.phone).replace(/\D/g, "").slice(-10);
     if (phoneDigits.length !== 10 || !/^[6-9]/.test(phoneDigits)) {
@@ -111,8 +326,16 @@ const Register = () => {
             </div>
 
             <div className="md:col-span-2">
-              <Input label="Full Name" icon={User} placeholder="Enter your full name" required
-                value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+              <Input 
+                label="Full Name" 
+                icon={User} 
+                placeholder="Enter your full name" 
+                required
+                value={formData.name} 
+                onChange={handleNameChange}
+                onBlur={handleNameBlur}
+                error={nameError}
+              />
             </div>
 
             <Input label="Email Address" icon={Mail} type="email" placeholder="email@example.com" required
@@ -177,11 +400,68 @@ const Register = () => {
               value={formData.dateOfBirth} onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })} />
 
             <div className="md:col-span-2 grid grid-cols-2 gap-6">
-              <Input label="City" icon={MapPin} placeholder="e.g. Mumbai" required
-                value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} />
-              <Input label="State" icon={MapPin} placeholder="e.g. Maharashtra" required
-                value={formData.state} onChange={(e) => setFormData({ ...formData, state: e.target.value })} />
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 ml-1 uppercase tracking-tight flex items-center gap-2">
+                  <MapPin size={16} />
+                  State
+                </label>
+                <select
+                  value={formData.state}
+                  onChange={handleStateChange}
+                  onBlur={handleCityStateBlur}
+                  className="w-full h-14 bg-gray-50 border border-gray-100 rounded-2xl px-6 font-bold text-gray-900 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all outline-none"
+                  required
+                >
+                  <option value="">Select State</option>
+                  {allStates.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 ml-1 uppercase tracking-tight flex items-center gap-2">
+                  <MapPin size={16} />
+                  City
+                </label>
+                <select
+                  value={formData.city}
+                  onChange={handleCityChange}
+                  onBlur={handleCityStateBlur}
+                  disabled={!formData.state}
+                  className="w-full h-14 bg-gray-50 border border-gray-100 rounded-2xl px-6 font-bold text-gray-900 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  required
+                >
+                  <option value="">
+                    {formData.state ? "Select City" : "Select State First"}
+                  </option>
+                  {getCitiesForState(formData.state).map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+
+            {/* City-State Error Display */}
+            <AnimatePresence>
+              {cityStateError && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="md:col-span-2 bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-bold border border-red-100"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                    {cityStateError}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="md:col-span-2">
               <AnimatePresence>
