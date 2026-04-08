@@ -100,13 +100,61 @@ export const getDonorStats = async () => {
     return response.data;
   } catch (error) {
     return {
-      totalDonations: 0,
-      livesSaved: 0,
-      nextEligible: "N/A",
+      donationCount: 0,
+      nextEligibleAt: null,
       history: [],
     };
   }
 };
+
+// ───────────────── PROFILE & SETTINGS ─────────────────
+
+export const getProfile = async () => {
+  try {
+    const response = await API.get("/me");
+    return {
+      success: true,
+      user: response.data.user
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to fetch profile"
+    };
+  }
+};
+
+export const updateProfile = async (userData) => {
+  try {
+    const response = await API.put("/me", userData);
+    return {
+      success: true,
+      user: response.data.user,
+      message: response.data.message || "Profile updated successfully"
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to update profile"
+    };
+  }
+};
+
+export const changePassword = async (passwordData) => {
+  try {
+    const response = await API.put("/change-password", passwordData);
+    return {
+      success: true,
+      message: response.data.message || "Password changed successfully"
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to change password"
+    };
+  }
+};
+
 
 export const getPatientStats = async () => {
   try {

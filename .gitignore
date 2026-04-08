@@ -58,3 +58,4 @@ Thumbs.db
 backup_untracked/
 
 /backend/firebaseServiceAccountKey.json
+/backend/package-lock.json

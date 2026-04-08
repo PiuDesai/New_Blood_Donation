@@ -1,14 +1,16 @@
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, Users, HeartPulse, Droplets,
-  Settings, HelpCircle, Activity, FlaskConical, Award
+
+  User, Settings, HelpCircle, Activity, FlaskConical, Award
+
 } from "lucide-react";
 import { cn } from "../../utils/cn";
 
 const Sidebar = ({ role }) => {
   const getLinks = () => {
     const common = [
-      { to: `/${role}/settings`, icon: Settings, label: "Settings" },
+      { to: `/${role}/profile`, icon: User, label: "My Profile" },
       { to: `/${role}/help`, icon: HelpCircle, label: "Support" },
     ];
 
