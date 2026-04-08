@@ -12,6 +12,13 @@ import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { dashboardPath } from "../../utils/rolePaths";
 import toast from "react-hot-toast";
 
+const sanitizePatientName = (value = "", { forSubmit = false } = {}) => {
+  // Keep only letters and spaces so patient name can't contain numbers.
+  const cleaned = String(value).replace(/[^A-Za-z\s]/g, "");
+  if (!forSubmit) return cleaned.replace(/\s{2,}/g, " ");
+  return cleaned.replace(/\s{2,}/g, " ").trim();
+};
+
 const PatientDashboard = () => {
   const { user } = useAuth();
   const location = useLocation();
@@ -168,7 +175,7 @@ const PatientDashboard = () => {
   const openRequestModal = (req = null) => {
     if (req) {
       setRequestModalForm({
-        patientName: req.patientName,
+        patientName: sanitizePatientName(req.patientName, { forSubmit: true }),
         bloodGroup: req.bloodGroup,
         units: req.units,
         hospital: req.hospital,
@@ -231,8 +238,12 @@ const PatientDashboard = () => {
     try {
       // Remove top-level city and prepare location
       const { city, ...formData } = requestForm;
-      const payload = {
+      const sanitizedFormData = {
         ...formData,
+        patientName: sanitizePatientName(formData.patientName, { forSubmit: true })
+      };
+      const payload = {
+        ...sanitizedFormData,
         location: {
           type: "Point",
           coordinates: [72.8777, 19.0760], // Placeholder
@@ -305,7 +316,7 @@ const PatientDashboard = () => {
     e.preventDefault();
     try {
       await bookBloodTest({
-        patientName: user?.name,
+        patientName: sanitizePatientName(user?.name || "", { forSubmit: true }),
         address: labForm.address,
         phone: user?.phone,
         testType: labForm.testType
@@ -853,7 +864,20 @@ const PatientDashboard = () => {
                       type="text" 
                       placeholder="e.g. Rahul Sharma" 
                       value={requestForm.patientName}
-                      onChange={(e) => setRequestModalForm({...requestForm, patientName: e.target.value})}
+                      onChange={(e) => setRequestModalForm({ ...requestForm, patientName: sanitizePatientName(e.target.value) })}
+                      onKeyDown={(e) => {
+                        // Block direct number entry (keeps UX aligned with sanitized value).
+                        if (e.key.length === 1 && /[0-9]/.test(e.key)) e.preventDefault();
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const text = e.clipboardData.getData("text");
+                        setRequestModalForm((prev) => ({
+                          ...prev,
+                          patientName: sanitizePatientName(text)
+                        }));
+                      }}
+                      inputMode="text"
                       className="w-full h-14 bg-gray-50 border-none rounded-2xl px-6 font-black text-gray-900 focus:ring-4 focus:ring-red-100 transition-all outline-none" 
                     />
                   </div>
