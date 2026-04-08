@@ -2,6 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { User, ShieldCheck, Building2, ArrowRight } from "lucide-react";
 import { Card } from "../../components/Common/Card";
 import { motion } from "framer-motion";
+import BackButton from "../../components/Common/BackButton";
+import BloodMatrixLogo from "../../components/Common/BloodMatrixLogo";
 
 const roles = [
   {
@@ -31,19 +33,22 @@ const RoleSelection = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-red-50 via-white to-blue-50 flex items-center justify-center p-6">
-      <div className="max-w-6xl w-full">
-        <div className="text-center mb-16">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="inline-block px-4 py-1.5 rounded-full bg-red-50 text-red-600 font-bold text-xs uppercase tracking-[0.3em] mb-6 border border-red-100 shadow-sm"
-          >
-            Portal Selection
-          </motion.div>
-          <h1 className="text-6xl font-black text-gray-900 mb-4 tracking-tighter">Choose Your Path</h1>
-          <p className="text-gray-400 text-lg font-medium">Select your portal to continue saving lives</p>
-        </div>
+    <>
+      <BackButton />
+      <BloodMatrixLogo />
+      <div className="min-h-screen bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-red-50 via-white to-blue-50 flex items-center justify-center p-6">
+        <div className="max-w-6xl w-full">
+          <div className="text-center mb-16">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="inline-block px-4 py-1.5 rounded-full bg-red-50 text-red-600 font-bold text-xs uppercase tracking-[0.3em] mb-6 border border-red-100 shadow-sm"
+            >
+              Portal Selection
+            </motion.div>
+            <h1 className="text-6xl font-black text-gray-900 mb-4 tracking-tighter">Choose Your Path</h1>
+            <p className="text-gray-400 text-lg font-medium">Select your portal to continue saving lives</p>
+          </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {roles.map((role, index) => (
@@ -76,6 +81,7 @@ const RoleSelection = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

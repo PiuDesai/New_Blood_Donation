@@ -41,6 +41,130 @@ const PatientDashboard = () => {
     city: ""
   });
 
+  // City-Hospital mapping data
+  const cityHospitalData = {
+    "Mumbai": [
+      "Lilavati Hospital", "Kokilaben Dhirubhai Ambani Hospital", "Nanavati Hospital", 
+      "Hinduja Hospital", "Jaslok Hospital", "Breach Candy Hospital", "Tata Memorial Hospital",
+      "S.L. Raheja Hospital", "Wockhardt Hospital", "Fortis Hospital", "Global Hospital",
+      "SevenHills Hospital", "Airoli Hospital", "Hiranandani Hospital"
+    ],
+    "Delhi": [
+      "AIIMS", "Apollo Hospital", "Fortis Escorts Heart Institute", "Max Healthcare",
+      "Sir Ganga Ram Hospital", "BLK Super Speciality Hospital", "Indraprastha Apollo",
+      "Artemis Hospital", "Medanta - The Medicity", "Columbia Asia Hospital",
+      "Primus Hospital", "Batra Hospital", "Rajiv Gandhi Cancer Institute"
+    ],
+    "Bangalore": [
+      "Manipal Hospital", "Apollo Hospital", "Fortis Hospital", "Columbia Asia Hospital",
+      "Narayana Health", "Sakra World Hospital", "St. John's Medical College",
+      "M.S. Ramaiah Hospital", "BGS Global Hospital", "Vikram Hospital",
+      "Aster CMI Hospital", "Cloudnine Hospital", "Sparsh Hospital"
+    ],
+    "Chennai": [
+      "Apollo Hospitals", "Fortis Malar Hospital", "MIOT Hospital", "Sri Ramachandra Hospital",
+      "Global Hospitals", "Kauvery Hospital", "Vijaya Hospital", "Billroth Hospital",
+      "Chennai Meenakshi Hospital", "Sundaram Medical Foundation", "Madras Medical Mission",
+      "LifeLine Hospital", "SIMS Hospital", "Deepam Hospital"
+    ],
+    "Kolkata": [
+      "Apollo Gleneagles Hospital", "Fortis Hospital", "AMRI Hospitals", "Ruby General Hospital",
+      "Medica Superspecialty Hospital", "Peerless Hospital", "Belle Vue Clinic",
+      "Calcutta Medical Research Institute", "Woodlands Hospital", "Desun Hospital",
+      "Ilsan Hospital", "Sri Aurobindo Seva Kendra", "BM Birla Heart Research Centre"
+    ],
+    "Hyderabad": [
+      "Apollo Hospitals", "Care Hospitals", "Yashoda Hospitals", "KIMS Hospitals",
+      "Continental Hospitals", "Global Hospitals", "Sunshine Hospitals", "Medicover Hospitals",
+      "Nizam's Institute of Medical Sciences", "Owaisi Hospital", "Gandhi Hospital",
+      "Kamineni Hospitals", "Rainbow Hospitals", "Citizens Hospital"
+    ],
+    "Pune": [
+      "Sahyadri Hospital", "Jehangir Hospital", "Ruby Hall Clinic", "Deenanath Mangeshkar Hospital",
+      "Columbia Asia Hospital", "Aditya Birla Memorial Hospital", "Sancheti Hospital",
+      "KEM Hospital", "Noble Hospital", "Inamdar Hospital", "Jahangir Hospital",
+      "Star Hospital", "Sassoon General Hospital", "Bharati Hospital"
+    ],
+    "Ahmedabad": [
+      "Apollo Hospitals", "Sterling Hospital", "Zydus Hospital", "Shalby Hospital",
+      "CIMS Hospital", "HCG Hospital", "Wockhardt Hospital", "Sankalp Hospital",
+      "Narayana Hospital", "Vijaya Hospital", "Shree Narayana Hospital", "Civil Hospital",
+      "Gujarat Cancer Research Institute", "United Hospital", "Saraswati Hospital"
+    ],
+    "Jaipur": [
+      "Fortis Hospital", "SMS Hospital", "Mahatma Gandhi Hospital", "Eternal Heart Hospital",
+      "Narayana Hospital", "Apollo Hospital", "Santokba Durlabhji Hospital", "Dhanwantri Hospital",
+      "Jeevan Rekha Hospital", "Metas Hospital", "Bhandari Hospital", "Bhagwan Mahaveer Hospital",
+      "Rajasthan Hospital", "SDM Hospital", "Mahatma Gandhi Medical College"
+    ],
+    "Lucknow": [
+      "SGPGI", "KGMU", "Dr. Ram Manohar Lohia Hospital", "Apollo Hospital",
+      "Fortis Hospital", "Max Healthcare", "Mayo Hospital", "Balrampur Hospital",
+      "Charak Hospital", "Sparsh Hospital", "Tara Hospital", "Lohia Hospital",
+      "Civil Hospital", "Queen Mary's Hospital", "Eldees Hospital"
+    ],
+    "Nagpur": [
+      "AIIMS Nagpur", "Indira Gandhi Government Medical College", "Wockhardt Hospital",
+      "Care Hospitals", "Orange City Hospital", "Krishna Hospital", "Lata Mangeshkar Hospital",
+      "Alexis Hospital", "Sancheti Hospital", "Seven Hills Hospital", "Renuka Hospital",
+      "Hinduja Hospital", "Crescent Hospital", "Vasan Eye Care"
+    ],
+    "Indore": [
+      "Apollo Hospitals", "Choithram Hospital", "Bombay Hospital", "CHL Hospital",
+      "Medanta Hospital", "Sri Aurobindo Hospital", "CARE Hospital", "Greater Kailash Hospital",
+      "Index Medical College", "Gokuldas Hospital", "Matrishwa Hospital", "Vijay Hospital",
+      "Arpit Hospital", "Shalby Hospital", "Renaissance Hospital"
+    ],
+    "Patna": [
+      "AIIMS Patna", "PMCH", "IGIMS", "Paras Hospital", "Ruban Hospital",
+      "Kurji Holy Family Hospital", "Mahavir Vaatsalya Hospital", "Anugrah Hospital",
+      "Rajeshwar Hospital", "Gautam Hospital", "Kurji Hospital", "Nalanda Medical College",
+      "Patna Medical College", "Vijay Hospital", "Shri Krishna Hospital"
+    ],
+    "Bhopal": [
+      "AIIMS Bhopal", "Hamidia Hospital", "BHEL Hospital", "People's Hospital",
+      "Chirayu Hospital", "Bansal Hospital", "Sarthak Hospital", "National Hospital",
+      "RKDF Hospital", "Jehangir Hospital", "CARE Hospital", "Vivekananda Hospital",
+      "Bhopal Memorial Hospital", "Siddhartha Hospital", "Lakshmi Narayan Hospital"
+    ],
+    "Surat": [
+      "Mahavir Hospital", "Surat Hospital", "Diamond Hospital", "Shalby Hospital",
+      "Apple Hospital", "Sunshine Hospital", "Care Institute of Medical Sciences", "Kiran Hospital",
+      "Umiya Hospital", "Civil Hospital", "New Civil Hospital", "P. D. Hinduja Hospital",
+      "Lokmanya Hospital", "Ashwini Hospital", "Saraswati Hospital"
+    ],
+    "Visakhapatnam": [
+      "King George Hospital", "Seven Hills Hospital", "Care Hospital", "Apollo Hospitals",
+      "Lions Hospital", "Queen's NRI Hospital", "Gandhi Hospital", "CMC Hospital",
+      "Pinnacle Hospital", "Annapurna Hospital", "NRI Hospital", "MVP Hospital",
+      "Simhachalam Hospital", "St. Joseph's Hospital", "Government General Hospital"
+    ]
+  };
+
+  // Get all cities for dropdown
+  const allCities = Object.keys(cityHospitalData);
+
+  // Get hospitals based on selected city
+  const getHospitalsForCity = (city) => {
+    return cityHospitalData[city] || [];
+  };
+
+  // Handle city change
+  const handleRequestCityChange = (e) => {
+    const selectedCity = e.target.value;
+    setRequestModalForm({ 
+      ...requestForm, 
+      city: selectedCity,
+      hospital: "" // Reset hospital when city changes
+    });
+  };
+
+  // Handle hospital change
+  const handleRequestHospitalChange = (e) => {
+    const selectedHospital = e.target.value;
+    setRequestModalForm({ ...requestForm, hospital: selectedHospital });
+  };
+
   const openRequestModal = (req = null) => {
     if (req) {
       setRequestModalForm({
@@ -198,18 +322,9 @@ const PatientDashboard = () => {
     return <Navigate to={dashboardPath(user.role)} replace />;
   }
 
-  const labTests = [
-    { id: 1, test: "Complete Blood Count (CBC)", date: "March 20, 2024", status: "Report Ready", result: "Normal" },
-    { id: 2, test: "Liver Function Test", date: "March 15, 2024", status: "Pending", result: "N/A" },
-  ];
+  const labTests = [];
 
-  const nearbyDonors = [
-    { name: "John Doe", bloodGroup: "O+", distance: "1.2 km", reliability: 98, phone: "+91 98765 43210" },
-    { name: "Jane Smith", bloodGroup: "O+", distance: "2.5 km", reliability: 95, phone: "+91 87654 32109" },
-    { name: "Mike Johnson", bloodGroup: "O+", distance: "3.8 km", reliability: 92, phone: "+91 76543 21098" },
-    { name: "Sarah Williams", bloodGroup: "A-", distance: "4.2 km", reliability: 99, phone: "+91 65432 10987" },
-    { name: "David Brown", bloodGroup: "B+", distance: "5.0 km", reliability: 94, phone: "+91 54321 09876" }
-  ];
+  const nearbyDonors = [];
 
   if (loading) return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
@@ -773,24 +888,37 @@ const PatientDashboard = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-2">Hospital Name</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. City Hospital" 
+                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-2">Hospital</label>
+                      <select 
                         value={requestForm.hospital}
-                        onChange={(e) => setRequestModalForm({...requestForm, hospital: e.target.value})}
-                        className="w-full h-14 bg-gray-50 border-none rounded-2xl px-6 font-black text-gray-900 focus:ring-4 focus:ring-red-100 transition-all outline-none" 
-                      />
+                        onChange={handleRequestHospitalChange}
+                        disabled={!requestForm.city}
+                        className="w-full h-14 bg-gray-50 border-none rounded-2xl px-6 font-black text-gray-900 focus:ring-4 focus:ring-red-100 transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <option value="">
+                          {requestForm.city ? "Select Hospital" : "Select City First"}
+                        </option>
+                        {getHospitalsForCity(requestForm.city).map((hospital) => (
+                          <option key={hospital} value={hospital}>
+                            {hospital}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-2">City</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. Mumbai" 
+                      <select 
                         value={requestForm.city}
-                        onChange={(e) => setRequestModalForm({...requestForm, city: e.target.value})}
-                        className="w-full h-14 bg-gray-50 border-none rounded-2xl px-6 font-black text-gray-900 focus:ring-4 focus:ring-red-100 transition-all outline-none" 
-                      />
+                        onChange={handleRequestCityChange}
+                        className="w-full h-14 bg-gray-50 border-none rounded-2xl px-6 font-black text-gray-900 focus:ring-4 focus:ring-red-100 transition-all outline-none"
+                      >
+                        <option value="">Select City</option>
+                        {allCities.map((city) => (
+                          <option key={city} value={city}>
+                            {city}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                   <div className="space-y-2">

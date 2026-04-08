@@ -22,7 +22,7 @@ router.post("/login", adminLogin);
 
 // ── Approval routes ─────────────────
 router.get("/pending-blood-banks", auth, requireRole("admin"), getPendingBloodBanks);
-router.post("/approve-blood-bank/:id", auth, requireRole("admin"), approveBloodBank);
+router.put("/approve-blood-bank/:id", auth, requireRole("admin"), approveBloodBank);
 
 router.get("/pending-donors", auth, requireRole("admin"), getPendingDonors);
 router.put("/approve-donor/:id", auth, requireRole("admin"), approveDonor);

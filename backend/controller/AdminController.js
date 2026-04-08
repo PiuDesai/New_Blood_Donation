@@ -1,6 +1,7 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/UserModel');
+const jwt = require("jsonwebtoken");
+const User = require("../models/UserModel");
 
+// ✅ ADMIN LOGIN
 exports.adminLogin = (req, res) => {
   const { email, password } = req.body;
 
@@ -10,26 +11,30 @@ exports.adminLogin = (req, res) => {
   ) {
     const token = jwt.sign(
       { role: "admin" },
-      process.env.JWT_SECRET || 'secret',
+      process.env.JWT_SECRET || "secret",
       { expiresIn: "1d" }
     );
 
     return res.json({
       success: true,
       token,
-      user: { role: "admin", email }
+      user: { role: "admin", email },
     });
   }
 
   return res.status(401).json({
     success: false,
-    message: "Invalid credentials"
+    message: "Invalid credentials",
   });
 };
 
+// ✅ GET APPROVED DONORS
 exports.getAllDonors = async (req, res) => {
   try {
-    const donors = await User.find({ role: "donor" })
+    const donors = await User.find({
+      role: "donor",
+      isApproved: true,
+    })
       .select("-password")
       .sort({ createdAt: -1 });
 
@@ -39,9 +44,13 @@ exports.getAllDonors = async (req, res) => {
   }
 };
 
+// ✅ GET APPROVED BLOOD BANKS
 exports.getAllBloodBanks = async (req, res) => {
   try {
-    const bloodbanks = await User.find({ role: "bloodbank" })
+    const bloodbanks = await User.find({
+      role: "bloodbank",
+      isApproved: true,
+    })
       .select("-password")
       .sort({ createdAt: -1 });
 
@@ -51,96 +60,95 @@ exports.getAllBloodBanks = async (req, res) => {
   }
 };
 
+// ✅ USER DETAILS
 exports.getUserDetails = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+
     res.json({ success: true, user });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// ✅ REMOVE → MOVE TO PENDING
 exports.removeUser = async (req, res) => {
   try {
     const { id } = req.params;
+
     const user = await User.findByIdAndUpdate(
       id,
-      { isActive: false },
+      {
+        isApproved: false, // ⭐ MAIN LOGIC
+        isActive: true,
+      },
       { new: true }
     ).select("-password");
 
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
-    res.json({ success: true, message: "User deactivated", user });
+    res.json({
+      success: true,
+      message: "Moved to pending",
+      user,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// ✅ PENDING DONORS
 exports.getPendingDonors = async (req, res) => {
   try {
     const donors = await User.find({
-      role: "donor",          // only donors
-      isApproved: false       // pending
+      role: "donor",
+      isApproved: false,
     }).select("-password");
 
-    res.json({
-      success: true,
-      donors
-    });
-
+    res.json({ success: true, donors });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // ✅ APPROVE DONOR
 exports.approveDonor = async (req, res) => {
   try {
-    const { id } = req.params;
-
     const donor = await User.findByIdAndUpdate(
-      id,
+      req.params.id,
       { isApproved: true },
       { new: true }
     );
 
     res.json({
       success: true,
-      message: "Donor approved successfully",
-      donor
+      message: "Donor approved",
+      donor,
     });
-
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// ✅ GET PENDING BLOOD BANKS
+// ✅ PENDING BLOOD BANKS
 exports.getPendingBloodBanks = async (req, res) => {
   try {
     const bloodbanks = await User.find({
       role: "bloodbank",
-      isApproved: false
+      isApproved: false,
     }).select("-password");
 
-    res.json({
-      success: true,
-      bloodbanks
-    });
-
+    res.json({ success: true, bloodbanks });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -156,14 +164,10 @@ exports.approveBloodBank = async (req, res) => {
     res.json({
       success: true,
       message: "Blood bank approved",
-      bloodbank
+      bloodbank,
     });
-
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -171,31 +175,27 @@ exports.approveBloodBank = async (req, res) => {
 exports.getAdminStats = async (req, res) => {
   try {
     const totalDonors = await User.countDocuments({ role: "donor" });
-
     const pendingDonors = await User.countDocuments({
       role: "donor",
-      isApproved: false
+      isApproved: false,
     });
 
     const totalBanks = await User.countDocuments({
-      role: "bloodbank"
+      role: "bloodbank",
     });
 
     const pendingBanks = await User.countDocuments({
       role: "bloodbank",
-      isApproved: false
+      isApproved: false,
     });
 
     res.json({
       totalDonors,
       pendingDonors,
       totalBanks,
-      pendingBanks
+      pendingBanks,
     });
-
   } catch (error) {
-    res.status(500).json({
-      message: error.message
-    });
+    res.status(500).json({ message: error.message });
   }
 };
