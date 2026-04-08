@@ -2,6 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { User, Heart, ArrowRight, ArrowLeft } from "lucide-react";
 import { Card } from "../../components/Common/Card";
 import { motion } from "framer-motion";
+import BackButton from "../../components/Common/BackButton";
+import BloodMatrixLogo from "../../components/Common/BloodMatrixLogo";
 
 const subRoles = [
   {
@@ -24,20 +26,15 @@ const SubRoleSelection = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-50 via-white to-red-50 flex items-center justify-center p-6">
-      <div className="max-w-4xl w-full">
-        <motion.button 
-          whileHover={{ x: -5 }}
-          onClick={() => navigate("/role-selection")}
-          className="flex items-center gap-3 text-gray-400 font-bold mb-12 hover:text-red-600 transition-all uppercase tracking-widest text-xs"
-        >
-          <ArrowLeft size={16} /> Back to Main Roles
-        </motion.button>
-
-        <div className="text-center mb-16">
-          <h1 className="text-6xl font-black text-gray-900 mb-4 tracking-tighter">User Portal</h1>
-          <p className="text-gray-400 text-lg font-medium">Choose how you want to contribute today</p>
-        </div>
+    <>
+      <BackButton />
+      <BloodMatrixLogo />
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-50 via-white to-red-50 flex items-center justify-center p-6">
+        <div className="max-w-4xl w-full">
+          <div className="text-center mb-16">
+            <h1 className="text-6xl font-black text-gray-900 mb-4 tracking-tighter">User Portal</h1>
+            <p className="text-gray-400 text-lg font-medium">Choose how you want to contribute today</p>
+          </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           {subRoles.map((role, index) => (
@@ -65,6 +62,7 @@ const SubRoleSelection = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
