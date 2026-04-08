@@ -196,19 +196,27 @@ const Register = () => {
   // Validate name field - only letters allowed
   const handleNameChange = (e) => {
     const value = e.target.value;
-    // Only allow letters (including spaces for full names)
-    const lettersOnly = value.replace(/[^a-zA-Z\s]/g, '');
     
-    setFormData({ ...formData, name: lettersOnly });
-    
-    // Clear error if valid
-    if (lettersOnly.trim().length >= 2) {
-      setNameError("");
+    // Check for invalid characters (numbers and special characters)
+    if (/[^a-zA-Z\s]/.test(value)) {
+      setNameError("Name can only contain letters and spaces");
+    } else {
+      // Only allow letters (including spaces for full names)
+      const lettersOnly = value.replace(/[^a-zA-Z\s]/g, '');
+      setFormData({ ...formData, name: lettersOnly });
+      
+      // Clear error if valid
+      if (lettersOnly.trim().length >= 2) {
+        setNameError("");
+      }
     }
+    
+    console.log("Name change:", { original: value, hasInvalidChars: /[^a-zA-Z\s]/.test(value) });
   };
 
   const handleNameBlur = () => {
     const name = formData.name.trim();
+    console.log("Name blur validation:", { name, length: name.length, regexTest: /^[a-zA-Z\s]+$/.test(name) });
     if (name.length < 2) {
       setNameError("Name must be at least 2 characters long");
     } else if (!/^[a-zA-Z\s]+$/.test(name)) {
