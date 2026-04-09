@@ -29,18 +29,35 @@ const forgotPassword = async (req, res, next) => {
     const message = `Forgot your password? Reset it here: ${resetURL}\nIf you didn't forget your password, please ignore this email.`;
 
     try {
-      await sendEmail({
+      const emailResult = await sendEmail({
         to: user.email,
         subject: 'Password Reset Token (Valid for 10 mins)',
         text: message
       });
 
-      res.json({ message: 'Token sent to email!' });
+      if (!emailResult.ok) {
+        throw new Error(emailResult.error || 'Email send failed');
+      }
+
+      res.json({ success: true, message: 'Token sent to email!' });
     } catch (err) {
+      console.error("[forgotPassword] Email error:", err.message);
       user.passwordResetToken = undefined;
       user.passwordResetExpires = undefined;
       await user.save({ validateBeforeSave: false });
-      return res.status(500).json({ message: 'Error sending email. Try again later.' });
+      
+      // Check if it's a login error to give a clearer message
+      if (err.message.includes('Invalid login') || err.message.includes('535')) {
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Email service configuration error. Please ensure your App Password is correct in the .env file.' 
+        });
+      }
+
+      return res.status(500).json({ 
+        success: false, 
+        message: 'We encountered an error while sending the reset link. Please try again later or contact support.' 
+      });
     }
   } catch (err) {
     next(err);
@@ -65,7 +82,7 @@ const resetPassword = async (req, res, next) => {
     await user.save();
 
     const token = signToken(user._id, user.role);
-    res.json({ message: 'Password reset successful', token, user: user.toJSON() });
+    res.json({ success: true, message: 'Password reset successful', token, user: user.toJSON() });
   } catch (err) {
     next(err);
   }
@@ -112,6 +129,7 @@ const registerUser = async (req, res, next) => {
       .catch((e) => console.error('[email] welcome error:', e.message));
 
     res.status(201).json({
+      success: true,
       message: 'Registered successfully',
       token,
       user
@@ -162,7 +180,8 @@ const registerBloodBank = async (req, res, next) => {
       .catch((e) => console.error('[email] bloodbank welcome error:', e.message));
 
     res.status(201).json({
-      message: 'Blood bank registered successfully',
+      success: true,
+      message: 'Blood Bank registered. Admin will review your account.',
       token,
       user
     });
@@ -219,6 +238,7 @@ const login = async (req, res, next) => {
     const token = signToken(user._id, user.role);
 
     res.json({
+      success: true,
       message: 'Login successful',
       token,
       user: user.toJSON()
@@ -236,9 +256,9 @@ const getProfile = async (req, res, next) => {
     const user = await User.findById(req.user.id);
 
     if (!user)
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ success: false, message: 'User not found' });
 
-    res.json({ user: user.toJSON() });
+    res.json({ success: true, user: user.toJSON() });
 
   } catch (err) {
     next(err); // ✅ FIX
@@ -267,7 +287,10 @@ const updateProfile = async (req, res, next) => {
       { new: true, runValidators: true }
     );
 
-    res.json({ message: 'Profile updated', user: user.toJSON() });
+    if (!user)
+      return res.status(404).json({ success: false, message: 'User not found' });
+
+    res.json({ success: true, message: 'Profile updated', user: user.toJSON() });
 
   } catch (err) {
     next(err); // ✅ FIX
@@ -292,7 +315,7 @@ const changePassword = async (req, res, next) => {
     user.password = newPassword;
     await user.save();
 
-    res.json({ message: 'Password changed' });
+    res.json({ success: true, message: 'Password changed' });
 
   } catch (err) {
     next(err); // ✅ FIX

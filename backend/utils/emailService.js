@@ -16,16 +16,30 @@ function getTransport() {
   if (!hasSmtpConfig()) return null;
 
   const smtpPass = String(process.env.SMTP_PASS || "").replace(/\s/g, "");
+  const isGmail = String(process.env.SMTP_HOST || "").toLowerCase().includes("gmail");
 
-  cachedTransport = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: String(process.env.SMTP_SECURE || "").toLowerCase() === "true",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: smtpPass,
-    },
-  });
+  const config = isGmail 
+    ? {
+        service: 'gmail',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: smtpPass,
+        }
+      }
+    : {
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT),
+        secure: String(process.env.SMTP_SECURE || "").toLowerCase() === "true",
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: smtpPass,
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      };
+
+  cachedTransport = nodemailer.createTransport(config);
 
   return cachedTransport;
 }

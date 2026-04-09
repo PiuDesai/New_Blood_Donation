@@ -374,9 +374,14 @@ const Profile = () => {
     setSendingReset(true);
     try {
       const res = await forgotPassword(formData.email);
-      toast.success(`Reset link sent! Please check your email: ${formData.email}`);
+      if (res.success) {
+        toast.success(`Reset link sent! Please check your email: ${formData.email}`);
+      } else {
+        toast.error(res.message || "Could not send reset link. Please try again.");
+      }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to send reset link");
+      const errorMsg = err.response?.data?.message || "Our email service is currently unavailable. Please try again later.";
+      toast.error(errorMsg);
     } finally {
       setSendingReset(false);
     }

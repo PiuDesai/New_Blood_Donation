@@ -42,10 +42,11 @@ const ResetPassword = () => {
           setTimeout(() => navigate("/role-selection"), 3000);
         }
       } else {
-        toast.error(res.message);
+        toast.error(res.message || "Failed to reset password. The link may have expired.");
       }
     } catch (err) {
-      toast.error("An error occurred. The link might be expired.");
+      const errorMsg = err.response?.data?.message || "This password reset link is invalid or has already been used. Please request a new one.";
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
