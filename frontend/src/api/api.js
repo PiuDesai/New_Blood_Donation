@@ -89,6 +89,16 @@ export const changePassword = async (payload) => {
   return data;
 };
 
+export const forgotPassword = async (email) => {
+  const { data } = await API.post("/forgot-password", { email });
+  return data;
+};
+
+export const resetPassword = async (token, password) => {
+  const { data } = await API.patch(`/reset-password/${token}`, { password });
+  return data;
+};
+
 export const checkDonorEligibility = async () => {
   const { data } = await API.get("/eligibility");
   return data;

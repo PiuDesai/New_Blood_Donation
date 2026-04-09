@@ -6,7 +6,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { getProfile, updateProfile, changePassword } from "../../api/authAPI";
+import { getProfile, updateProfile, changePassword } from "../../api/api";
+import { forgotPassword } from "../../api/api";
 import { Button } from "../../components/Common/Button";
 import { Card } from "../../components/Common/Card";
 import { Input } from "../../components/Common/Input";
@@ -95,6 +96,8 @@ const Profile = () => {
     newPassword: "",
     confirmPassword: ""
   });
+
+  const [sendingReset, setSendingReset] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -336,6 +339,25 @@ const Profile = () => {
       toast.error("An error occurred");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      return toast.error("Registered email not found. Please refresh and try again.");
+    }
+    
+    const confirmSend = window.confirm(`A password reset link will be sent to your registered email: ${formData.email}. Proceed?`);
+    if (!confirmSend) return;
+
+    setSendingReset(true);
+    try {
+      const res = await forgotPassword(formData.email);
+      toast.success(`Reset link sent! Please check your email: ${formData.email}`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to send reset link");
+    } finally {
+      setSendingReset(false);
     }
   };
 
@@ -748,7 +770,17 @@ const Profile = () => {
                       </div>
                     </div>
 
-                    <div className="flex justify-end pt-6">
+                    <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={handleForgotPassword}
+                        disabled={sendingReset}
+                        className="text-red-600 font-black uppercase text-[10px] tracking-widest flex items-center gap-2 hover:bg-red-50"
+                      >
+                        {sendingReset ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                        Forgot Password?
+                      </Button>
                       <Button
                         type="submit"
                         disabled={updating}
