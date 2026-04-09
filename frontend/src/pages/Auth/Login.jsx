@@ -141,15 +141,17 @@ const Login = () => {
             </form>
 
             <div className="mt-10 text-center">
-              <p className="text-gray-400">
-                New user?{" "}
-                <Link to={role === "bloodbank" ? "/register/bloodbank" : "/register"} className="text-red-600">
-                  Create Account
-                </Link>
-              </p>
+              {role !== "admin" && (
+                <p className="text-gray-400">
+                  New user?{" "}
+                  <Link to={role === "bloodbank" ? "/register/bloodbank" : "/register"} className="text-red-600">
+                    Create Account
+                  </Link>
+                </p>
+              )}
 
               <button onClick={() => navigate("/role-selection")} className="text-sm text-gray-400 mt-3">
-                ← Switch Role
+                Switch Role
               </button>
             </div>
 
