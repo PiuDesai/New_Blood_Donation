@@ -1,9 +1,92 @@
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/UserModel.js');
+const { sendEmail } = require('../utils/emailService');
 
 // ── Helper: sign JWT ──────────────────────────────────────────
 const signToken = (id, role) =>
   jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+
+
+// ───────────────── FORGOT PASSWORD ─────────────────
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Please provide email' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 mins
+
+    await user.save({ validateBeforeSave: false });
+
+    // Send reset email
+    const resetURL = `${process.env.FRONT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+    const message = `Forgot your password? Reset it here: ${resetURL}\nIf you didn't forget your password, please ignore this email.`;
+
+    try {
+      const emailResult = await sendEmail({
+        to: user.email,
+        subject: 'Password Reset Token (Valid for 10 mins)',
+        text: message
+      });
+
+      if (!emailResult.ok) {
+        throw new Error(emailResult.error || 'Email send failed');
+      }
+
+      res.json({ success: true, message: 'Token sent to email!' });
+    } catch (err) {
+      console.error("[forgotPassword] Email error:", err.message);
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+      
+      // Check if it's a login error to give a clearer message
+      if (err.message.includes('Invalid login') || err.message.includes('535')) {
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Email service configuration error. Please ensure your App Password is correct in the .env file.' 
+        });
+      }
+
+      return res.status(500).json({ 
+        success: false, 
+        message: 'We encountered an error while sending the reset link. Please try again later or contact support.' 
+      });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ───────────────── RESET PASSWORD ─────────────────
+const resetPassword = async (req, res, next) => {
+  try {
+    const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() }
+    });
+
+    if (!user) return res.status(400).json({ message: 'Token is invalid or has expired' });
+
+    user.password = req.body.password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    const token = signToken(user._id, user.role);
+    res.json({ success: true, message: 'Password reset successful', token, user: user.toJSON() });
+  } catch (err) {
+    next(err);
+  }
+};
 
 
 // ───────────────── REGISTER USER (Donor/Patient) ─────────────────
@@ -32,9 +115,24 @@ const registerUser = async (req, res, next) => {
       bloodGroup, dateOfBirth, gender, location
     });
 
+    const token = signToken(user._id, user.role);
+
+    // welcome email (non-blocking; log result for debugging)
+    sendEmail({
+      to: user.email,
+      subject: 'Welcome to BloodMatrix',
+      text: `Hi ${user.name},\n\nYour account has been created successfully.\n\nThanks,\nBloodMatrix Team`,
+    })
+      .then((r) => {
+        if (process.env.NODE_ENV !== 'production') console.log('[email] welcome result:', r);
+      })
+      .catch((e) => console.error('[email] welcome error:', e.message));
+
     res.status(201).json({
+      success: true,
       message: 'Registered successfully',
-      userId: user._id
+      token,
+      user
     });
 
   } catch (err) {
@@ -69,9 +167,23 @@ const registerBloodBank = async (req, res, next) => {
       licenseInfo
     });
 
+    const token = signToken(user._id, user.role);
+
+    sendEmail({
+      to: user.email,
+      subject: 'Blood bank registration received',
+      text: `Hi ${user.name},\n\nYour blood bank account has been created successfully.\n\nThanks,\nBloodMatrix Team`,
+    })
+      .then((r) => {
+        if (process.env.NODE_ENV !== 'production') console.log('[email] bloodbank welcome result:', r);
+      })
+      .catch((e) => console.error('[email] bloodbank welcome error:', e.message));
+
     res.status(201).json({
-      message: 'Blood bank registered successfully',
-      userId: user._id
+      success: true,
+      message: 'Blood Bank registered. Admin will review your account.',
+      token,
+      user
     });
 
   } catch (err) {
@@ -126,6 +238,7 @@ const login = async (req, res, next) => {
     const token = signToken(user._id, user.role);
 
     res.json({
+      success: true,
       message: 'Login successful',
       token,
       user: user.toJSON()
@@ -143,9 +256,9 @@ const getProfile = async (req, res, next) => {
     const user = await User.findById(req.user.id);
 
     if (!user)
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ success: false, message: 'User not found' });
 
-    res.json({ user: user.toJSON() });
+    res.json({ success: true, user: user.toJSON() });
 
   } catch (err) {
     next(err); // ✅ FIX
@@ -174,7 +287,10 @@ const updateProfile = async (req, res, next) => {
       { new: true, runValidators: true }
     );
 
-    res.json({ message: 'Profile updated', user: user.toJSON() });
+    if (!user)
+      return res.status(404).json({ success: false, message: 'User not found' });
+
+    res.json({ success: true, message: 'Profile updated', user: user.toJSON() });
 
   } catch (err) {
     next(err); // ✅ FIX
@@ -199,7 +315,7 @@ const changePassword = async (req, res, next) => {
     user.password = newPassword;
     await user.save();
 
-    res.json({ message: 'Password changed' });
+    res.json({ success: true, message: 'Password changed' });
 
   } catch (err) {
     next(err); // ✅ FIX
@@ -307,6 +423,8 @@ module.exports = {
   getProfile,
   updateProfile,
   changePassword,
+  forgotPassword,
+  resetPassword,
   checkEligibility,
   recordDonation,
   logout,

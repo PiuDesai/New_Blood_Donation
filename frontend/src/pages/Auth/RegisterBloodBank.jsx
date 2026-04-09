@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import BackButton from "../../components/Common/BackButton";
 import BloodMatrixLogo from "../../components/Common/BloodMatrixLogo";
+import { useAuth } from "../../context/AuthContext";
 
 // State-City mapping data - Comprehensive with all cities and districts
 const stateCityData = {
@@ -221,6 +222,7 @@ const stateCityData = {
 
 const RegisterBloodBank = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -312,8 +314,13 @@ const RegisterBloodBank = () => {
 
     try {
       const response = await registerBloodBank(payload);
-      toast.success(response.message || "Blood Bank registered successfully!");
-      navigate("/login/bloodbank");
+      if (response?.token && response?.user) {
+        toast.success(response.message || "Blood bank registered successfully!");
+        login(response.user, response.token);
+      } else {
+        toast.success(response.message || "Blood Bank registered successfully!");
+        navigate("/login/bloodbank");
+      }
     } catch (err) {
       const msg = getErrorMessage(err);
       setError(msg);

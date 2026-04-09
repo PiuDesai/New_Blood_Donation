@@ -48,6 +48,30 @@ export const loginAdmin = async (credentials) => {
   }
 };
 
+export const forgotPassword = async (email) => {
+  try {
+    const response = await API.post("/forgot-password", { email });
+    return { success: true, ...response.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to send reset link",
+    };
+  }
+};
+
+export const resetPassword = async (token, password) => {
+  try {
+    const response = await API.patch(`/reset-password/${token}`, { password });
+    return { success: true, ...response.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to reset password",
+    };
+  }
+};
+
 export const registerUser = async (userData) => {
   try {
     // Backend route: POST /api/user/register

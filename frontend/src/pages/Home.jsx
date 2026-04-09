@@ -93,7 +93,7 @@ const Home = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
               </span>
-              <span className="text-xs font-black uppercase tracking-widest">Lives saved today: 1,242</span>
+              <span className="text-xs font-black uppercase tracking-widest">Active Life-Saving Network</span>
             </div>
             <h1 className="text-6xl md:text-8xl font-black text-gray-900 leading-[0.9] tracking-tighter mb-8">
               The Next Gen <br />
@@ -111,15 +111,8 @@ const Home = () => {
                 Join the Network <ArrowRight className="group-hover:translate-x-2 transition-transform" />
               </Button>
               <div className="flex items-center gap-4 px-6">
-                <div className="flex -space-x-3">
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gray-100 overflow-hidden">
-                      <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="User" />
-                    </div>
-                  ))}
-                </div>
                 <div className="text-xs font-bold text-gray-400">
-                  <span className="text-gray-900 font-black">10k+</span> Registered Heroes
+                  <span className="text-gray-900 font-black tracking-widest uppercase">Verified Heroes & Centers</span>
                 </div>
               </div>
             </div>
@@ -138,8 +131,8 @@ const Home = () => {
                   <div className="w-16 h-16 bg-white/20 backdrop-blur-lg rounded-2xl flex items-center justify-center text-white mb-8 border border-white/20">
                     <Heart size={32} fill="white" />
                   </div>
-                  <h3 className="text-4xl font-black text-white leading-tight mb-4">Urgent O+ <br />Needed in Mumbai</h3>
-                  <p className="text-red-50 text-lg font-bold">ETA: 12 mins to reach City Hospital</p>
+                  <h3 className="text-4xl font-black text-white leading-tight mb-4">Urgent Help <br />Nearby</h3>
+                  <p className="text-red-50 lg:text-lg font-bold">Fastest response for emergency requirements.</p>
                 </div>
                 
                 <div className="relative z-20 space-y-4">
@@ -185,7 +178,7 @@ const Home = () => {
               </div>
               <div>
                 <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Active Donors</p>
-                <p className="text-sm font-black text-gray-900">48 Near You</p>
+                <p className="text-sm font-black text-gray-900">Verified Network</p>
               </div>
             </motion.div>
           </motion.div>

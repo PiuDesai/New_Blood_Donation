@@ -5,10 +5,10 @@ import { Button } from "../../components/Common/Button";
 import { Input } from "../../components/Common/Input";
 import { RatingInput, StarRating } from "../../components/Common/RatingComponent";
 import { useAuth } from "../../context/AuthContext";
-import { getPatientStats, getMyBloodRequests, createBloodRequest, getAllCamps, updateBloodRequest, deleteBloodRequest, rateDonor, verifyRequestCompletion, bookBloodTest } from "../../api/api";
+import { getPatientStats, getMyBloodRequests, createBloodRequest, getAllCamps, updateBloodRequest, deleteBloodRequest, rateDonor, verifyRequestCompletion, bookBloodTest, getAllBloodBanks } from "../../api/api";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation, useNavigate, Navigate } from "react-router-dom";
+import { useLocation, useNavigate, Navigate, useSearchParams } from "react-router-dom";
 import { dashboardPath } from "../../utils/rolePaths";
 import toast from "react-hot-toast";
 
@@ -23,6 +23,9 @@ const PatientDashboard = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get("q") || "";
+
   const [stats, setStats] = useState(null);
   const [myRequests, setMyRequests] = useState([]);
   const [camps, setCamps] = useState([]);
@@ -48,6 +51,26 @@ const PatientDashboard = () => {
     state: "",
     city: ""
   });
+
+  const [localSearch, setLocalSearch] = useState(query);
+  const [realNearbyDonors, setRealNearbyDonors] = useState([]);
+  const [realBloodBanks, setRealBloodBanks] = useState([]);
+
+  const filteredDonors = realNearbyDonors.filter(donor => 
+    donor.name.toLowerCase().includes((localSearch || query).toLowerCase()) ||
+    donor.bloodGroup.toLowerCase().includes((localSearch || query).toLowerCase())
+  );
+
+  const filteredBanks = realBloodBanks.filter(bank => 
+    bank.name.toLowerCase().includes((localSearch || query).toLowerCase()) ||
+    bank.bloodStock?.some(stock => stock.bloodGroup.toLowerCase().includes((localSearch || query).toLowerCase()))
+  );
+
+  const labTests = [
+     { test: "Complete Blood Count (CBC)", date: "Apr 05, 2026", status: "Report Ready" },
+     { test: "Liver Function Test (LFT)", date: "Apr 02, 2026", status: "Report Ready" },
+     { test: "Diabetes Screening (HbA1c)", date: "Mar 28, 2026", status: "Processing" },
+   ];
 
   // State-City-Hospital mapping data - Complete Indian coverage
   const stateCityHospitalData = {
@@ -2871,14 +2894,16 @@ const PatientDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [statsData, requestsData, campsData] = await Promise.all([
+      const [statsData, requestsData, campsData, banksData] = await Promise.all([
         getPatientStats(),
         getMyBloodRequests(),
-        getAllCamps()
+        getAllCamps(),
+        getAllBloodBanks()
       ]);
       setStats(statsData);
       setMyRequests(requestsData);
       setCamps(campsData);
+      setRealBloodBanks(banksData || []);
     } catch (err) {
       console.error("Failed to fetch patient data:", err);
       setError(err?.response?.data?.message || err?.message || "Could not load dashboard data.");
@@ -2987,10 +3012,6 @@ const PatientDashboard = () => {
     return <Navigate to={dashboardPath(user.role)} replace />;
   }
 
-  const labTests = [];
-
-  const nearbyDonors = [];
-
   if (loading) return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
       <div className="w-16 h-16 border-4 border-red-100 border-t-red-600 rounded-full animate-spin" />
@@ -2998,375 +3019,56 @@ const PatientDashboard = () => {
     </div>
   );
 
-  if (isRequestsPage) {
-    return (
-      <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Button>
-        <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
-          <div className="flex items-center justify-between mb-10">
-            <h3 className="text-3xl font-black text-gray-900 tracking-tight">All Blood Requests</h3>
-            <Button onClick={() => openRequestModal()} className="bg-red-600 hover:bg-red-700">New Request</Button>
-          </div>
-          <div className="space-y-6">
-            {myRequests.map((req, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group flex flex-col gap-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8">
-                  <div className="flex items-center gap-8">
-                    <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-pink-600 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-red-200 group-hover:rotate-6 transition-transform">{req.bloodGroup}</div>
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <p className="font-black text-2xl text-gray-900">{req.units} Units</p>
-                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${req.urgency === "Emergency" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>{req.urgency}</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
-                        <span className="flex items-center gap-1.5"><MapPin size={14} /> {req.hospital}</span>
-                        <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(req.createdAt).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest ${
-                      req.status === "Pending" ? "bg-amber-50 text-amber-600" :
-                      req.status === "Accepted" ? "bg-blue-50 text-blue-600" :
-                      req.status === "Cancelled" ? "bg-gray-100 text-gray-400" :
-                      req.status === "Rejected" ? "bg-red-50 text-red-600" :
-                      "bg-emerald-50 text-emerald-600"
-                    }`}>{req.status}</span>
-                  </div>
-                </div>
-
-                {req.status === "Rejected" && req.rejectionReason && (
-                  <div className="p-6 bg-red-50 rounded-3xl border border-red-100">
-                    <p className="text-xs font-black text-red-600 uppercase tracking-widest mb-1">Blood Bank Rejection Reason</p>
-                    <p className="text-sm font-bold text-gray-700">{req.rejectionReason}</p>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase mt-2 tracking-widest">Notification has been sent to local donors to assist.</p>
-                  </div>
-                )}
-
-                {/* Conditional Actions/Info */}
-                <div className="pt-4 border-t border-gray-50 flex flex-wrap items-center justify-between gap-4">
-                  {req.status === "Pending" && (
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={() => openRequestModal(req)}
-                        variant="outline" 
-                        className="h-10 px-6 text-xs font-black uppercase border-gray-100 text-gray-400 hover:text-blue-600 hover:border-blue-100 transition-all flex items-center gap-2"
-                      >
-                        <Edit3 size={14} /> Edit
-                      </Button>
-                      <Button 
-                        onClick={() => handleDeleteRequest(req._id)}
-                        variant="outline" 
-                        className="h-10 px-6 text-xs font-black uppercase border-gray-100 text-gray-400 hover:text-red-600 hover:border-red-100 transition-all flex items-center gap-2"
-                      >
-                        <Trash2 size={14} /> Delete
-                      </Button>
-                    </div>
-                  )}
-
-                  {(req.status === "Accepted" || req.status === "Completed") && (req.acceptedBy || req.assignedBloodBank) && (
-                    <div className="w-full">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4 bg-blue-50/50 p-6 rounded-3xl border border-blue-50">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-100">
-                            {req.acceptedByRole === 'bloodbank' ? <Home size={24} /> : <User size={24} />}
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
-                              {req.acceptedByRole === 'bloodbank' ? 'Blood Bank Details' : 'Donor Details'}
-                            </p>
-                            <div className="flex items-center gap-4">
-                              <p className="font-bold text-lg text-gray-900">
-                                {req.acceptedByRole === 'bloodbank' ? req.assignedBloodBank?.name : req.acceptedBy?.name}
-                              </p>
-                              {(req.donorContact || (req.acceptedByRole === 'bloodbank' ? req.assignedBloodBank?.phone : req.acceptedBy?.phone)) && (
-                                <a 
-                                  href={`tel:${req.donorContact || (req.acceptedByRole === 'bloodbank' ? req.assignedBloodBank.phone : req.acceptedBy.phone)}`} 
-                                  className="flex items-center gap-2 text-xs font-black text-blue-600 bg-white px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
-                                >
-                                  <Phone size={12} /> Call {req.acceptedByRole === 'bloodbank' ? 'Bank' : 'Donor'}
-                                </a>
-                              )}
-                            </div>
-                            {req.acceptedByRole === 'bloodbank' && req.assignedBloodBank?.location && (
-                              <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 flex items-center gap-1">
-                                <MapPin size={10} /> {req.assignedBloodBank.location.address || req.assignedBloodBank.location.city || "Location not specified"}
-                              </p>
-                            )}
-                          </div>
+  const renderContent = () => {
+    if (isRequestsPage) {
+      return (
+        <div className="space-y-10">
+          <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+            <ArrowLeft size={16} /> Back to Dashboard
+          </Button>
+          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
+            <div className="flex items-center justify-between mb-10">
+              <h3 className="text-3xl font-black text-gray-900 tracking-tight">All Blood Requests</h3>
+              <Button onClick={() => openRequestModal()} className="bg-red-600 hover:bg-red-700">New Request</Button>
+            </div>
+            <div className="space-y-6">
+              {myRequests.map((req, i) => (
+                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group flex flex-col gap-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8">
+                    <div className="flex items-center gap-8">
+                      <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-pink-600 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-red-200 group-hover:rotate-6 transition-transform">{req.bloodGroup}</div>
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <p className="font-black text-2xl text-gray-900">{req.units} Units</p>
+                          <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${req.urgency === "Emergency" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>{req.urgency}</span>
                         </div>
-
-                        {req.status === "Accepted" && (
-                          !req.completedByPatient ? (
-                            <Button 
-                              onClick={() => handleConfirmReceived(req._id)}
-                              disabled={confirming === req._id}
-                              className="bg-emerald-600 h-12 px-8 rounded-xl text-xs font-black uppercase tracking-widest"
-                            >
-                              {confirming === req._id ? "Confirming..." : "Mark as Received"}
-                            </Button>
-                          ) : (
-                            <div className="flex items-center gap-2 py-2.5 px-6 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-                              <CheckCircle2 size={16} />
-                              <span className="text-xs font-black uppercase">Confirmed by You</span>
-                            </div>
-                          )
-                        )}
+                        <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
+                          <span className="flex items-center gap-1.5"><MapPin size={14} /> {req.hospital}</span>
+                          <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(req.createdAt).toLocaleDateString()}</span>
+                        </div>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className={`px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest ${
+                        req.status === "Pending" ? "bg-amber-50 text-amber-600" :
+                        req.status === "Accepted" ? "bg-blue-50 text-blue-600" :
+                        req.status === "Cancelled" ? "bg-gray-100 text-gray-400" :
+                        req.status === "Rejected" ? "bg-red-50 text-red-600" :
+                        "bg-emerald-50 text-emerald-600"
+                      }`}>{req.status}</span>
+                    </div>
+                  </div>
+
+                  {req.status === "Rejected" && req.rejectionReason && (
+                    <div className="p-6 bg-red-50 rounded-3xl border border-red-100">
+                      <p className="text-xs font-black text-red-600 uppercase tracking-widest mb-1">Blood Bank Rejection Reason</p>
+                      <p className="text-sm font-bold text-gray-700">{req.rejectionReason}</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase mt-2 tracking-widest">Notification has been sent to local donors to assist.</p>
                     </div>
                   )}
 
-                  {req.status === "Completed" && (
-                    <div className="flex items-center justify-between w-full p-4 bg-emerald-50 rounded-2xl border border-emerald-100 mt-2">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle2 size={20} className="text-emerald-500" />
-                        <p className="text-sm font-bold text-gray-900">
-                          Request successfully fulfilled by {req.acceptedByRole === 'bloodbank' ? req.assignedBloodBank?.name : req.acceptedBy?.name}
-                        </p>
-                      </div>
-                      {req.acceptedByRole === 'donor' && !req.isRated && (
-                        <Button 
-                          onClick={() => {
-                            setRatingDonorId(req.acceptedBy?._id);
-                            setRatingRequestId(req._id);
-                          }}
-                          className="bg-red-600 h-10 px-6 text-[10px] font-black uppercase tracking-widest"
-                        >
-                          Rate Donor
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Rating Modal */}
-          <AnimatePresence>
-            {ratingDonorId && (
-              <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setRatingDonorId(null)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-md">
-                  <RatingInput onRate={handleRateDonor} submitting={submittingRating} />
-                </motion.div>
-              </div>
-            )}
-          </AnimatePresence>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isFindPage) {
-    return (
-      <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Button>
-        <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-            <h3 className="text-3xl font-black text-gray-900 tracking-tight">Find Nearby Donors</h3>
-            <div className="flex items-center bg-gray-50 border border-gray-100 rounded-2xl px-6 py-3 w-full md:w-96 group focus-within:bg-white focus-within:border-red-200 transition-all">
-              <Search size={18} className="text-gray-400 group-focus-within:text-red-500" />
-              <input type="text" placeholder="Search blood group..." className="bg-transparent border-none outline-none px-4 text-sm font-bold w-full" />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {nearbyDonors.map((donor, i) => (
-              <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }} className="p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-blue-100 hover:shadow-xl hover:shadow-blue-50/50 transition-all group relative overflow-hidden">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-black text-xl group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">{donor.bloodGroup}</div>
-                    <div>
-                      <p className="font-black text-xl text-gray-900 group-hover:text-blue-600 transition-colors">{donor.name}</p>
-                      <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{donor.distance} away</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-emerald-600 font-black text-lg">{donor.reliability}%</p>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reliability</p>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <Button className="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100 font-black uppercase tracking-widest text-[10px]">Contact Donor</Button>
-                  <button className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all"><Phone size={18} /></button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isLabPage) {
-    return (
-      <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Button>
-        <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
-          <div className="flex items-center justify-between mb-10">
-            <h3 className="text-3xl font-black text-gray-900 tracking-tight">Home Lab Tests</h3>
-            <Button onClick={() => setShowLabModal(true)} className="bg-blue-600 hover:bg-blue-700">Book New Test</Button>
-          </div>
-          <div className="space-y-6">
-            {labTests.map((test, i) => (
-              <div key={i} className="flex items-center justify-between p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-blue-100 transition-all group">
-                <div className="flex items-center gap-6">
-                  <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-xl shadow-blue-50 group-hover:bg-blue-600 group-hover:text-white transition-all"><Activity size={24} /></div>
-                  <div><p className="font-black text-gray-900 text-lg">{test.test}</p><p className="text-gray-400 font-bold text-sm uppercase tracking-widest">{test.date}</p></div>
-                </div>
-                <div className="flex items-center gap-8">
-                  <span className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest ${test.status === "Report Ready" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>{test.status}</span>
-                  {test.status === "Report Ready" && <button className="text-blue-600 font-black text-xs uppercase tracking-widest hover:underline">Download PDF</button>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isSettingsPage) {
-    return (
-      <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Button>
-        <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
-          <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Account Settings</h3>
-          <div className="space-y-6 max-w-2xl">
-            <div className="p-6 bg-gray-50 rounded-2xl">
-              <p className="font-black text-gray-900 mb-2">Profile Information</p>
-              <p className="text-sm text-gray-500 font-bold">Update your personal details and blood group.</p>
-              <Button className="mt-4 bg-red-600 h-10 text-xs">Edit Profile</Button>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isHelpPage) {
-    return (
-      <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Button>
-        <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
-          <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Patient Support</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="p-8 bg-red-50 rounded-[2rem] border border-red-100">
-              <HelpCircle className="text-red-600 mb-4" size={32} />
-              <h4 className="font-black text-xl text-gray-900 mb-2">Emergency Help</h4>
-              <p className="text-gray-500 font-bold text-sm mb-6">Need immediate assistance finding blood? Contact our 24/7 hotline.</p>
-              <Button className="bg-red-600 h-10 text-xs">Call Helpline</Button>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-10 pb-20">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-5xl font-black text-gray-900 mb-2 tracking-tight">
-            Hello, <span className="text-red-600">{user?.name?.split(" ")[0]}!</span>
-          </h1>
-          <p className="text-gray-400 font-bold text-lg">Your health portal is ready. How can we help today?</p>
-        </motion.div>
-        
-        <div className="flex flex-wrap gap-4">
-          <Button 
-            onClick={() => openRequestModal()}
-            className="h-14 px-8 rounded-2xl bg-red-600 hover:bg-red-700 shadow-xl shadow-red-100 text-lg font-black uppercase tracking-widest flex items-center gap-3 transition-all active:scale-95"
-          >
-            <Plus size={24} /> New Request
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={() => setShowLabModal(true)}
-            className="h-14 px-8 rounded-2xl border-2 border-blue-100 text-blue-600 hover:bg-blue-50 text-lg font-black uppercase tracking-widest flex items-center gap-3 transition-all"
-          >
-            <Home size={24} /> Book Lab Test
-          </Button>
-        </div>
-      </div>
-
-      {error && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-2xl text-sm font-bold flex items-center gap-3">
-          <ShieldCheck className="text-amber-500" /> {error}
-        </motion.div>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <StatsCard 
-          title="Active Requests" 
-          value={stats?.activeRequests ?? 0} 
-          icon={HeartPulse} 
-          color="from-red-500 to-pink-600" 
-        />
-        <StatsCard 
-          title="Donors Found" 
-          value={stats?.donorsFound ?? 0} 
-          icon={Activity} 
-          color="from-blue-500 to-indigo-600" 
-        />
-        <StatsCard 
-          title="Nearby Centers" 
-          value={stats?.nearbyCenters ?? 0} 
-          icon={MapPin} 
-          color="from-emerald-500 to-teal-600" 
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Recent Requests */}
-        <Card variant="glass" className="lg:col-span-2 p-10 border-none shadow-2xl shadow-gray-100/50">
-          <div className="flex items-center justify-between mb-10">
-            <h3 className="text-2xl font-black text-gray-900 tracking-tight">Recent Blood Requests</h3>
-            <button className="text-red-600 font-black uppercase text-xs tracking-widest hover:underline decoration-2 underline-offset-4">View History</button>
-          </div>
-          
-          <div className="space-y-6">
-            {myRequests.map((req, i) => (
-              <motion.div 
-                key={i} 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group gap-8"
-              >
-                <div className="flex items-center gap-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-pink-600 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-red-200 group-hover:rotate-6 transition-transform">
-                    {req.bloodGroup}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <p className="font-black text-2xl text-gray-900">{req.units}</p>
-                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                        req.urgency === "Emergency" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
-                      }`}>
-                        {req.urgency}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
-                      <span className="flex items-center gap-1.5"><MapPin size={14} /> {req.hospital}</span>
-                      <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(req.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-end gap-4">
+                  {/* Conditional Actions/Info */}
+                  <div className="pt-4 border-t border-gray-50 flex flex-wrap items-center justify-between gap-4">
                     {req.status === "Pending" && (
                       <div className="flex gap-2">
                         <Button 
@@ -3381,125 +3083,487 @@ const PatientDashboard = () => {
                           variant="outline" 
                           className="h-10 px-6 text-xs font-black uppercase border-gray-100 text-gray-400 hover:text-red-600 hover:border-red-100 transition-all flex items-center gap-2"
                         >
-                          <Trash2 size={14} /> Cancel
+                          <Trash2 size={14} /> Delete
                         </Button>
                       </div>
                     )}
-                    {req.status === "Accepted" && (
-                      <div className="flex flex-col items-end gap-3">
-                        <div className="flex items-center gap-4 bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
-                          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-100">
-                            {req.acceptedByRole === 'bloodbank' ? <Home size={20} /> : <User size={20} />}
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-0.5">
-                              {req.acceptedByRole === 'bloodbank' ? 'Assigned Bank' : 'Assigned Donor'}
-                            </p>
-                            <div className="flex items-center gap-3">
-                              <p className="font-black text-gray-900">{req.acceptedBy?.name || req.assignedBloodBank?.name}</p>
-                              <a href={`tel:${req.donorContact || req.acceptedBy?.phone || req.assignedBloodBank?.phone}`} className="flex items-center gap-2 px-3 py-1 bg-white rounded-lg border border-blue-100 text-blue-600 text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all">
-                                <Phone size={12} /> Call Now
-                              </a>
+
+                    {(req.status === "Accepted" || req.status === "Completed") && (req.acceptedBy || req.assignedBloodBank) && (
+                      <div className="w-full">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4 bg-blue-50/50 p-6 rounded-3xl border border-blue-50">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                              {req.acceptedByRole === 'bloodbank' ? <Home size={24} /> : <User size={24} />}
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
+                                {req.acceptedByRole === 'bloodbank' ? 'Blood Bank Details' : 'Donor Details'}
+                              </p>
+                              <div className="flex items-center gap-4">
+                                <p className="font-bold text-lg text-gray-900">
+                                  {req.acceptedByRole === 'bloodbank' ? req.assignedBloodBank?.name : req.acceptedBy?.name}
+                                </p>
+                                {(req.donorContact || (req.acceptedByRole === 'bloodbank' ? req.assignedBloodBank?.phone : req.acceptedBy?.phone)) && (
+                                  <a 
+                                    href={`tel:${req.donorContact || (req.acceptedByRole === 'bloodbank' ? req.assignedBloodBank.phone : req.acceptedBy.phone)}`} 
+                                    className="flex items-center gap-2 text-xs font-black text-blue-600 bg-white px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                  >
+                                    <Phone size={12} /> Call {req.acceptedByRole === 'bloodbank' ? 'Bank' : 'Donor'}
+                                  </a>
+                                )}
+                              </div>
+                              {req.acceptedByRole === 'bloodbank' && req.assignedBloodBank?.location && (
+                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 flex items-center gap-1">
+                                  <MapPin size={10} /> {req.assignedBloodBank.location.address || req.assignedBloodBank.location.city || "Location not specified"}
+                                </p>
+                              )}
                             </div>
                           </div>
+
+                          {req.status === "Accepted" && (
+                            !req.completedByPatient ? (
+                              <Button 
+                                onClick={() => handleConfirmReceived(req._id)}
+                                disabled={confirming === req._id}
+                                className="bg-emerald-600 h-12 px-8 rounded-xl text-xs font-black uppercase tracking-widest"
+                              >
+                                {confirming === req._id ? "Confirming..." : "Mark as Received"}
+                              </Button>
+                            ) : (
+                              <div className="flex items-center gap-2 py-2.5 px-6 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                <CheckCircle2 size={16} />
+                                <span className="text-xs font-black uppercase">Confirmed by You</span>
+                              </div>
+                            )
+                          )}
                         </div>
-                        {!req.completedByPatient ? (
+                      </div>
+                    )}
+
+                    {req.status === "Completed" && (
+                      <div className="flex items-center justify-between w-full p-4 bg-emerald-50 rounded-2xl border border-emerald-100 mt-2">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 size={20} className="text-emerald-500" />
+                          <p className="text-sm font-bold text-gray-900">
+                            Request successfully fulfilled by {req.acceptedByRole === 'bloodbank' ? req.assignedBloodBank?.name : req.acceptedBy?.name}
+                          </p>
+                        </div>
+                        {req.acceptedByRole === 'donor' && !req.isRated && (
                           <Button 
-                            onClick={() => handleConfirmReceived(req._id)}
-                            disabled={confirming === req._id}
-                            className="bg-emerald-600 h-10 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-100 hover:scale-105 active:scale-95 transition-all"
+                            onClick={() => {
+                              setRatingDonorId(req.acceptedBy?._id);
+                              setRatingRequestId(req._id);
+                            }}
+                            className="bg-red-600 h-10 px-6 text-[10px] font-black uppercase tracking-widest"
                           >
-                            {confirming === req._id ? "Confirming..." : "Mark as Received"}
+                            Rate Donor
                           </Button>
-                        ) : (
-                          <div className="flex items-center gap-2 py-2 px-6 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-                            <CheckCircle2 size={16} />
-                            <span className="text-[10px] font-black uppercase">Received</span>
-                          </div>
                         )}
                       </div>
                     )}
-                    <span className={`px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest ${
-                      req.status === "Pending" ? "bg-amber-50 text-amber-600" : 
-                      req.status === "Accepted" ? "bg-blue-50 text-blue-600" :
-                      req.status === "Rejected" ? "bg-red-50 text-red-600" :
-                      "bg-emerald-50 text-emerald-600"
-                    }`}>
-                      {req.status}
-                    </span>
                   </div>
-                  {req.status === "Rejected" && req.rejectionReason && (
-                    <div className="bg-red-50 p-4 rounded-2xl border border-red-100 mt-2">
-                      <p className="text-xs font-black text-red-600 uppercase tracking-widest mb-1">Rejection Reason</p>
-                      <p className="text-sm font-bold text-gray-700">{req.rejectionReason}</p>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase mt-2">Donors have been notified to help instead.</p>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Nearby Donors Sidebar */}
-        <div className="space-y-10">
-          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50 bg-gradient-to-br from-white to-blue-50/30">
-            <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-8">Upcoming Camps</h3>
-            <div className="space-y-6">
-              {camps.map((camp, i) => (
-                <div key={i} className="p-6 rounded-2xl bg-white border border-gray-50 hover:border-red-100 transition-all group">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center font-black"><Calendar size={20} /></div>
-                    <div><p className="font-black text-gray-900">{camp.name}</p><p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{new Date(camp.date).toLocaleDateString()}</p></div>
-                  </div>
-                  <p className="text-xs text-gray-500 font-bold flex items-center gap-2 mb-2"><MapPin size={12} /> {camp.location}</p>
-                  {camp.createdBy?.name && (
-                    <p className="text-[10px] text-blue-600 font-black uppercase mb-3">Host: {camp.createdBy.name}</p>
-                  )}
-                  <p className="text-[10px] text-gray-400 font-bold">Donors can register via Donor login → Find Camps.</p>
-                </div>
+                </motion.div>
               ))}
-              {camps.length === 0 && (
-                <p className="text-gray-400 font-bold text-center py-10">No camps scheduled yet.</p>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+
+    if (isFindPage) {
+      return (
+        <div className="space-y-10">
+          <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+            <ArrowLeft size={16} /> Back to Dashboard
+          </Button>
+          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+            <h3 className="text-3xl font-black text-gray-900 tracking-tight">Find Nearby Donors</h3>
+            <div className="flex items-center bg-gray-50 border border-gray-100 rounded-2xl px-6 py-3 w-full md:w-96 group focus-within:bg-white focus-within:border-red-200 transition-all">
+              <Search size={18} className="text-gray-400 group-focus-within:text-red-500" />
+              <input 
+                type="text" 
+                placeholder="Search blood group or name..." 
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                className="bg-transparent border-none outline-none px-4 text-sm font-bold w-full" 
+              />
+            </div>
+          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {filteredDonors.map((donor, i) => (
+                <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }} className="p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-blue-100 hover:shadow-xl hover:shadow-blue-50/50 transition-all group relative overflow-hidden">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-black text-xl group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">{donor.bloodGroup}</div>
+                      <div>
+                        <p className="font-black text-xl text-gray-900 group-hover:text-blue-600 transition-colors">{donor.name}</p>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{donor.location?.city || "Nearby"}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-emerald-600 font-black text-lg">{donor.donorInfo?.reliability || 100}%</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reliability</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <a href={`tel:${donor.phone}`} className="flex-1">
+                      <Button className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100 font-black uppercase tracking-widest text-[10px]">Contact Donor</Button>
+                    </a>
+                  </div>
+                </motion.div>
+              ))}
+              {filteredBanks.map((bank, i) => (
+                <motion.div key={`bank-${i}`} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }} className="p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group relative overflow-hidden">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 font-black text-xl group-hover:bg-red-600 group-hover:text-white transition-all duration-300"><Home size={24} /></div>
+                      <div>
+                        <p className="font-black text-xl text-gray-900 group-hover:text-red-600 transition-colors">{bank.name}</p>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{bank.location?.city || "Local Center"}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-red-600 font-black text-lg">{bank.bloodStock?.length || 0}</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Groups in Stock</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <a href={`tel:${bank.phone}`} className="flex-1">
+                      <Button className="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 shadow-lg shadow-red-100 font-black uppercase tracking-widest text-[10px]">Contact Center</Button>
+                    </a>
+                  </div>
+                </motion.div>
+              ))}
+              {filteredDonors.length === 0 && filteredBanks.length === 0 && (
+                <div className="col-span-full py-20 text-center">
+                  <p className="text-gray-400 font-bold">No donors or blood banks found matching your search.</p>
+                </div>
               )}
             </div>
           </Card>
+        </div>
+      );
+    }
 
-          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50 bg-gradient-to-br from-white to-blue-50/30">
-            <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-8">Nearby Donors</h3>
-            <div className="space-y-8">
-              {nearbyDonors.map((donor, i) => (
-                <div key={i} className="flex items-center justify-between group">
-                  <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-red-600 font-black text-lg shadow-xl shadow-blue-100 group-hover:bg-red-600 group-hover:text-white transition-all duration-300">
-                      {donor.bloodGroup}
-                    </div>
-                    <div>
-                      <p className="font-black text-gray-900 group-hover:text-red-600 transition-colors">{donor.name}</p>
-                      <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{donor.distance} away</p>
-                    </div>
+    if (isLabPage) {
+      return (
+        <div className="space-y-10">
+          <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+            <ArrowLeft size={16} /> Back to Dashboard
+          </Button>
+          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
+            <div className="flex items-center justify-between mb-10">
+              <h3 className="text-3xl font-black text-gray-900 tracking-tight">Home Lab Tests</h3>
+              <Button onClick={() => setShowLabModal(true)} className="bg-blue-600 hover:bg-blue-700">Book New Test</Button>
+            </div>
+            <div className="space-y-6">
+              {labTests.map((test, i) => (
+                <div key={i} className="flex items-center justify-between p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-blue-100 transition-all group">
+                  <div className="flex items-center gap-6">
+                    <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-xl shadow-blue-50 group-hover:bg-blue-600 group-hover:text-white transition-all"><Activity size={24} /></div>
+                    <div><p className="font-black text-gray-900 text-lg">{test.test}</p><p className="text-gray-400 font-bold text-sm uppercase tracking-widest">{test.date}</p></div>
                   </div>
-                  <button className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all">
-                    <Phone size={18} />
-                  </button>
+                  <div className="flex items-center gap-8">
+                    <span className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest ${test.status === "Report Ready" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>{test.status}</span>
+                    {test.status === "Report Ready" && <button className="text-blue-600 font-black text-xs uppercase tracking-widest hover:underline">Download PDF</button>}
+                  </div>
                 </div>
               ))}
             </div>
-            <Button variant="ghost" className="w-full mt-10 h-14 rounded-2xl text-blue-600 font-black uppercase tracking-widest border-2 border-blue-50 hover:bg-blue-50">
-              Find More Donors
-            </Button>
-          </Card>
-
-          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-red-100/50 bg-gradient-to-br from-red-600 to-pink-600 text-white relative overflow-hidden group">
-            <div className="relative z-10">
-              <h4 className="text-xl font-black mb-4 tracking-tight">Need Urgent Help?</h4>
-              <p className="text-white/80 font-bold text-sm leading-relaxed mb-8">Connect with our emergency response team 24/7 for immediate blood assistance.</p>
-              <button className="h-14 px-8 rounded-2xl bg-white text-red-600 font-black uppercase tracking-widest text-xs shadow-xl hover:scale-105 transition-all">Call Helpline</button>
-            </div>
-            <HeartPulse size={120} className="absolute -bottom-10 -right-10 text-white/10 group-hover:scale-110 transition-transform duration-700" />
           </Card>
         </div>
+      );
+    }
+
+    if (isSettingsPage) {
+      return (
+        <div className="space-y-10">
+          <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+            <ArrowLeft size={16} /> Back to Dashboard
+          </Button>
+          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
+            <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Account Settings</h3>
+            <div className="space-y-6 max-w-2xl">
+              <div className="p-6 bg-gray-50 rounded-2xl">
+                <p className="font-black text-gray-900 mb-2">Profile Information</p>
+                <p className="text-sm text-gray-500 font-bold">Update your personal details and blood group.</p>
+                <Button className="mt-4 bg-red-600 h-10 text-xs">Edit Profile</Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+
+    if (isHelpPage) {
+      return (
+        <div className="space-y-10">
+          <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
+            <ArrowLeft size={16} /> Back to Dashboard
+          </Button>
+          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
+            <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Patient Support</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="p-8 bg-red-50 rounded-[2rem] border border-red-100">
+                <HelpCircle className="text-red-600 mb-4" size={32} />
+                <h4 className="font-black text-xl text-gray-900 mb-2">Emergency Help</h4>
+                <p className="text-gray-500 font-bold text-sm mb-6">Need immediate assistance finding blood? Contact our 24/7 hotline.</p>
+                <Button className="bg-red-600 h-10 text-xs">Call Helpline</Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-10">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+            <h1 className="text-5xl font-black text-gray-900 mb-2 tracking-tight">
+              Hello, <span className="text-red-600">{user?.name?.split(" ")[0]}!</span>
+            </h1>
+            <p className="text-gray-400 font-bold text-lg">Your health portal is ready. How can we help today?</p>
+          </motion.div>
+          
+          <div className="flex flex-wrap gap-4">
+            <Button 
+              onClick={() => openRequestModal()}
+              className="h-14 px-8 rounded-2xl bg-red-600 hover:bg-red-700 shadow-xl shadow-red-100 text-lg font-black uppercase tracking-widest flex items-center gap-3 transition-all active:scale-95"
+            >
+              <Plus size={24} /> New Request
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => setShowLabModal(true)}
+              className="h-14 px-8 rounded-2xl border-2 border-blue-100 text-blue-600 hover:bg-blue-50 text-lg font-black uppercase tracking-widest flex items-center gap-3 transition-all"
+            >
+              <Home size={24} /> Book Lab Test
+            </Button>
+          </div>
+        </div>
+
+        {error && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-2xl text-sm font-bold flex items-center gap-3">
+            <ShieldCheck className="text-amber-500" /> {error}
+          </motion.div>
+        )}
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <StatsCard 
+            title="Active Requests" 
+            value={stats?.activeRequests ?? 0} 
+            icon={HeartPulse} 
+            color="from-red-500 to-pink-600" 
+          />
+          <StatsCard 
+            title="Donors Found" 
+            value={stats?.donorsFound ?? 0} 
+            icon={Activity} 
+            color="from-blue-500 to-indigo-600" 
+          />
+          <StatsCard 
+            title="Nearby Centers" 
+            value={stats?.nearbyCenters ?? 0} 
+            icon={MapPin} 
+            color="from-emerald-500 to-teal-600" 
+          />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          {/* Recent Requests */}
+          <Card variant="glass" className="lg:col-span-2 p-10 border-none shadow-2xl shadow-gray-100/50">
+            <div className="flex items-center justify-between mb-10">
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight">Recent Blood Requests</h3>
+              <button
+                type="button"
+                onClick={() => navigate("/patient/requests")}
+                className="text-red-600 font-black uppercase text-xs tracking-widest hover:underline decoration-2 underline-offset-4"
+              >
+                View History
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {myRequests.map((req, i) => (
+                <motion.div 
+                  key={i} 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-8 rounded-[2.5rem] bg-white border border-gray-50 hover:border-red-100 hover:shadow-xl hover:shadow-red-50/50 transition-all group gap-8"
+                >
+                  <div className="flex items-center gap-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-pink-600 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-red-200 group-hover:rotate-6 transition-transform">
+                      {req.bloodGroup}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <p className="font-black text-2xl text-gray-900">{req.units}</p>
+                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                          req.urgency === "Emergency" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
+                        }`}>
+                          {req.urgency}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
+                        <span className="flex items-center gap-1.5"><MapPin size={14} /> {req.hospital}</span>
+                        <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(req.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-end gap-4">
+                      {req.status === "Pending" && (
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={() => openRequestModal(req)}
+                            variant="outline" 
+                            className="h-10 px-6 text-xs font-black uppercase border-gray-100 text-gray-400 hover:text-blue-600 hover:border-blue-100 transition-all flex items-center gap-2"
+                          >
+                            <Edit3 size={14} /> Edit
+                          </Button>
+                          <Button 
+                            onClick={() => handleDeleteRequest(req._id)}
+                            variant="outline" 
+                            className="h-10 px-6 text-xs font-black uppercase border-gray-100 text-gray-400 hover:text-red-600 hover:border-red-100 transition-all flex items-center gap-2"
+                          >
+                            <Trash2 size={14} /> Cancel
+                          </Button>
+                        </div>
+                      )}
+                      {req.status === "Accepted" && (
+                        <div className="flex flex-col items-end gap-3">
+                          <div className="flex items-center gap-4 bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
+                            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                              {req.acceptedByRole === 'bloodbank' ? <Home size={20} /> : <User size={20} />}
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-0.5">
+                                {req.acceptedByRole === 'bloodbank' ? 'Assigned Bank' : 'Assigned Donor'}
+                              </p>
+                              <div className="flex items-center gap-3">
+                                <p className="font-black text-gray-900">{req.acceptedBy?.name || req.assignedBloodBank?.name}</p>
+                                <a href={`tel:${req.donorContact || req.acceptedBy?.phone || req.assignedBloodBank?.phone}`} className="flex items-center gap-2 px-3 py-1 bg-white rounded-lg border border-blue-100 text-blue-600 text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all">
+                                  <Phone size={12} /> Call Now
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                          {!req.completedByPatient ? (
+                            <Button 
+                              onClick={() => handleConfirmReceived(req._id)}
+                              disabled={confirming === req._id}
+                              className="bg-emerald-600 h-10 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-100 hover:scale-105 active:scale-95 transition-all"
+                            >
+                              {confirming === req._id ? "Confirming..." : "Mark as Received"}
+                            </Button>
+                          ) : (
+                            <div className="flex items-center gap-2 py-2 px-6 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                              <CheckCircle2 size={16} />
+                              <span className="text-[10px] font-black uppercase">Received</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <span className={`px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest ${
+                        req.status === "Pending" ? "bg-amber-50 text-amber-600" : 
+                        req.status === "Accepted" ? "bg-blue-50 text-blue-600" :
+                        req.status === "Rejected" ? "bg-red-50 text-red-600" :
+                        "bg-emerald-50 text-emerald-600"
+                      }`}>
+                        {req.status}
+                      </span>
+                    </div>
+                    {req.status === "Rejected" && req.rejectionReason && (
+                      <div className="bg-red-50 p-4 rounded-2xl border border-red-100 mt-2">
+                        <p className="text-xs font-black text-red-600 uppercase tracking-widest mb-1">Rejection Reason</p>
+                        <p className="text-sm font-bold text-gray-700">{req.rejectionReason}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase mt-2">Donors have been notified to help instead.</p>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Nearby Donors Sidebar */}
+          <div className="space-y-10">
+            <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50 bg-gradient-to-br from-white to-blue-50/30">
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-8">Upcoming Camps</h3>
+              <div className="space-y-6">
+                {camps.map((camp, i) => (
+                  <div key={i} className="p-6 rounded-2xl bg-white border border-gray-50 hover:border-red-100 transition-all group">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center font-black"><Calendar size={20} /></div>
+                      <div><p className="font-black text-gray-900">{camp.name}</p><p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{new Date(camp.date).toLocaleDateString()}</p></div>
+                    </div>
+                    <p className="text-xs text-gray-500 font-bold flex items-center gap-2 mb-2"><MapPin size={12} /> {camp.location}</p>
+                    {camp.createdBy?.name && (
+                      <p className="text-[10px] text-blue-600 font-black uppercase mb-3">Host: {camp.createdBy.name}</p>
+                    )}
+                    <p className="text-[10px] text-gray-400 font-bold">Donors can register via Donor login → Find Camps.</p>
+                  </div>
+                ))}
+                {camps.length === 0 && (
+                  <p className="text-gray-400 font-bold text-center py-10">No camps scheduled yet.</p>
+                )}
+              </div>
+            </Card>
+
+            <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50 bg-gradient-to-br from-white to-blue-50/30">
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-8">Nearby Centers</h3>
+              <div className="space-y-8">
+                {realBloodBanks.slice(0, 3).map((bank, i) => (
+                  <div key={i} className="flex items-center justify-between group">
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-red-600 font-black text-lg shadow-xl shadow-blue-100 group-hover:bg-red-600 group-hover:text-white transition-all duration-300">
+                        <Home size={24} />
+                      </div>
+                      <div>
+                        <p className="font-black text-gray-900 group-hover:text-red-600 transition-colors">{bank.name}</p>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{bank.location?.city || "Local"}</p>
+                      </div>
+                    </div>
+                    <a href={`tel:${bank.phone}`} className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all">
+                      <Phone size={18} />
+                    </a>
+                  </div>
+                ))}
+                {realBloodBanks.length === 0 && (
+                  <p className="text-gray-400 font-bold text-center py-4">No centers found.</p>
+                )}
+              </div>
+              <Button 
+                onClick={() => navigate("/patient/find")}
+                variant="ghost" 
+                className="w-full mt-10 h-14 rounded-2xl text-blue-600 font-black uppercase tracking-widest border-2 border-blue-50 hover:bg-blue-50"
+              >
+                Find More Centers
+              </Button>
+            </Card>
+
+            <Card variant="glass" className="p-10 border-none shadow-2xl shadow-red-100/50 bg-gradient-to-br from-red-600 to-pink-600 text-white relative overflow-hidden group">
+              <div className="relative z-10">
+                <h4 className="text-xl font-black mb-4 tracking-tight">Need Urgent Help?</h4>
+                <p className="text-white/80 font-bold text-sm leading-relaxed mb-8">Connect with our emergency response team 24/7 for immediate blood assistance.</p>
+                <button className="h-14 px-8 rounded-2xl bg-white text-red-600 font-black uppercase tracking-widest text-xs shadow-xl hover:scale-105 transition-all">Call Helpline</button>
+              </div>
+              <HeartPulse size={120} className="absolute -bottom-10 -right-10 text-white/10 group-hover:scale-110 transition-transform duration-700" />
+            </Card>
+          </div>
+        </div>
       </div>
+    );
+  };
+
+  return (
+    <div className="pb-20">
+      {renderContent()}
 
       {/* Request Modal */}
       <AnimatePresence>

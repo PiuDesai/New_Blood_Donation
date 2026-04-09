@@ -10,6 +10,7 @@ import SubRoleSelection from "./pages/Auth/SubRoleSelection";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import RegisterBloodBank from "./pages/Auth/RegisterBloodBank";
+import ResetPassword from "./pages/Auth/ResetPassword";
 import AdminDashboard from "./pages/Dashboard/AdminDashboard";
 import DonorDashboard from "./pages/Dashboard/DonorDashboard";
 import DonorCertificates from "./pages/Dashboard/DonorCertificates";
@@ -47,6 +48,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/register/bloodbank" element={<RegisterBloodBank />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* Admin Routes */}
         <Route
