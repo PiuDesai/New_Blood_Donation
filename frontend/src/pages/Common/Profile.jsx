@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   User, Mail, Phone, MapPin, Calendar, 
   Droplets, Shield, Camera, Save, Key,
@@ -20,6 +20,58 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
+  const [pincodeOptions, setPincodeOptions] = useState([]);
+  const [loadingPincodes, setLoadingPincodes] = useState(false);
+
+  const fileInputRef = useRef(null);
+  const [photoSaving, setPhotoSaving] = useState(false);
+
+  // State-City mapping (same idea as Register page)
+  const stateCityData = {
+    "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool", "Rajahmundry", "Tirupati", "Kakinada", "Anantapur", "Eluru", "Ongole", "Vizianagaram"],
+    "Arunachal Pradesh": ["Itanagar", "Tawang", "Ziro", "Pasighat", "Bomdila", "Tezu", "Anini", "Khonsa"],
+    "Assam": ["Guwahati", "Silchar", "Dibrugarh", "Jorhat", "Nagaon", "Tinsukia", "Tezpur", "Bongaigaon", "Goalpara", "Karimganj", "Sivasagar", "Lakhimpur"],
+    "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia", "Darbhanga", "Bihar Sharif", "Arrah", "Begusarai", "Katihar", "Monghyr", "Chapra", "Dehri", "Siwan"],
+    "Chhattisgarh": ["Raipur", "Bhilai", "Bilaspur", "Durg", "Korba", "Rajnandgaon", "Jagdalpur", "Ambikapur", "Raigarh", "Mahasamund", "Dhamtari"],
+    "Goa": ["Panaji", "Margao", "Vasco da Gama", "Mapusa", "Ponda", "Bicholim", "Curchorem", "Sanquelim"],
+    "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Anand", "Nadiad", "Mehsana", "Surendranagar", "Porbandar", "Bharuch"],
+    "Haryana": ["Gurgaon", "Faridabad", "Panipat", "Ambala", "Yamunanagar", "Rohtak", "Hisar", "Karnal", "Sonipat", "Panchkula", "Bhiwani", "Sirsa", "Bahadurgarh", "Jind"],
+    "Himachal Pradesh": ["Shimla", "Solan", "Dharamshala", "Mandi", "Kullu", "Palampur", "Bilaspur", "Una", "Sirmaur", "Chamba", "Hamirpur", "Kinnaur", "Lahaul and Spiti"],
+    "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro", "Deoghar", "Phusro", "Hazaribagh", "Giridih", "Ramgarh", "Medininagar", "Chakradharpur", "Jamtara", "Chatra", "Koderma"],
+    "Karnataka": ["Bangalore", "Mysore", "Hubli", "Mangalore", "Belgaum", "Gulbarga", "Davanagere", "Bellary", "Bijapur", "Shimoga", "Tumkur", "Raichur", "Bidar", "Hospet", "Kolar"],
+    "Kerala": ["Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kollam", "Alappuzha", "Palakkad", "Malappuram", "Kannur", "Kasaragod", "Kottayam", "Idukki", "Pathanamthitta", "Wayanad"],
+    "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain", "Guna", "Sagar", "Ratlam", "Satna", "Morena", "Khandwa", "Burhanpur", "Ashoknagar", "Katni", "Rewa", "Vidisha"],
+    "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Thane", "Nashik", "Aurangabad", "Solapur", "Amravati", "Navi Mumbai", "Kolhapur", "Sangli", "Malegaon", "Akola", "Dhule", "Ahmednagar", "Chandrapur", "Parbhani", "Jalgaon", "Bhiwandi", "Ambernath", "Nanded", "Panvel", "Bhusawal", "Ulhasnagar", "Nandurbar", "Wardha", "Yavatmal", "Latur", "Gondia"],
+    "Manipur": ["Imphal", "Thoubal", "Churachandpur", "Bishnupur", "Kakching", "Ukhrul", "Senapati", "Tamenglong"],
+    "Meghalaya": ["Shillong", "Tura", "Nongstoin", "Jowai", "Baghmara", "Resubelpara", "Mairang", "Nongpoh"],
+    "Mizoram": ["Aizawl", "Lunglei", "Champhai", "Serchhip", "Kolasib", "Mamit", "Saiha", "Lawngtlai"],
+    "Nagaland": ["Kohima", "Dimapur", "Mokokchung", "Tuensang", "Wokha", "Zunheboto", "Phek", "Kiphire", "Longleng", "Peren"],
+    "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Berhampur", "Sambalpur", "Puri", "Balasore", "Bhawanipatna", "Cuttack", "Dhenkanal", "Baripada", "Jharsuguda", "Koraput", "Rayagada", "Sundargarh"],
+    "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda", "Mohali", "Pathankot", "Hoshiarpur", "Batala", "Moga", "Firozpur", "Kapurthala", "Phagwara", "Muktsar", "Barnala"],
+    "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota", "Bikaner", "Ajmer", "Bhilwara", "Alwar", "Bharatpur", "Sikar", "Pali", "Kishangarh", "Beawar", "Tonk", "Sawai Madhopur", "Nagaur"],
+    "Sikkim": ["Gangtok", "Namchi", "Mangan", "Gyalshing", "Rangpo", "Jorethang", "Pelling", "Singtam"],
+    "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tirunelveli", "Tirupur", "Vellore", "Erode", "Thoothukudi", "Dindigul", "Thanjavur", "Ranipet", "Sivakasi", "Karur", "Udhagamandalam", "Hosur", "Rajapalayam", "Kanchipuram", "Kumbakonam", "Tiruvannamalai", "Nagercoil", "Viluppuram", "Cuddalore", "Dharmapuri", "Ariyalur", "Perambalur", "Nagapattinam", "Krishnagiri", "Namakkal", "Tiruvarur", "Theni", "Virudhunagar"],
+    "Telangana": ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Khammam", "Ramagundam", "Mahbubnagar", "Nalgonda", "Adilabad", "Miryalaguda", "Suryapet", "Jagtial", "Bhadradri Kothagudem", "Jangaon", "Kamareddy", "Sircilla", "Medak", "Siddipet", "Yadadri Bhuvanagiri", "Medchal Malkajgiri", "Komaram Bheem Asifabad", "Mancherial", "Nirmal"],
+    "Tripura": ["Agartala", "Udaipur", "Dharmanagar", "Pratapgarh", "Kailashahar", "Belonia", "Khowai", "Ranirbazar", "Sonamura", "Kamalpur"],
+    "Uttar Pradesh": ["Lucknow", "Kanpur", "Ghaziabad", "Agra", "Varanasi", "Meerut", "Allahabad", "Bareilly", "Aligarh", "Moradabad", "Saharanpur", "Noida", "Gorakhpur", "Firozabad", "Jhansi", "Mughalsarai", "Mathura", "Rampur", "Shahjahanpur", "Fatehpur", "Barabanki", "Modinagar", "Hapur", "Rae Bareli", "Etawah", "Lakhimpur", "Sitapur", "Unnao", "Mainpuri", "Bulandshahr", "Badaun", "Bijnor", "Amroha", "Hathras", "Kasganj"],
+    "Uttarakhand": ["Dehradun", "Haridwar", "Roorkee", "Haldwani", "Rishikesh", "Kashipur", "Rudrapur", "Kotdwar", "Pithoragarh", "Udham Singh Nagar", "Champawat", "Bageshwar", "Uttarkashi"],
+    "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Siliguri", "Asansol", "Raniganj", "Burdwan", "Barrackpore", "Kalyani", "Salt Lake City", "Haldia", "Kharagpur", "Bally", "Baharampur", "Krishnanagar", "Barasat", "Naihati", "Dankuni", "Bansberia", "Baranagar", "South Dum Dum", "North Dum Dum", "Panihati", "Rishra", "Konnagar", "Uttarpara", "Bhatpara", "Chandannagar", "Serampore", "Ulubaria", "Budge Budge", "Hooghly-Chinsurah", "Arambagh", "Kalna", "Memari"]
+  };
+
+  const allStates = Object.keys(stateCityData);
+  const getCitiesForState = (state) => stateCityData[state] || [];
+  const getMaxDobForAdult = () => {
+    const today = new Date();
+    const adultDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    return adultDate.toISOString().split("T")[0];
+  };
+
+  const sanitizeFullName = (value = "", { forSubmit = false } = {}) => {
+    // Only letters and spaces allowed. Keep trailing spaces while typing.
+    const cleaned = String(value).replace(/[^A-Za-z\s]/g, "");
+    if (!forSubmit) return cleaned.replace(/\s{2,}/g, " ");
+    return cleaned.replace(/\s{2,}/g, " ").trim();
+  };
   
   const [formData, setFormData] = useState({
     name: "",
@@ -51,7 +103,7 @@ const Profile = () => {
         if (res.success) {
           const userData = res.user;
           setFormData({
-            name: userData.name || "",
+            name: sanitizeFullName(userData.name || "", { forSubmit: true }),
             email: userData.email || "",
             phone: userData.phone || "",
             gender: userData.gender || "",
@@ -76,6 +128,49 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    const city = formData.location.city?.trim();
+    const state = formData.location.state?.trim();
+
+    if (!city) {
+      setPincodeOptions([]);
+      return;
+    }
+
+    const fetchPincodesForCity = async () => {
+      setLoadingPincodes(true);
+      try {
+        const res = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(city)}`);
+        const data = await res.json();
+        const offices = data?.[0]?.PostOffice || [];
+
+        const filteredByState = offices.filter((office) => {
+          if (!state) return true;
+          return String(office.State || "").toLowerCase() === state.toLowerCase();
+        });
+
+        const uniquePincodes = [...new Set(filteredByState.map((office) => String(office.Pincode || "").trim()).filter(Boolean))];
+        setPincodeOptions(uniquePincodes);
+
+        if (uniquePincodes.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            location: {
+              ...prev.location,
+              pincode: uniquePincodes.includes(prev.location.pincode) ? prev.location.pincode : uniquePincodes[0]
+            }
+          }));
+        }
+      } catch {
+        setPincodeOptions([]);
+      } finally {
+        setLoadingPincodes(false);
+      }
+    };
+
+    fetchPincodesForCity();
+  }, [formData.location.city, formData.location.state]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name.includes("location.")) {
@@ -84,9 +179,13 @@ const Profile = () => {
         ...prev,
         location: {
           ...prev.location,
-          [field]: value
+          [field]: value,
+          ...(field === "state" ? { city: "", pincode: "" } : null),
+          ...(field === "city" ? { pincode: "" } : null)
         }
       }));
+    } else if (name === "name") {
+      setFormData((prev) => ({ ...prev, name: sanitizeFullName(value) }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -100,7 +199,21 @@ const Profile = () => {
     e.preventDefault();
     setUpdating(true);
     try {
-      const res = await updateProfile(formData);
+      const payload = { ...formData, name: sanitizeFullName(formData.name, { forSubmit: true }) };
+      if (payload.dateOfBirth) {
+        const dob = new Date(payload.dateOfBirth);
+        const today = new Date();
+        let age = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+        if (age < 18) {
+          toast.error("User must be at least 18 years old");
+          setUpdating(false);
+          return;
+        }
+      }
+
+      const res = await updateProfile(payload);
       if (res.success) {
         toast.success("Profile updated successfully!");
         // Update local auth context user data
@@ -112,6 +225,93 @@ const Profile = () => {
       toast.error("An error occurred");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handlePickProfilePhoto = () => {
+    fileInputRef.current?.click();
+  };
+
+  const compressImageToDataUrl = async (file) => {
+    // Backend uses default `express.json()` size limit, so we must keep payload small.
+    const MAX_DATA_URL_LENGTH = 80_000; // ~80KB chars (safe under typical 100KB limit)
+    const src = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = src;
+      });
+
+      // Try a few size/quality combinations until it fits.
+      const candidates = [
+        { maxDim: 256, quality: 0.7 },
+        { maxDim: 224, quality: 0.65 },
+        { maxDim: 192, quality: 0.6 },
+        { maxDim: 160, quality: 0.55 },
+        { maxDim: 128, quality: 0.5 },
+      ];
+
+      for (const c of candidates) {
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(1, c.maxDim / img.width, c.maxDim / img.height);
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) continue;
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", c.quality);
+        if (dataUrl.length <= MAX_DATA_URL_LENGTH) return dataUrl;
+      }
+
+      return null;
+    } finally {
+      URL.revokeObjectURL(src);
+    }
+  };
+
+  const handleProfilePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Allow re-selecting the same file again.
+    e.target.value = "";
+
+    // Basic client-side validation to avoid extremely large payloads.
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error("Image size should be <= 4MB");
+      return;
+    }
+
+    setPhotoSaving(true);
+    try {
+      const dataUrl = await compressImageToDataUrl(file);
+      if (!dataUrl) {
+        toast.error("Image is too large. Please choose a smaller photo.");
+        return;
+      }
+
+      // Update preview immediately
+      setFormData((prev) => ({ ...prev, profilePhoto: dataUrl }));
+
+      const res = await updateProfile({ profilePhoto: dataUrl });
+      if (res.success) {
+        toast.success("Profile photo updated!");
+        updateUser(res.user); // persists to localStorage; will remain after refresh
+      } else {
+        toast.error(res.message || "Failed to update profile photo");
+      }
+    } catch (err) {
+      toast.error("An error occurred while updating profile photo");
+    } finally {
+      setPhotoSaving(false);
     }
   };
 
@@ -182,7 +382,21 @@ const Profile = () => {
                     )}
                   </div>
                 </div>
-                <button className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-2xl shadow-xl flex items-center justify-center text-gray-900 hover:bg-red-600 hover:text-white transition-all border border-gray-100">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleProfilePhotoChange}
+                />
+                <button
+                  type="button"
+                  onClick={handlePickProfilePhoto}
+                  disabled={photoSaving}
+                  className={`absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-2xl shadow-xl flex items-center justify-center text-gray-900 hover:bg-red-600 hover:text-white transition-all border border-gray-100 ${
+                    photoSaving ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                  }`}
+                >
                   <Camera size={18} />
                 </button>
               </div>
@@ -269,6 +483,16 @@ const Profile = () => {
                           name="name"
                           value={formData.name}
                           onChange={handleInputChange}
+                          onKeyDown={(e) => {
+                            // Block direct number entry.
+                            if (e.key.length === 1 && /[0-9]/.test(e.key)) e.preventDefault();
+                          }}
+                          onPaste={(e) => {
+                            e.preventDefault();
+                            const text = e.clipboardData.getData("text");
+                            setFormData((prev) => ({ ...prev, name: sanitizeFullName(text) }));
+                          }}
+                          inputMode="text"
                           placeholder="John Doe"
                           className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all text-sm font-bold"
                         />
@@ -297,7 +521,8 @@ const Profile = () => {
                           name="bloodGroup"
                           value={formData.bloodGroup}
                           onChange={handleInputChange}
-                          className="w-full h-14 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:border-red-200 outline-none px-6 transition-all text-sm font-bold appearance-none"
+                          disabled
+                          className="w-full h-14 rounded-2xl border border-gray-100 bg-gray-100/50 text-gray-400 cursor-not-allowed outline-none px-6 transition-all text-sm font-bold appearance-none"
                         >
                           <option value="">Select Blood Group</option>
                           {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => (
@@ -326,6 +551,7 @@ const Profile = () => {
                           name="dateOfBirth"
                           value={formData.dateOfBirth}
                           onChange={handleInputChange}
+                          max={getMaxDobForAdult()}
                           className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all text-sm font-bold"
                         />
                       </div>
@@ -378,34 +604,65 @@ const Profile = () => {
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                       <div className="space-y-3">
-                        <label className="text-gray-400 font-black uppercase text-[10px] tracking-widest ml-1">City</label>
-                        <Input
-                          name="location.city"
-                          value={formData.location.city}
-                          onChange={handleInputChange}
-                          placeholder="City"
-                          className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all text-sm font-bold"
-                        />
-                      </div>
-                      <div className="space-y-3">
                         <label className="text-gray-400 font-black uppercase text-[10px] tracking-widest ml-1">State</label>
-                        <Input
+                        <select
                           name="location.state"
                           value={formData.location.state}
                           onChange={handleInputChange}
-                          placeholder="State"
-                          className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all text-sm font-bold"
-                        />
+                          className="w-full h-14 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:border-red-200 outline-none px-6 transition-all text-sm font-bold appearance-none"
+                        >
+                          <option value="">Select State</option>
+                          {allStates.map((state) => (
+                            <option key={state} value={state}>
+                              {state}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-gray-400 font-black uppercase text-[10px] tracking-widest ml-1">City</label>
+                        <select
+                          name="location.city"
+                          value={formData.location.city}
+                          onChange={handleInputChange}
+                          disabled={!formData.location.state}
+                          className="w-full h-14 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:border-red-200 outline-none px-6 transition-all text-sm font-bold appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <option value="">
+                            {formData.location.state ? "Select City" : "Select State First"}
+                          </option>
+                          {getCitiesForState(formData.location.state).map((city) => (
+                            <option key={city} value={city}>
+                              {city}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="space-y-3">
                         <label className="text-gray-400 font-black uppercase text-[10px] tracking-widest ml-1">Pincode</label>
-                        <Input
-                          name="location.pincode"
-                          value={formData.location.pincode}
-                          onChange={handleInputChange}
-                          placeholder="000000"
-                          className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all text-sm font-bold"
-                        />
+                        {pincodeOptions.length > 0 ? (
+                          <select
+                            name="location.pincode"
+                            value={formData.location.pincode}
+                            onChange={handleInputChange}
+                            className="w-full h-14 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:border-red-200 outline-none px-6 transition-all text-sm font-bold appearance-none"
+                          >
+                            {pincodeOptions.map((pin) => (
+                              <option key={pin} value={pin}>
+                                {pin}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <Input
+                            name="location.pincode"
+                            value={formData.location.pincode}
+                            onChange={handleInputChange}
+                            placeholder={loadingPincodes ? "Loading pincodes..." : "Select city first"}
+                            disabled={!formData.location.city || loadingPincodes}
+                            className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                        )}
                       </div>
                     </div>
 
