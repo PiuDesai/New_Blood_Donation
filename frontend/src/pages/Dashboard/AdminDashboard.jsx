@@ -66,8 +66,8 @@ const AdminDashboard = () => {
         console.error("Failed to fetch admin data:", err);
         setError(
           err?.response?.data?.message ||
-            err?.message ||
-            "Failed to load dashboard"
+          err?.message ||
+          "Failed to load dashboard"
         );
       } finally {
         setLoading(false);
@@ -131,26 +131,35 @@ const AdminDashboard = () => {
       )}
 
       {/* STATS */}
+      {/* STATS */}
+      {/* STATS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Total Donors"
           value={stats?.totalDonors || 0}
           icon={Users}
+          color="bg-gradient-to-br from-blue-500 to-blue-700"
         />
+
         <StatsCard
           title="Pending Donors"
           value={stats?.pendingDonors || 0}
           icon={Activity}
+          color="bg-gradient-to-br from-yellow-400 to-orange-500"
         />
+
         <StatsCard
           title="Total Blood Banks"
           value={stats?.totalBanks || 0}
           icon={HeartPulse}
+          color="bg-gradient-to-br from-red-500 to-pink-600"
         />
+
         <StatsCard
           title="Pending Blood Banks"
           value={stats?.pendingBanks || 0}
           icon={Droplets}
+          color="bg-gradient-to-br from-purple-500 to-indigo-600"
         />
       </div>
 
@@ -188,7 +197,7 @@ const AdminDashboard = () => {
                     <UserCheck size={16} /> Approve
                   </button>
 
-                  <button 
+                  <button
                     onClick={() => handleReject(item.id)}
                     className="px-4 py-2 bg-red-500 text-white rounded-lg flex items-center gap-2"
                   >
