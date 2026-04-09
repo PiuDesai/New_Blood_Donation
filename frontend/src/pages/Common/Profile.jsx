@@ -232,6 +232,27 @@ const Profile = () => {
     fileInputRef.current?.click();
   };
 
+  const handleRemoveProfilePhoto = async () => {
+    if (photoSaving) return;
+    setPhotoSaving(true);
+    try {
+      // Update preview immediately
+      setFormData((prev) => ({ ...prev, profilePhoto: "" }));
+
+      const res = await updateProfile({ profilePhoto: "" });
+      if (res.success) {
+        toast.success("Profile photo removed!");
+        updateUser(res.user);
+      } else {
+        toast.error(res.message || "Failed to remove profile photo");
+      }
+    } catch {
+      toast.error("An error occurred while removing profile photo");
+    } finally {
+      setPhotoSaving(false);
+    }
+  };
+
   const compressImageToDataUrl = async (file) => {
     // Backend uses default `express.json()` size limit, so we must keep payload small.
     const MAX_DATA_URL_LENGTH = 80_000; // ~80KB chars (safe under typical 100KB limit)
@@ -399,6 +420,21 @@ const Profile = () => {
                 >
                   <Camera size={18} />
                 </button>
+
+                {formData.profilePhoto && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveProfilePhoto}
+                    disabled={photoSaving}
+                    className={`absolute -bottom-2 -left-2 w-10 h-10 bg-white rounded-2xl shadow-xl flex items-center justify-center text-gray-900 hover:bg-gray-900 hover:text-white transition-all border border-gray-100 ${
+                      photoSaving ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                    }`}
+                    title="Remove photo"
+                    aria-label="Remove profile photo"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
               
               <div>

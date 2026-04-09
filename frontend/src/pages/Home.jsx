@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Heart, Droplets, ShieldCheck, Zap, Users, ArrowRight, Activity, Calendar, MapPin } from "lucide-react";
@@ -7,6 +7,7 @@ import { Card } from "../components/Common/Card";
 
 const Home = () => {
   const navigate = useNavigate();
+  const [selectedRole, setSelectedRole] = useState("patient");
 
   const features = [
     { icon: Droplets, title: "Smart Matching", desc: "AI-driven matching between donors and patients based on location and urgency." },
@@ -14,6 +15,49 @@ const Home = () => {
     { icon: Zap, title: "Real-time Alerts", desc: "Instant notifications for emergency blood requirements in your immediate area." },
     { icon: Activity, title: "Live Inventory", desc: "Track live blood stock levels across multiple city-wide blood banks." }
   ];
+
+  const roleCards = [
+    { id: "patient", title: "Patient", icon: Heart },
+    { id: "donor", title: "Donor", icon: Droplets },
+    { id: "bloodbank", title: "Blood Bank", icon: ShieldCheck },
+  ];
+
+  const roleDetails = {
+    patient: {
+      heading: "Patient Guide",
+      points: [
+        "Sign up/login and complete profile.",
+        "Create blood request with patient details.",
+        "Track request status in dashboard.",
+        "Search donors and nearby blood banks.",
+        "Book home test and download report.",
+        "Upload blood report for AI analysis.",
+      ],
+      flow: ["Request", "Submit", "Wait", "Get Help"],
+    },
+    donor: {
+      heading: "Donor Guide",
+      points: [
+        "Sign up/login and update donor profile.",
+        "View nearby active blood requests.",
+        "Respond and support emergency needs.",
+        "Manage donation history and activity.",
+        "Get rewards/certificates for donations.",
+      ],
+      flow: ["See Requests", "Respond", "Donate", "Complete"],
+    },
+    bloodbank: {
+      heading: "Blood Bank Guide",
+      points: [
+        "Sign up/login and maintain blood bank profile.",
+        "Manage incoming patient blood requests.",
+        "Accept/reject requests and update status.",
+        "Handle home test bookings and technician assignment.",
+        "Upload report links after test completion.",
+      ],
+      flow: ["Receive", "Review", "Process", "Close"],
+    },
+  };
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden font-['Plus_Jakarta_Sans']">
@@ -26,6 +70,7 @@ const Home = () => {
         <div className="hidden md:flex items-center gap-10">
           <a href="#features" className="text-sm font-bold text-gray-500 hover:text-red-600 transition-colors">Features</a>
           <a href="#mission" className="text-sm font-bold text-gray-500 hover:text-red-600 transition-colors">Mission</a>
+          <a href="#architecture" className="text-sm font-bold text-gray-500 hover:text-red-600 transition-colors">Architecture</a>
           <Button 
             onClick={() => navigate("/role-selection")}
             className="bg-red-600 hover:bg-red-700 h-11 px-8 rounded-xl text-sm font-black uppercase tracking-widest"
@@ -250,6 +295,73 @@ const Home = () => {
           </div>
           <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-red-600/20 to-transparent"></div>
           <Activity size={400} className="absolute -bottom-40 -left-20 text-white/5" />
+        </div>
+      </section>
+
+      {/* Architecture Section */}
+      <section id="architecture" className="py-32 px-6 md:px-20 bg-gray-50/30">
+        <div className="max-w-7xl mx-auto space-y-16">
+          <div className="text-center">
+            <h4 className="text-red-600 font-black uppercase text-xs tracking-[0.3em] mb-4">Architecture</h4>
+            <h2 className="text-5xl font-black text-gray-900 tracking-tighter">How to Use BloodMatrix</h2>
+            <p className="text-gray-500 font-bold mt-6 max-w-3xl mx-auto leading-relaxed">
+              Simple idea: <span className="text-gray-900 font-black">people who need blood</span> meet <span className="text-gray-900 font-black">people who can help</span>.
+              Choose who you are and follow the steps.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {roleCards.map((role) => (
+              <Card key={role.id} className="p-10 border-none shadow-xl shadow-gray-100/50">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole(role.id)}
+                  className={`w-full text-left p-1 rounded-2xl transition-all ${
+                    selectedRole === role.id ? "ring-2 ring-red-200" : ""
+                  }`}
+                >
+                  <role.icon size={34} className={`mb-6 ${selectedRole === role.id ? "text-red-600" : "text-gray-400"}`} />
+                  <h3 className="text-xl font-black text-gray-900 mb-2">{role.title}</h3>
+                  <p className="text-gray-500 font-bold text-sm leading-relaxed">
+                    Click to view {role.title.toLowerCase()} details.
+                  </p>
+                </button>
+              </Card>
+            ))}
+          </div>
+
+          <Card className="p-10 border-none shadow-xl shadow-gray-100/50">
+            <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">{roleDetails[selectedRole].heading}</h3>
+            <p className="text-gray-500 font-bold text-sm mb-10 leading-relaxed">
+              Simple role-wise details for users.
+            </p>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="p-8 border border-gray-100 shadow-none bg-white">
+                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Details</h4>
+                <ul className="space-y-3 text-sm font-bold text-gray-600">
+                  {roleDetails[selectedRole].points.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
+              </Card>
+              <Card className="p-8 border border-gray-100 shadow-none bg-white">
+                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Flow</h4>
+                <div className="flex flex-wrap items-center gap-3">
+                  {roleDetails[selectedRole].flow.map((step, idx) => (
+                    <React.Fragment key={`${selectedRole}-${step}`}>
+                      <div className="px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-gray-900 font-black text-[11px] uppercase tracking-widest">
+                        {step}
+                      </div>
+                      {idx !== roleDetails[selectedRole].flow.length - 1 && (
+                        <div className="text-gray-300 font-black text-xl select-none">→</div>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </Card>
         </div>
       </section>
 
