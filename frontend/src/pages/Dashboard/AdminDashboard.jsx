@@ -136,21 +136,28 @@ const AdminDashboard = () => {
           title="Total Donors"
           value={stats?.totalDonors || 0}
           icon={Users}
+          color="bg-gradient-to-br from-blue-500 to-blue-700"
         />
+
         <StatsCard
           title="Pending Donors"
           value={stats?.pendingDonors || 0}
           icon={Activity}
+          color="bg-gradient-to-br from-yellow-400 to-orange-500"
         />
+
         <StatsCard
           title="Total Blood Banks"
           value={stats?.totalBanks || 0}
           icon={HeartPulse}
+          color="bg-gradient-to-br from-red-500 to-pink-600"
         />
+
         <StatsCard
           title="Pending Blood Banks"
           value={stats?.pendingBanks || 0}
           icon={Droplets}
+          color="bg-gradient-to-br from-purple-500 to-indigo-600"
         />
       </div>
 
