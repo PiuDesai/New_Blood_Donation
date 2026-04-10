@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const Camp = require("../models/Camp");
 const User = require("../models/UserModel");
 const sendNotification = require("../utils/sendNotification");
+const { sendBulkEmail } = require("../utils/emailService");
 const {
   getDonorCooldownStatus,
   applyCooldownAfterDonation,
@@ -74,6 +75,34 @@ exports.createCamp = async (req, res) => {
       participations: [],
       unitsCollected: 0,
     });
+
+    // Email nearby donors (same city as blood bank), if SMTP configured and emailEnabled
+    try {
+      const bank = await User.findById(uid).select("name location");
+      const city = bank?.location?.city?.trim();
+      if (city) {
+        const donors = await User.find({
+          role: "donor",
+          isActive: true,
+          isApproved: true,
+          "notificationPreferences.emailEnabled": true,
+          "location.city": new RegExp(`^${city.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
+        }).select("email name");
+
+        const emails = donors.map((d) => d.email).filter(Boolean);
+        await sendBulkEmail(
+          emails,
+          {
+            subject: "New blood donation camp near you",
+            text: `A new camp has been created in/near ${camp.location} on ${new Date(camp.date).toLocaleDateString()}.\n\nLog in to participate.\n\nBloodMatrix`,
+          },
+          { max: 80 }
+        );
+      }
+    } catch (e) {
+      console.error("[email] camp create:", e.message);
+    }
+
     res.status(201).json(camp);
   } catch (err) {
     console.error(err);

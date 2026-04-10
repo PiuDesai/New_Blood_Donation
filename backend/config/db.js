@@ -6,9 +6,13 @@ const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGO_URI || "mongodb://localhost:27017/bloodApp";
     await mongoose.connect(mongoURI); 
-    console.log("MongoDB Connected Successfully....");
+    if (process.env.NODE_ENV !== 'production') {
+      console.log("MongoDB Connected Successfully....");
+    }
   } catch (error) {
-    console.error("MongoDB Connection Failed :", error.message);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error("MongoDB Connection Failed :", error.message);
+    }
     process.exit(1);
   }
 };

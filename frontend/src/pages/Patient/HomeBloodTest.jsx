@@ -7,6 +7,13 @@ import { Input } from '../../components/Common/Input';
 import { Loader2, MapPin, User, Phone, FileText, Activity, ExternalLink, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const sanitizePatientName = (value = "", { forSubmit = false } = {}) => {
+  // Keep only letters and spaces so patient name can't contain numbers.
+  const cleaned = String(value).replace(/[^A-Za-z\s]/g, "");
+  if (!forSubmit) return cleaned.replace(/\s{2,}/g, " ");
+  return cleaned.replace(/\s{2,}/g, " ").trim();
+};
+
 const HomeBloodTest = () => {
   const { user } = useAuth();
   const [tests, setTests] = useState([]);
@@ -16,7 +23,7 @@ const HomeBloodTest = () => {
 
   const [formData, setFormData] = useState({
     testType: '',
-    patientName: user?.name || '',
+    patientName: sanitizePatientName(user?.name || '', { forSubmit: true }),
     phone: user?.phone || '',
     address: user?.location?.address || '',
   });
@@ -48,7 +55,7 @@ const HomeBloodTest = () => {
       toast.success('Home test booked successfully!');
       setFormData({
         testType: '',
-        patientName: user?.name || '',
+        patientName: sanitizePatientName(user?.name || '', { forSubmit: true }),
         phone: user?.phone || '',
         address: user?.location?.address || '',
       });
@@ -90,7 +97,17 @@ const HomeBloodTest = () => {
               label="Patient Name"
               icon={User}
               value={formData.patientName}
-              onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, patientName: sanitizePatientName(e.target.value) })}
+              onKeyDown={(e) => {
+                // Block direct number entry (keeps UX aligned with sanitized value).
+                if (e.key.length === 1 && /[0-9]/.test(e.key)) e.preventDefault();
+              }}
+              onPaste={(e) => {
+                e.preventDefault();
+                const text = e.clipboardData.getData("text");
+                setFormData((prev) => ({ ...prev, patientName: sanitizePatientName(text) }));
+              }}
+              inputMode="text"
               required
             />
 

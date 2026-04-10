@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { loginUser, loginAdmin } from "../../api/authAPI";
+import { loginUser, loginAdmin, forgotPassword } from "../../api/authAPI";
 import { getErrorMessage } from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { Card } from "../../components/Common/Card";
@@ -21,6 +21,28 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      toast.error("Please enter your email first");
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    try {
+      const res = await forgotPassword(formData.email);
+      if (res.success) {
+        toast.success(`Reset link sent to ${formData.email}!`);
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err) {
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -114,6 +136,16 @@ const Login = () => {
                     {passwordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={forgotPasswordLoading}
+                    className="text-xs font-black text-red-600 uppercase tracking-widest hover:underline disabled:opacity-50"
+                  >
+                    {forgotPasswordLoading ? "Sending..." : "Forgot Password?"}
+                  </button>
+                </div>
               </div>
 
               <AnimatePresence>
@@ -141,15 +173,17 @@ const Login = () => {
             </form>
 
             <div className="mt-10 text-center">
-              <p className="text-gray-400">
-                New user?{" "}
-                <Link to={role === "bloodbank" ? "/register/bloodbank" : "/register"} className="text-red-600">
-                  Create Account
-                </Link>
-              </p>
+              {role !== "admin" && (
+                <p className="text-gray-400">
+                  New user?{" "}
+                  <Link to={role === "bloodbank" ? "/register/bloodbank" : "/register"} className="text-red-600">
+                    Create Account
+                  </Link>
+                </p>
+              )}
 
               <button onClick={() => navigate("/role-selection")} className="text-sm text-gray-400 mt-3">
-                ← Switch Role
+                Switch Role
               </button>
             </div>
 

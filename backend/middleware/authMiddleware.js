@@ -42,7 +42,9 @@ const auth = (req, res, next) => {
     next(); // ✅ MUST
 
   } catch (error) {
-    console.log("AUTH ERROR:", error.message);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("AUTH ERROR:", error.message);
+    }
 
     // ❌ DO NOT USE next(error) here for now
     return res.status(401).json({

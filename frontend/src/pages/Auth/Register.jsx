@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { registerUser } from "../../api/api";
 import { getErrorMessage } from "../../api/axios";
 import { Card } from "../../components/Common/Card";
 import { Input } from "../../components/Common/Input";
 import { Button } from "../../components/Common/Button";
-import { User, Mail, Lock, Phone, MapPin, Droplets, Calendar, Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Lock, Phone, MapPin, Droplets, Calendar, Loader2, ArrowRight, Eye, EyeOff, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import BackButton from "../../components/Common/BackButton";
@@ -19,6 +19,7 @@ const genderToApi = (g) => {
 
 const Register = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -26,6 +27,14 @@ const Register = () => {
     bloodGroup: "", gender: "", dateOfBirth: "", city: "", state: "",
     role: "patient"
   });
+
+  // Read role from URL parameters
+  useEffect(() => {
+    const roleFromUrl = searchParams.get('role');
+    if (roleFromUrl && ['patient', 'donor'].includes(roleFromUrl)) {
+      setFormData(prev => ({ ...prev, role: roleFromUrl }));
+    }
+  }, [searchParams]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,7 +46,9 @@ const Register = () => {
   const stateCityData = {
     "Andhra Pradesh": [
       "Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool", "Rajahmundry", 
-      "Tirupati", "Kakinada", "Anantapur", "Eluru", "Ongole", "Vizianagaram"
+      "Tirupati", "Kakinada", "Anantapur", "Eluru", "Ongole", "Vizianagaram",
+      "Chittoor", "Anakapalli", "Tadipatri", "Hindupur", "Bapatla", "Palnadu",
+      "Narsaraopet", "Srikakulam", "Machilipatnam", "Tenali", "Proddatur", "Nandyal"
     ],
     "Arunachal Pradesh": [
       "Itanagar", "Tawang", "Ziro", "Pasighat", "Bomdila", "Tezu", "Anini", "Khonsa"
@@ -284,8 +295,13 @@ const Register = () => {
 
     try {
       const response = await registerUser(payload);
-      toast.success(response.message || "Registration successful. Please sign in.");
-      navigate("/role-selection");
+      if (response?.token && response?.user) {
+        toast.success(response.message || "Registration successful!");
+        login(response.user, response.token); // redirects to dashboard
+      } else {
+        toast.success(response.message || "Registration successful. Please sign in.");
+        navigate(`/login/${formData.role}`);
+      }
     } catch (err) {
       const msg = getErrorMessage(err);
       setError(msg);
@@ -314,21 +330,15 @@ const Register = () => {
             <div className="md:col-span-2">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-700 ml-1 uppercase tracking-tight">Register As</label>
-                <div className="flex gap-4">
-                  {["patient", "donor"].map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, role: r })}
-                      className={`flex-1 py-3 rounded-2xl font-bold border-2 transition-all capitalize ${
-                        formData.role === r
-                          ? "border-red-600 bg-red-50 text-red-600 shadow-md"
-                          : "border-gray-100 bg-white text-gray-400 hover:border-red-200"
-                      }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-center gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-2xl">
+                  <div className={`w-12 h-12 bg-gradient-to-br ${formData.role === "patient" ? "from-blue-500 to-indigo-600" : "from-red-500 to-pink-600"} rounded-xl flex items-center justify-center text-white shadow-lg`}>
+                    {formData.role === "patient" ? <User size={20} /> : <Heart size={20} />}
+                  </div>
+                  <div>
+                    <div className="text-lg font-black text-gray-900 capitalize">
+                      {formData.role === "patient" ? "Patient" : "Donor"}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -497,7 +507,7 @@ const Register = () => {
           <div className="mt-12 text-center pt-8 border-t border-gray-100">
             <p className="text-gray-400 font-bold text-sm">
               Already have an account?{" "}
-              <Link to="/role-selection" className="text-red-600 hover:text-red-700 underline underline-offset-4 decoration-2">
+              <Link to={`/login/${formData.role}`} className="text-red-600 hover:text-red-700 underline underline-offset-4 decoration-2">
                 Sign In Instead
               </Link>
             </p>
