@@ -23,25 +23,8 @@ const Login = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
 
-  const handleForgotPassword = async () => {
-    if (!formData.email) {
-      toast.error("Please enter your email first");
-      return;
-    }
-
-    setForgotPasswordLoading(true);
-    try {
-      const res = await forgotPassword(formData.email);
-      if (res.success) {
-        toast.success(`Reset link sent to ${formData.email}!`);
-      } else {
-        toast.error(res.message);
-      }
-    } catch (err) {
-      toast.error("An error occurred. Please try again.");
-    } finally {
-      setForgotPasswordLoading(false);
-    }
+  const handleForgotPassword = () => {
+    navigate("/forgot-password");
   };
 
   const handleSubmit = async (e) => {

@@ -1,7 +1,7 @@
 import { Card } from "./Card";
 import { cn } from "../../utils/cn";
 
-export const StatsCard = ({ title, value, icon: Icon, color, trend, trendValue }) => {
+export const StatsCard = ({ title, value, icon: Icon, color, trend, trendValue, hideBackgroundIcon }) => {
   return (
     <div>
       <Card className="flex items-center gap-6 p-8 group border-none shadow-md shadow-gray-200/40 relative overflow-hidden bg-white hover:shadow-xl transition-all duration-300">
@@ -27,7 +27,7 @@ export const StatsCard = ({ title, value, icon: Icon, color, trend, trendValue }
           </div>
         </div>
 
-        {Icon && <Icon size={120} className="absolute -bottom-10 -right-10 text-gray-50 group-hover:scale-110 group-hover:text-gray-100 transition-all duration-500 opacity-50" />}
+        {!hideBackgroundIcon && Icon && <Icon size={120} className="absolute -bottom-10 -right-10 text-gray-50 group-hover:scale-110 group-hover:text-gray-100 transition-all duration-500 opacity-50" />}
       </Card>
     </div>
   );
