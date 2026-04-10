@@ -19,13 +19,45 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ───── Middleware ─────
-app.use(cors());
-app.use(express.json());
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://new-blood-donation.vercel.app",
+  process.env.FRONT_URL
+].filter(Boolean);
 
-app.use((req, res, next) => {
-  console.log(`[${req.method}] ${req.originalUrl}`);
-  next();
-});
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Normalize origin by removing trailing slash
+    const normalizedOrigin = origin.replace(/\/$/, "");
+    const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, ""));
+
+    if (normalizedAllowed.indexOf(normalizedOrigin) === -1) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`[CORS] Denied origin: ${origin}`);
+      }
+      return callback(new Error('CORS policy violation'), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+app.options(/.*/, cors()); // ✅ Updated for path-to-regexp v8+ (Named Wildcard)
+
+app.use(express.json({ limit: '10mb' })); // Increased limit for profile photos
+
+// Request Logger (only in dev)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.log(`[${req.method}] ${req.originalUrl}`);
+    next();
+  });
+}
 
 
 
@@ -60,11 +92,14 @@ app.use((req, res) => {
 
 // ───── Global Error Handler ─────
 app.use((err, req, res, next) => {
-  console.error("GLOBAL ERROR:", err.message);
+  if (process.env.NODE_ENV !== 'production') {
+    console.error("GLOBAL ERROR:", err.stack);
+  }
 
-  res.status(500).json({
+  res.status(err.status || 500).json({
     success: false,
-    message: err.message || "Internal Server Error"
+    message: err.message || "Internal Server Error",
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
   });
 });
 

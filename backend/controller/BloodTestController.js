@@ -1,6 +1,7 @@
 const BloodTestBooking = require('../models/BloodTestBookingModel.js');
 const User = require('../models/UserModel.js');
 const sendNotification = require('../utils/sendNotification.js');
+const { sendEmail } = require('../utils/emailService.js');
 
 // ── Create Booking (Patient) ───────────────────────────────────
 const createBooking = async (req, res, next) => {
@@ -162,7 +163,7 @@ const uploadReport = async (req, res, next) => {
       return res.status(400).json({ message: 'Report URL is required' });
     }
 
-    const booking = await BloodTestBooking.findById(bookingId).populate('patient');
+    const booking = await BloodTestBooking.findById(bookingId).populate('patient', 'name email fcmToken notificationPreferences');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
     booking.reportUrl = reportUrl;
@@ -184,6 +185,20 @@ const uploadReport = async (req, res, next) => {
       );
     } catch (notifErr) {
       console.error('Notification Error:', notifErr.message);
+    }
+
+    // Email patient when report is ready (if enabled)
+    try {
+      const emailEnabled = booking.patient?.notificationPreferences?.emailEnabled !== false;
+      if (emailEnabled && booking.patient?.email) {
+        await sendEmail({
+          to: booking.patient.email,
+          subject: 'Your home blood test report is ready',
+          text: `Hi ${booking.patient.name || 'there'},\n\nYour ${booking.testType} report is now available.\n\nReport link: ${reportUrl}\n\nBloodMatrix`,
+        });
+      }
+    } catch (e) {
+      console.error("[email] report upload:", e.message);
     }
 
     res.json({ message: 'Report uploaded', booking });

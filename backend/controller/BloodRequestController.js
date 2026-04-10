@@ -2,6 +2,7 @@ const BloodRequest = require('../models/BloodRequestModel');
 const User = require('../models/UserModel');
 const sendNotification = require('../utils/sendNotification');
 const { getDonorCooldownStatus, COOLDOWN_DAYS } = require('../utils/donorCooldown');
+const { sendBulkEmail } = require('../utils/emailService');
 
 const VALID_BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -74,6 +75,27 @@ exports.createRequest = async (req, res, next) => {
       });
     } catch (notifErr) {
       console.error('Notification Error:', notifErr.message);
+    }
+
+    // Email (optional): donors with same blood group + all blood banks
+    try {
+      const emailRecipients = await User.find({
+        _id: { $in: dbRecipientIds },
+        email: { $exists: true, $ne: '' },
+        "notificationPreferences.emailEnabled": true,
+      }).select("email");
+
+      const emails = emailRecipients.map((u) => u.email).filter(Boolean);
+      await sendBulkEmail(
+        emails,
+        {
+          subject: `New blood request: ${groupForDb}`,
+          text: `A new blood request was created.\n\nBlood group: ${groupForDb}\nUnits: ${units}\nHospital: ${hospital}\nUrgency: ${urgency || 'Normal'}\n\nOpen the app to respond.\n\nBloodMatrix`,
+        },
+        { max: 80 }
+      );
+    } catch (e) {
+      console.error("[email] blood request:", e.message);
     }
 
     res.status(201).json({ message: 'Blood request created', request });

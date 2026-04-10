@@ -6,7 +6,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { getProfile, updateProfile, changePassword } from "../../api/authAPI";
+import { getProfile, updateProfile, changePassword } from "../../api/api";
+import { forgotPassword } from "../../api/api";
 import { Button } from "../../components/Common/Button";
 import { Card } from "../../components/Common/Card";
 import { Input } from "../../components/Common/Input";
@@ -95,6 +96,8 @@ const Profile = () => {
     newPassword: "",
     confirmPassword: ""
   });
+
+  const [sendingReset, setSendingReset] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -232,6 +235,27 @@ const Profile = () => {
     fileInputRef.current?.click();
   };
 
+  const handleRemoveProfilePhoto = async () => {
+    if (photoSaving) return;
+    setPhotoSaving(true);
+    try {
+      // Update preview immediately
+      setFormData((prev) => ({ ...prev, profilePhoto: "" }));
+
+      const res = await updateProfile({ profilePhoto: "" });
+      if (res.success) {
+        toast.success("Profile photo removed!");
+        updateUser(res.user);
+      } else {
+        toast.error(res.message || "Failed to remove profile photo");
+      }
+    } catch {
+      toast.error("An error occurred while removing profile photo");
+    } finally {
+      setPhotoSaving(false);
+    }
+  };
+
   const compressImageToDataUrl = async (file) => {
     // Backend uses default `express.json()` size limit, so we must keep payload small.
     const MAX_DATA_URL_LENGTH = 80_000; // ~80KB chars (safe under typical 100KB limit)
@@ -339,6 +363,30 @@ const Profile = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      return toast.error("Registered email not found. Please refresh and try again.");
+    }
+    
+    const confirmSend = window.confirm(`A password reset link will be sent to your registered email: ${formData.email}. Proceed?`);
+    if (!confirmSend) return;
+
+    setSendingReset(true);
+    try {
+      const res = await forgotPassword(formData.email);
+      if (res.success) {
+        toast.success(`Reset link sent! Please check your email: ${formData.email}`);
+      } else {
+        toast.error(res.message || "Could not send reset link. Please try again.");
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || "Our email service is currently unavailable. Please try again later.";
+      toast.error(errorMsg);
+    } finally {
+      setSendingReset(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
@@ -399,6 +447,21 @@ const Profile = () => {
                 >
                   <Camera size={18} />
                 </button>
+
+                {formData.profilePhoto && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveProfilePhoto}
+                    disabled={photoSaving}
+                    className={`absolute -bottom-2 -left-2 w-10 h-10 bg-white rounded-2xl shadow-xl flex items-center justify-center text-gray-900 hover:bg-gray-900 hover:text-white transition-all border border-gray-100 ${
+                      photoSaving ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                    }`}
+                    title="Remove photo"
+                    aria-label="Remove profile photo"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
               
               <div>
@@ -748,7 +811,17 @@ const Profile = () => {
                       </div>
                     </div>
 
-                    <div className="flex justify-end pt-6">
+                    <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={handleForgotPassword}
+                        disabled={sendingReset}
+                        className="text-red-600 font-black uppercase text-[10px] tracking-widest flex items-center gap-2 hover:bg-red-50"
+                      >
+                        {sendingReset ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                        Forgot Password?
+                      </Button>
                       <Button
                         type="submit"
                         disabled={updating}

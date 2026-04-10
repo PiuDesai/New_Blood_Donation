@@ -3,29 +3,52 @@ import { Button } from "../Common/Button";
 import { LogOut, User, Search } from "lucide-react";
 import NotificationBell from "../NotificationBell";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { dashboardPath } from "../../utils/rolePaths";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    // Navigate to the appropriate search page based on role
+    const role = user?.role?.toLowerCase();
+    if (role === "patient") {
+      navigate(`/patient/find?q=${encodeURIComponent(searchQuery)}`);
+    } else if (role === "donor") {
+      navigate(`/donor/dashboard?q=${encodeURIComponent(searchQuery)}`);
+    } else if (role === "bloodbank") {
+      navigate(`/bloodbank/nearby-donors?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
 
   return (
     <nav className="h-24 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-10 flex items-center justify-between sticky top-0 z-40">
       <div className="flex items-center gap-10">
-        <div className="flex items-center gap-3 group cursor-pointer">
+        <div 
+          onClick={() => navigate(dashboardPath(user?.role))}
+          className="flex items-center gap-3 group cursor-pointer"
+        >
           <div className="w-12 h-12 bg-gradient-to-tr from-red-600 to-pink-500 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-red-200 group-hover:rotate-12 transition-transform">
             B
           </div>
           <span className="text-2xl font-black text-gray-900 tracking-tighter hidden md:block">BloodMatrix</span>
         </div>
 
-        <div className="hidden lg:flex items-center bg-gray-50 border border-gray-100 rounded-2xl px-4 py-2 w-96 group focus-within:bg-white focus-within:border-red-200 transition-all">
+        <form onSubmit={handleSearch} className="hidden lg:flex items-center bg-gray-50 border border-gray-100 rounded-2xl px-4 py-2 w-96 group focus-within:bg-white focus-within:border-red-200 transition-all">
           <Search size={18} className="text-gray-400 group-focus-within:text-red-500" />
           <input
             type="text"
             placeholder="Search for donors, centers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="bg-transparent border-none outline-none px-3 text-sm font-medium w-full placeholder:text-gray-300"
           />
-        </div>
+        </form>
       </div>
 
       <div className="flex items-center gap-6">

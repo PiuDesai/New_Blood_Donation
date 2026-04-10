@@ -294,8 +294,13 @@ const Register = () => {
 
     try {
       const response = await registerUser(payload);
-      toast.success(response.message || "Registration successful. Please sign in.");
-      navigate("/role-selection");
+      if (response?.token && response?.user) {
+        toast.success(response.message || "Registration successful!");
+        login(response.user, response.token); // redirects to dashboard
+      } else {
+        toast.success(response.message || "Registration successful. Please sign in.");
+        navigate(`/login/${formData.role}`);
+      }
     } catch (err) {
       const msg = getErrorMessage(err);
       setError(msg);
