@@ -68,7 +68,9 @@ async function sendEmail({ to, subject, text, html }) {
     });
     return { ok: true, messageId: info.messageId };
   } catch (err) {
-    console.error("[email] send failed:", err.message);
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[email] send failed:", err.message);
+    }
     return { ok: false, error: err.message };
   }
 }
