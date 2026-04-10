@@ -4,6 +4,7 @@ import { getTestTypes, bookBloodTest, getMyBookings } from '../../api/api';
 import { Card } from '../../components/Common/Card';
 import { Button } from '../../components/Common/Button';
 import { Input } from '../../components/Common/Input';
+import BackButton from '../../components/Common/BackButton';
 import { Loader2, MapPin, User, Phone, FileText, Activity, ExternalLink, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -71,6 +72,7 @@ const HomeBloodTest = () => {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-10">
+      <BackButton />
       <div className="grid md:grid-cols-2 gap-8">
         {/* Booking Form */}
         <Card className="p-6 h-fit">

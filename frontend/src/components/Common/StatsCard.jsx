@@ -27,8 +27,7 @@ export const StatsCard = ({ title, value, icon: Icon, color, trend, trendValue, 
           </div>
         </div>
 
-        {!hideBackgroundIcon && Icon && <Icon size={120} className="absolute -bottom-10 -right-10 text-gray-50 group-hover:scale-110 group-hover:text-gray-100 transition-all duration-500 opacity-50" />}
-      </Card>
+              </Card>
     </div>
   );
 };

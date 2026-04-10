@@ -1,4 +1,4 @@
-import { HeartPulse, Droplets, Activity, Search, Plus, MapPin, Calendar, Clock, Loader2, ShieldCheck, Phone, CheckCircle2, Home, ArrowLeft, HelpCircle, Edit3, Trash2, Star, User } from "lucide-react";
+import { HeartPulse, Droplets, Activity, Search, Plus, MapPin, Calendar, Clock, Loader2, ShieldCheck, Phone, CheckCircle2, Home, ArrowLeft, HelpCircle, Edit3, Trash2, Star, User, Inbox } from "lucide-react";
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
@@ -3339,27 +3339,31 @@ const PatientDashboard = () => {
           </motion.div>
         )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <StatsCard 
-            title="Active Requests" 
-            value={stats?.activeRequests ?? 0} 
-            icon={HeartPulse} 
-            color="from-red-500 to-pink-600" 
-          />
-          <StatsCard 
-            title="Donors Found" 
-            value={stats?.donorsFound ?? 0} 
-            icon={Activity} 
-            color="from-blue-500 to-indigo-600" 
-          />
-          <StatsCard 
-            title="Nearby Centers" 
-            value={stats?.nearbyCenters ?? 0} 
-            icon={MapPin} 
-            color="from-emerald-500 to-teal-600" 
-          />
-        </div>
+      {/* Stats */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+<StatsCard 
+  title="Active Requests" 
+  value={stats?.activeRequests ?? 0} 
+  icon={() => <HeartPulse size={28} className="text-red-600" />}
+  color="from-red-500 to-pink-600" 
+/>
+
+<StatsCard 
+  title="Donors Found" 
+  value={stats?.donorsFound ?? 0} 
+  icon={() => <User size={28} className="text-blue-600" />}
+  color="from-blue-500 to-indigo-600" 
+/>
+
+<StatsCard 
+  title="Nearby Centers" 
+  value={stats?.nearbyCenters ?? 0} 
+  icon={() => <Home size={28} className="text-emerald-600" />}
+  color="from-emerald-500 to-teal-600" 
+/>
+
+</div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Recent Requests */}
