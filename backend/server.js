@@ -21,22 +21,33 @@ const PORT = process.env.PORT || 5000;
 // ───── Middleware ─────
 const allowedOrigins = [
   "http://localhost:5173",
-  process.env.FRONT_URL,
-  "https://your-frontend-domain.vercel.app" // User should update this in Render env vars
+  "https://new-blood-donation.vercel.app",
+  process.env.FRONT_URL
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+    
+    // Normalize origin by removing trailing slash
+    const normalizedOrigin = origin.replace(/\/$/, "");
+    const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, ""));
+
+    if (normalizedAllowed.indexOf(normalizedOrigin) === -1) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`[CORS] Denied origin: ${origin}`);
+      }
+      return callback(new Error('CORS policy violation'), false);
     }
     return callback(null, true);
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+app.options('*', cors()); // Enable pre-flight for all routes
 
 app.use(express.json({ limit: '10mb' })); // Increased limit for profile photos
 
