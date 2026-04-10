@@ -47,7 +47,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.options('/:any*', cors()); // ✅ Updated for path-to-regexp v8+ (Named Wildcard)
+app.options(/.*/, cors()); // ✅ Updated for path-to-regexp v8+ (Named Wildcard)
 
 app.use(express.json({ limit: '10mb' })); // Increased limit for profile photos
 
