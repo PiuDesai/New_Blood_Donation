@@ -8,7 +8,6 @@ import { Button } from "../../components/Common/Button";
 import { User, Mail, Lock, Phone, MapPin, Droplets, Calendar, Loader2, ArrowRight, Eye, EyeOff, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
-import BackButton from "../../components/Common/BackButton";
 import BloodMatrixLogo from "../../components/Common/BloodMatrixLogo";
 import { useAuth } from "../../context/AuthContext";
 
@@ -308,6 +307,39 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-red-50 via-white to-blue-50 flex items-center justify-center p-6 py-20">
+      <button
+        onClick={() => window.history.back()}
+        style={{
+          position: "fixed",
+          top: "20px",
+          left: "20px",
+          backgroundColor: "#dc2626",
+          color: "white",
+          border: "none",
+          borderRadius: "50%",
+          width: "36px",
+          height: "36px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "18px",
+          fontWeight: "500",
+          cursor: "pointer",
+          boxShadow: "0 2px 6px rgba(220, 38, 38, 0.25)",
+          transition: "all 0.2s ease",
+          zIndex: 9999,
+        }}
+        onMouseOver={(e) => {
+          e.target.style.backgroundColor = "#b91c1c";
+          e.target.style.boxShadow = "0 3px 8px rgba(220, 38, 38, 0.35)";
+        }}
+        onMouseOut={(e) => {
+          e.target.style.backgroundColor = "#dc2626";
+          e.target.style.boxShadow = "0 2px 6px rgba(220, 38, 38, 0.25)";
+        }}
+      >
+        ←
+      </button>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}

@@ -388,25 +388,25 @@ const DonorDashboard = () => {
         <StatsCard 
           title="Total Donations" 
           value={user?.donorInfo?.donationCount ?? 0} 
-          icon={Droplets} 
+          icon={() => <Droplets size={28} className="text-red-600" />}
           color="from-red-500 to-pink-600" 
         />
         <StatsCard 
           title="My Points" 
           value={user?.points ?? 0} 
-          icon={Star} 
+          icon={() => <Star size={28} className="text-yellow-500" />}
           color="from-yellow-400 to-amber-600" 
         />
         <StatsCard 
           title="Rating" 
           value={user?.rating?.toFixed(1) ?? "0.0"} 
-          icon={ShieldCheck} 
+          icon={() => <ShieldCheck size={28} className="text-emerald-600" />}
           color="from-emerald-400 to-teal-600" 
         />
         <StatsCard 
           title="Lives Saved" 
           value={user?.donorInfo?.donationCount ? user.donorInfo.donationCount * 3 : 0} 
-          icon={Activity} 
+          icon={() => <Activity size={28} className="text-blue-600" />}
           color="from-blue-500 to-indigo-600" 
         />
       </div>

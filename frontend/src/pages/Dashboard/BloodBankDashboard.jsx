@@ -238,10 +238,10 @@ const BloodBankDashboard = () => {
   const renderInventory = () => (
     <div className="space-y-10">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <StatsCard title="Total Units" value={stats?.totalUnits ?? 0} icon={Droplets} color="from-blue-500 to-indigo-600" />
-        <StatsCard title="Today's Intake" value={stats?.todayDonations ?? 0} icon={TrendingUp} color="from-emerald-500 to-teal-600" />
-        <StatsCard title="Active Requests" value={stats?.activeRequests ?? 0} icon={Activity} color="from-purple-500 to-violet-600" />
-        <StatsCard title="Low Stock" value={stats?.lowStockAlerts ?? 0} icon={AlertTriangle} color="from-red-500 to-pink-600" />
+        <StatsCard title="Total Units" value={stats?.totalUnits ?? 0} icon={() => <Droplets size={28} className="text-blue-600" />} color="from-blue-500 to-indigo-600" />
+        <StatsCard title="Today's Intake" value={stats?.todayDonations ?? 0} icon={() => <TrendingUp size={28} className="text-emerald-600" />} color="from-emerald-500 to-teal-600" />
+        <StatsCard title="Active Requests" value={stats?.activeRequests ?? 0} icon={() => <Activity size={28} className="text-purple-600" />} color="from-purple-500 to-violet-600" />
+        <StatsCard title="Low Stock" value={stats?.lowStockAlerts ?? 0} icon={() => <AlertTriangle size={28} className="text-red-600" />} color="from-red-500 to-pink-600" />
       </div>
 
       <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
