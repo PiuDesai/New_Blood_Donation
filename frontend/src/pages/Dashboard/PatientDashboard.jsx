@@ -2886,7 +2886,6 @@ const PatientDashboard = () => {
   const isFindPage = location.pathname.includes("/find");
   const isLabPage = location.pathname.includes("/lab");
   const isSettingsPage = location.pathname.includes("/settings");
-  const isHelpPage = location.pathname.includes("/help");
 
   useEffect(() => {
     fetchData();
@@ -3290,26 +3289,15 @@ const PatientDashboard = () => {
                 <p className="text-sm text-gray-500 font-bold">Update your personal details and blood group.</p>
                 <Button className="mt-4 bg-red-600 h-10 text-xs">Edit Profile</Button>
               </div>
-            </div>
-          </Card>
-        </div>
-      );
-    }
-
-    if (isHelpPage) {
-      return (
-        <div className="space-y-10">
-          <Button onClick={() => navigate(dashboardPath("patient"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
-            <ArrowLeft size={16} /> Back to Dashboard
-          </Button>
-          <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
-            <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Patient Support</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="p-8 bg-red-50 rounded-[2rem] border border-red-100">
-                <HelpCircle className="text-red-600 mb-4" size={32} />
-                <h4 className="font-black text-xl text-gray-900 mb-2">Emergency Help</h4>
-                <p className="text-gray-500 font-bold text-sm mb-6">Need immediate assistance finding blood? Contact our 24/7 hotline.</p>
-                <Button className="bg-red-600 h-10 text-xs">Call Helpline</Button>
+              <div className="p-6 bg-red-50 rounded-2xl">
+                <p className="font-black text-gray-900 mb-2">Change Password</p>
+                <p className="text-sm text-gray-500 font-bold">Secure your account with a new password.</p>
+                <Button 
+                  onClick={() => window.open('/forgot-password', '_blank')}
+                  className="mt-4 bg-red-600 h-10 text-xs"
+                >
+                  Change Password
+                </Button>
               </div>
             </div>
           </Card>
@@ -3325,7 +3313,7 @@ const PatientDashboard = () => {
             <h1 className="text-5xl font-black text-gray-900 mb-2 tracking-tight">
               Hello, <span className="text-red-600">{user?.name?.split(" ")[0]}!</span>
             </h1>
-            <p className="text-gray-400 font-bold text-lg">Your health portal is ready. How can we help today?</p>
+            <p className="text-gray-400 font-bold text-lg">Your health portal is ready.</p>
           </motion.div>
           
           <div className="flex flex-wrap gap-4">
@@ -3486,7 +3474,7 @@ const PatientDashboard = () => {
                       <div className="bg-red-50 p-4 rounded-2xl border border-red-100 mt-2">
                         <p className="text-xs font-black text-red-600 uppercase tracking-widest mb-1">Rejection Reason</p>
                         <p className="text-sm font-bold text-gray-700">{req.rejectionReason}</p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase mt-2">Donors have been notified to help instead.</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase mt-2">Donors have been notified.</p>
                       </div>
                     )}
                   </div>
@@ -3549,15 +3537,6 @@ const PatientDashboard = () => {
               >
                 Find More Centers
               </Button>
-            </Card>
-
-            <Card variant="glass" className="p-10 border-none shadow-2xl shadow-red-100/50 bg-gradient-to-br from-red-600 to-pink-600 text-white relative overflow-hidden group">
-              <div className="relative z-10">
-                <h4 className="text-xl font-black mb-4 tracking-tight">Need Urgent Help?</h4>
-                <p className="text-white/80 font-bold text-sm leading-relaxed mb-8">Connect with our emergency response team 24/7 for immediate blood assistance.</p>
-                <button className="h-14 px-8 rounded-2xl bg-white text-red-600 font-black uppercase tracking-widest text-xs shadow-xl hover:scale-105 transition-all">Call Helpline</button>
-              </div>
-              <HeartPulse size={120} className="absolute -bottom-10 -right-10 text-white/10 group-hover:scale-110 transition-transform duration-700" />
             </Card>
           </div>
         </div>

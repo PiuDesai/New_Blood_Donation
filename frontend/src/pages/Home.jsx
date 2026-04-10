@@ -33,14 +33,14 @@ const Home = () => {
         "Book home test and download report.",
         "Upload blood report for AI analysis.",
       ],
-      flow: ["Request", "Submit", "Wait", "Get Help"],
+      flow: ["Request", "Submit", "Wait"],
     },
     donor: {
       heading: "Donor Guide",
       points: [
         "Sign up/login and update donor profile.",
         "View nearby active blood requests.",
-        "Respond and support emergency needs.",
+        "Respond to emergency needs.",
         "Manage donation history and activity.",
         "Get rewards/certificates for donations.",
       ],
@@ -127,14 +127,6 @@ const Home = () => {
             {/* Banner / Abstract UI Visual */}
             <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(220,38,38,0.2)]">
               <div className="aspect-[4/5] bg-gradient-to-br from-red-600 to-pink-600 p-12 flex flex-col justify-between relative overflow-hidden">
-                <div className="relative z-20">
-                  <div className="w-16 h-16 bg-white/20 backdrop-blur-lg rounded-2xl flex items-center justify-center text-white mb-8 border border-white/20">
-                    <Heart size={32} fill="white" />
-                  </div>
-                  <h3 className="text-4xl font-black text-white leading-tight mb-4">Urgent Help <br />Nearby</h3>
-                  <p className="text-red-50 lg:text-lg font-bold">Fastest response for emergency requirements.</p>
-                </div>
-                
                 <div className="relative z-20 space-y-4">
                   <div className="bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/10">
                     <div className="flex justify-between items-center mb-2">
@@ -283,7 +275,7 @@ const Home = () => {
             </div>
             <div>
               <p className="text-6xl font-black text-white mb-2 tracking-tighter">24/7</p>
-              <p className="text-red-500 font-black uppercase text-xs tracking-widest">Active Support</p>
+              <p className="text-red-500 font-black uppercase text-xs tracking-widest">System Monitoring</p>
             </div>
           </div>
           <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-red-600/20 to-transparent"></div>
@@ -298,7 +290,7 @@ const Home = () => {
             <h4 className="text-red-600 font-black uppercase text-xs tracking-[0.3em] mb-4">Architecture</h4>
             <h2 className="text-5xl font-black text-gray-900 tracking-tighter">How to Use BloodMatrix</h2>
             <p className="text-gray-500 font-bold mt-6 max-w-3xl mx-auto leading-relaxed">
-              Simple idea: <span className="text-gray-900 font-black">people who need blood</span> meet <span className="text-gray-900 font-black">people who can help</span>.
+              Simple idea: <span className="text-gray-900 font-black">people who need blood</span> meet <span className="text-gray-900 font-black">people who can donate</span>.
               Choose who you are and follow the steps.
             </p>
           </div>

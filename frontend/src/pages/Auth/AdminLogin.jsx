@@ -4,14 +4,20 @@ import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import BackButton from "../../components/Common/BackButton";
 import BloodMatrixLogo from "../../components/Common/BloodMatrixLogo";
+import toast from "react-hot-toast";
 
 const AdminLogin = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleForgotPassword = () => {
+    navigate("/forgot-password");
   };
 
   const handleSubmit = async (e) => {
@@ -71,6 +77,17 @@ const AdminLogin = () => {
             <button type="submit" style={styles.button}>
               Login
             </button>
+            
+            <div style={styles.forgotPasswordContainer}>
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={forgotPasswordLoading}
+                style={styles.forgotPasswordLink}
+              >
+                {forgotPasswordLoading ? "Sending..." : "Forgot Password?"}
+              </button>
+            </div>
           </form>
         </div>
       </div>
@@ -129,6 +146,21 @@ const styles = {
     border: "none",
     borderRadius: "6px",
     cursor: "pointer",
+  },
+  forgotPasswordContainer: {
+    textAlign: "right",
+    marginTop: "10px",
+  },
+  forgotPasswordLink: {
+    background: "none",
+    border: "none",
+    color: "#007bff",
+    cursor: "pointer",
+    fontSize: "12px",
+    textDecoration: "underline",
+    padding: "5px",
+    opacity: 1,
+    transition: "opacity 0.3s",
   },
 };
 

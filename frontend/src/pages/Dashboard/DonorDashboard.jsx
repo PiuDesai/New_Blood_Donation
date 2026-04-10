@@ -39,7 +39,6 @@ const DonorDashboard = () => {
   const isHistoryPage = location.pathname.includes("/history");
   const isSchedulePage = location.pathname.includes("/schedule");
   const isSettingsPage = location.pathname.includes("/settings");
-  const isHelpPage = location.pathname.includes("/help");
 
   useEffect(() => {
     fetchData();
@@ -313,26 +312,15 @@ const DonorDashboard = () => {
               <p className="text-sm text-gray-500 font-bold">Show yourself as active for nearby emergency requests.</p>
               <Button className="mt-4 bg-red-600 h-10 text-xs">I'm Available</Button>
             </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isHelpPage) {
-    return (
-      <div className="space-y-10 pb-20">
-        <Button onClick={() => navigate(dashboardPath("donor"))} variant="ghost" className="flex items-center gap-2 text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest">
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Button>
-        <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
-          <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Support Hub</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="p-8 bg-blue-50 rounded-[2rem] border border-blue-100">
-              <HelpCircle className="text-blue-600 mb-4" size={32} />
-              <h4 className="font-black text-xl text-gray-900 mb-2">Donation Guidance</h4>
-              <p className="text-gray-500 font-bold text-sm mb-6">Learn more about donation protocols and health benefits.</p>
-              <Button className="bg-blue-600 h-10 text-xs">Read Guide</Button>
+            <div className="p-6 bg-red-50 rounded-2xl">
+              <p className="font-black text-gray-900 mb-2">Change Password</p>
+              <p className="text-sm text-gray-500 font-bold">Secure your account with a new password.</p>
+              <Button 
+                onClick={() => window.open('/forgot-password', '_blank')}
+                className="mt-4 bg-red-600 h-10 text-xs"
+              >
+                Change Password
+              </Button>
             </div>
           </div>
         </Card>
@@ -602,7 +590,7 @@ const DonorDashboard = () => {
           <Card variant="glass" className="p-10 border-none shadow-2xl shadow-blue-100/50 bg-gradient-to-br from-blue-600 to-indigo-600 text-white relative overflow-hidden group">
             <div className="relative z-10">
               <h4 className="text-xl font-black mb-4 tracking-tight">Refer a Friend</h4>
-              <p className="text-white/80 font-bold text-sm leading-relaxed mb-8">Help us grow our community. Get special badges for every successful referral.</p>
+              <p className="text-white/80 font-bold text-sm leading-relaxed mb-8">Expand our community. Get special badges for every successful referral.</p>
               <button className="h-14 px-8 rounded-2xl bg-white text-blue-600 font-black uppercase tracking-widest text-xs shadow-xl hover:scale-105 transition-all flex items-center gap-2">
                 Share Link <ArrowRight size={16} />
               </button>

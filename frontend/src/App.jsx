@@ -11,6 +11,7 @@ import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import RegisterBloodBank from "./pages/Auth/RegisterBloodBank";
 import ResetPassword from "./pages/Auth/ResetPassword";
+import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
 import AdminDashboard from "./pages/Dashboard/AdminDashboard";
 import DonorDashboard from "./pages/Dashboard/DonorDashboard";
 import DonorCertificates from "./pages/Dashboard/DonorCertificates";
@@ -48,6 +49,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/register/bloodbank" element={<RegisterBloodBank />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* Admin Routes */}
@@ -85,7 +87,6 @@ function App() {
           <Route path="rewards" element={<Rewards />} />
           <Route path="settings" element={<Profile />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="help" element={<DonorDashboard />} />
         </Route>
 
         {/* Patient Routes */}
@@ -105,7 +106,6 @@ function App() {
           <Route path="report-analyzer" element={<ReportAnalyzer />} />
           <Route path="settings" element={<Profile />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="help" element={<PatientDashboard />} />
           <Route path="report-analyzer" element={<ReportAnalyzer />} />
         </Route>
 
@@ -125,7 +125,6 @@ function App() {
           <Route path="nearby-donors" element={<BloodBankNearbyDonors />} />
           <Route path="settings" element={<Profile />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="help" element={<BloodBankDashboard />} />
         </Route>
 
         {/* Default Route */}

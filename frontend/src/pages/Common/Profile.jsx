@@ -401,13 +401,6 @@ const Profile = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
-          <Button 
-            onClick={() => navigate(dashboardPath(user.role))} 
-            variant="ghost" 
-            className="flex items-center gap-2 p-0 h-auto text-gray-400 hover:text-red-600 font-black uppercase text-xs tracking-widest transition-all mb-4"
-          >
-            <ArrowLeft size={16} /> Back to Dashboard
-          </Button>
           <h2 className="text-4xl font-black text-gray-900 tracking-tight">Account Settings</h2>
           <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">Manage your profile and preferences</p>
         </div>

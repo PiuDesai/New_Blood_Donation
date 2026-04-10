@@ -57,7 +57,6 @@ const AdminDashboard = () => {
           role: "Blood Bank",
           location: u.location?.city || "Unknown",
           date: new Date(u.createdAt).toLocaleDateString(),
-          avatar: u.name?.substring(0, 2).toUpperCase(),
           licenseInfo: u.licenseInfo,
         }));
 
@@ -153,7 +152,9 @@ const AdminDashboard = () => {
         <StatsCard
           title="Pending Blood Banks"
           value={stats?.pendingBanks || 0}
-          icon={() => <Droplets size={28} className="text-pink-600" />}
+          icon={Droplets}
+          color="bg-gradient-to-br from-purple-500 to-indigo-600"
+          hideBackgroundIcon={true}
         />
       </div>
 
@@ -171,10 +172,6 @@ const AdminDashboard = () => {
                 className="flex flex-col md:flex-row md:items-center justify-between p-5 border rounded-xl"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center font-bold">
-                    {item.avatar}
-                  </div>
-
                   <div>
                     <h4 className="font-bold">{item.name}</h4>
                     <p className="text-sm text-gray-500 flex items-center gap-1">

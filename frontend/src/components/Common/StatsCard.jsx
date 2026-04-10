@@ -1,7 +1,7 @@
 import { Card } from "./Card";
 import { cn } from "../../utils/cn";
 
-export const StatsCard = ({ title, value, icon: Icon, color, trend, trendValue }) => {
+export const StatsCard = ({ title, value, icon: Icon, color, trend, trendValue, hideBackgroundIcon }) => {
   return (
     <div>
       <Card className="flex items-center gap-6 p-8 group border-none shadow-md shadow-gray-200/40 relative overflow-hidden bg-white hover:shadow-xl transition-all duration-300">

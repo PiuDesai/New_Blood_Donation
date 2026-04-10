@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Building2, Droplets, Activity, Plus, Search, MapPin, MoreVertical, ShieldCheck, Bell, Users, Calendar, ArrowRight, TrendingUp, AlertTriangle, ArrowLeft, CheckCircle2, Clock, Settings, HelpCircle, User } from "lucide-react";
+import { Building2, Droplets, Activity, Plus, Search, MapPin, MoreVertical, ShieldCheck, Bell, Users, Calendar, ArrowRight, TrendingUp, AlertTriangle, ArrowLeft, CheckCircle2, Clock, Settings, User } from "lucide-react";
 import { StatsCard } from "../../components/Common/StatsCard";
 import { Card } from "../../components/Common/Card";
 import { Button } from "../../components/Common/Button";
@@ -454,19 +454,15 @@ const BloodBankDashboard = () => {
           <div><p className="font-black text-gray-900">Emergency Broadcast</p><p className="text-xs text-gray-400 font-bold">Instantly notify all local donors of critical shortages.</p></div>
           <div className="w-12 h-6 bg-blue-600 rounded-full relative"><div className="w-5 h-5 bg-white rounded-full absolute top-0.5 right-1" /></div>
         </div>
-      </div>
-    </Card>
-  );
-
-  const renderHelp = () => (
-    <Card variant="glass" className="p-10 border-none shadow-2xl shadow-gray-100/50">
-      <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Support Hub</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="p-8 bg-blue-50 rounded-[2rem] border border-blue-100">
-          <HelpCircle className="text-blue-600 mb-4" size={32} />
-          <h4 className="font-black text-xl text-gray-900 mb-2">Technical Support</h4>
-          <p className="text-gray-500 font-bold text-sm mb-6">Connect with central admin for logistical support.</p>
-          <Button className="bg-blue-600 h-10 text-xs">Open Ticket</Button>
+        <div className="p-6 bg-red-50 rounded-2xl">
+          <p className="font-black text-gray-900 mb-2">Change Password</p>
+          <p className="text-sm text-gray-500 font-bold">Secure your account with a new password.</p>
+          <Button 
+            onClick={() => window.open('/forgot-password', '_blank')}
+            className="mt-4 bg-red-600 h-10 text-xs"
+          >
+            Change Password
+          </Button>
         </div>
       </div>
     </Card>
@@ -497,7 +493,6 @@ const BloodBankDashboard = () => {
         {path === "inventory" && renderInventory()}
         {path === "requests" && renderRequests()}
         {path === "settings" && renderSettings()}
-        {path === "help" && renderHelp()}
       </motion.div>
       {manageCampId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">

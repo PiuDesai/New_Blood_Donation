@@ -2,16 +2,15 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, Users, HeartPulse, Droplets,
 
-  User, Settings, HelpCircle, Activity, FlaskConical, Award
+  User, Settings, Activity, FlaskConical, Award
 
 } from "lucide-react";
 import { cn } from "../../utils/cn";
 
 const Sidebar = ({ role }) => {
   const getLinks = () => {
-    const common = [
+    const common = role === 'admin' ? [] : [
       { to: `/${role}/profile`, icon: User, label: "My Profile" },
-      { to: `/${role}/help`, icon: HelpCircle, label: "Support" },
     ];
 
     const roleSpecific = {
@@ -74,7 +73,7 @@ const Sidebar = ({ role }) => {
           <div className="relative z-10">
             <h4 className="font-black text-xl mb-2 tracking-tight">Emergency?</h4>
             <p className="text-red-100 text-xs font-bold mb-6 leading-relaxed">
-              Our 24/7 hotline is here to help you find blood instantly.
+              Our 24/7 hotline is available for urgent blood needs.
             </p>
             <button className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-6 py-3 rounded-2xl text-xs font-black transition-all border border-white/20 uppercase tracking-widest">
               Call Now
