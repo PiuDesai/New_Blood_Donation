@@ -23,7 +23,9 @@ const sendNotification = async (fcmTokens = [], dbRecipientIds = [], payload) =>
   }
 
   if (validTokens.length === 0 && uniqueRecipientIds.length === 0) {
-    console.log("⚠️ No FCM tokens and no DB recipients; skipping notification.");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("⚠️ No FCM tokens and no DB recipients; skipping notification.");
+    }
     return;
   }
 
@@ -36,23 +38,30 @@ const sendNotification = async (fcmTokens = [], dbRecipientIds = [], payload) =>
 
   // ── 1. FCM (optional) ─────────────────────────
   if (validTokens.length > 0) {
-    const message = {
-      notification: { title, body },
-      data: { ...fcmData, click_action: "FLUTTER_NOTIFICATION_CLICK" },
-      tokens: validTokens,
-    };
+    // Only proceed if admin is initialized
+    if (admin && admin.apps.length > 0) {
+      const message = {
+        notification: { title, body },
+        data: { ...fcmData, click_action: "FLUTTER_NOTIFICATION_CLICK" },
+        tokens: validTokens,
+      };
 
-    try {
-      console.log(`🚀 Sending FCM to ${validTokens.length} token(s)...`);
-      const response = await admin.messaging().sendEachForMulticast(message);
-      console.log(`✅ FCM: success ${response.successCount}, failure ${response.failureCount}`);
-      if (response.failureCount > 0) {
-        response.responses.forEach((resp, idx) => {
-          if (!resp.success) console.error("❌ FCM token failed:", validTokens[idx], resp.error?.message);
-        });
+      try {
+        if (process.env.NODE_ENV !== "production") console.log(`🚀 Sending FCM to ${validTokens.length} token(s)...`);
+        const response = await admin.messaging().sendEachForMulticast(message);
+        if (process.env.NODE_ENV !== "production") console.log(`✅ FCM: success ${response.successCount}, failure ${response.failureCount}`);
+        if (response.failureCount > 0) {
+          response.responses.forEach((resp, idx) => {
+            if (!resp.success && process.env.NODE_ENV !== "production") console.error("❌ FCM token failed:", validTokens[idx], resp.error?.message);
+          });
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV !== "production") console.error("🔥 FCM error:", err.message);
       }
-    } catch (err) {
-      console.error("🔥 FCM error:", err.message);
+    } else {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("⚠️ Firebase Admin not initialized; skipping FCM notification.");
+      }
     }
   }
 
@@ -68,9 +77,9 @@ const sendNotification = async (fcmTokens = [], dbRecipientIds = [], payload) =>
         isEmergency,
       }));
       await Notification.insertMany(dbNotifications);
-      console.log(`💾 Saved ${dbNotifications.length} notification(s) to MongoDB.`);
+      if (process.env.NODE_ENV !== "production") console.log(`💾 Saved ${dbNotifications.length} notification(s) to MongoDB.`);
     } catch (err) {
-      console.error("🔥 Error saving notifications:", err.message);
+      if (process.env.NODE_ENV !== "production") console.error("🔥 Error saving notifications:", err.message);
     }
   }
 };

@@ -126,7 +126,9 @@ const registerUser = async (req, res, next) => {
       .then((r) => {
         if (process.env.NODE_ENV !== 'production') console.log('[email] welcome result:', r);
       })
-      .catch((e) => console.error('[email] welcome error:', e.message));
+      .catch((e) => {
+        if (process.env.NODE_ENV !== 'production') console.error('[email] welcome error:', e.message);
+      });
 
     res.status(201).json({
       success: true,
@@ -177,7 +179,9 @@ const registerBloodBank = async (req, res, next) => {
       .then((r) => {
         if (process.env.NODE_ENV !== 'production') console.log('[email] bloodbank welcome result:', r);
       })
-      .catch((e) => console.error('[email] bloodbank welcome error:', e.message));
+      .catch((e) => {
+        if (process.env.NODE_ENV !== 'production') console.error('[email] bloodbank welcome error:', e.message);
+      });
 
     res.status(201).json({
       success: true,

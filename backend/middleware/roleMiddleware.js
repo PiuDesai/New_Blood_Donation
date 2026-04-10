@@ -10,7 +10,9 @@ const requireRole = (...allowedRoles) => (req, res, next) => {
   }
 
   if (!userRole || !normalizedAllowed.includes(userRole)) {
-    console.error(`[requireRole] Access Denied: User Role "${userRole}" not in ${JSON.stringify(normalizedAllowed)}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.error(`[requireRole] Access Denied: User Role "${userRole}" not in ${JSON.stringify(normalizedAllowed)}`);
+    }
     return res.status(403).json({ 
       success: false,
       message: `Access denied. Role "${userRole}" is not authorized for this action.` 

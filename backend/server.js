@@ -19,13 +19,34 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ───── Middleware ─────
-app.use(cors());
-app.use(express.json());
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.FRONT_URL,
+  "https://your-frontend-domain.vercel.app" // User should update this in Render env vars
+].filter(Boolean);
 
-app.use((req, res, next) => {
-  console.log(`[${req.method}] ${req.originalUrl}`);
-  next();
-});
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
+
+app.use(express.json({ limit: '10mb' })); // Increased limit for profile photos
+
+// Request Logger (only in dev)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.log(`[${req.method}] ${req.originalUrl}`);
+    next();
+  });
+}
 
 
 
@@ -60,11 +81,14 @@ app.use((req, res) => {
 
 // ───── Global Error Handler ─────
 app.use((err, req, res, next) => {
-  console.error("GLOBAL ERROR:", err.message);
+  if (process.env.NODE_ENV !== 'production') {
+    console.error("GLOBAL ERROR:", err.stack);
+  }
 
-  res.status(500).json({
+  res.status(err.status || 500).json({
     success: false,
-    message: err.message || "Internal Server Error"
+    message: err.message || "Internal Server Error",
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
   });
 });
 
