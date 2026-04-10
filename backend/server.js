@@ -47,7 +47,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.options('*', cors()); // Enable pre-flight for all routes
+app.options('(.*)', cors()); // ✅ Updated for path-to-regexp v8 compatibility
 
 app.use(express.json({ limit: '10mb' })); // Increased limit for profile photos
 
