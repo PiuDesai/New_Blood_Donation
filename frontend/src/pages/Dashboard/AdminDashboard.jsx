@@ -42,15 +42,15 @@ const AdminDashboard = () => {
           getPendingBloodBanks(),
         ]);
 
-        // ✅ SET STATS
+        // SET STATS
         setStats(statsRes?.data || statsRes);
 
-        // ✅ HANDLE DIFFERENT API STRUCTURES
+        //HANDLE DIFFERENT API STRUCTURES
         const banks = Array.isArray(pendingRes)
           ? pendingRes
           : pendingRes?.data || pendingRes?.pendingBanks || pendingRes?.bloodbanks || [];
 
-        // ✅ MAP SAFELY
+        //MAP SAFELY
         const formatted = banks.map((u) => ({
           id: u._id,
           name: u.name,
@@ -77,7 +77,7 @@ const AdminDashboard = () => {
     fetchData();
   }, []);
 
-  // ✅ APPROVE FUNCTION
+  // APPROVE FUNCTION
   const handleApprove = async (id) => {
     try {
       await approveBloodBank(id);
@@ -91,7 +91,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // ✅ REJECT FUNCTION
+  //REJECT FUNCTION
   const handleReject = async (id) => {
     if (!window.confirm("Are you sure you want to reject and deactivate this blood bank?")) return;
     try {
@@ -103,7 +103,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // ✅ LOADING SCREEN
+  //LOADING SCREEN
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">

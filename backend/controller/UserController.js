@@ -3,12 +3,12 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/UserModel.js');
 const { sendEmail } = require('../utils/emailService');
 
-// ── Helper: sign JWT ──────────────────────────────────────────
+// Helper: sign JWT
 const signToken = (id, role) =>
   jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
 
-// ───────────────── FORGOT PASSWORD ─────────────────
+//FORGOT PASSWORD
 const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -89,7 +89,7 @@ const resetPassword = async (req, res, next) => {
 };
 
 
-// ───────────────── REGISTER USER (Donor/Patient) ─────────────────
+// REGISTER USER (Donor/Patient) 
 const registerUser = async (req, res, next) => {
   try {
     const {
@@ -143,7 +143,7 @@ const registerUser = async (req, res, next) => {
 };
 
 
-// ───────────────── REGISTER BLOOD BANK ─────────────────
+//REGISTER BLOOD BANK 
 const registerBloodBank = async (req, res, next) => {
   try {
     const {
@@ -265,7 +265,7 @@ const getProfile = async (req, res, next) => {
     res.json({ success: true, user: user.toJSON() });
 
   } catch (err) {
-    next(err); // ✅ FIX
+    next(err); 
   }
 };
 
@@ -297,12 +297,12 @@ const updateProfile = async (req, res, next) => {
     res.json({ success: true, message: 'Profile updated', user: user.toJSON() });
 
   } catch (err) {
-    next(err); // ✅ FIX
+    next(err); 
   }
 };
 
 
-// ───────────────── CHANGE PASSWORD ─────────────────
+//CHANGE PASSWORD
 const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -322,12 +322,12 @@ const changePassword = async (req, res, next) => {
     res.json({ success: true, message: 'Password changed' });
 
   } catch (err) {
-    next(err); // ✅ FIX
+    next(err); 
   }
 };
 
 
-// ───────────────── CHECK ELIGIBILITY ─────────────────
+//CHECK ELIGIBILITY
 const checkEligibility = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
@@ -341,14 +341,14 @@ const checkEligibility = async (req, res, next) => {
     });
 
   } catch (err) {
-    next(err); // ✅ FIX
+    next(err); 
   }
 };
 
 
 const { addPointsForDonation } = require('./GamificationController.js');
 
-// ───────────────── RECORD DONATION ─────────────────
+//RECORD DONATION 
 const recordDonation = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
@@ -373,7 +373,7 @@ const recordDonation = async (req, res, next) => {
 };
 
 
-// ───────────────── LOGOUT ─────────────────
+//LOGOUT 
 const logout = async (req, res, next) => {
   try {
     await User.findByIdAndUpdate(req.user.id, { fcmToken: '' });
@@ -386,7 +386,7 @@ const logout = async (req, res, next) => {
 };
 
 
-// ───────────────── VIEW BLOOD BANKS (For Users) ─────────────
+//VIEW BLOOD BANKS (For Users)
 const getAllBloodBanks = async (req, res, next) => {
   try {
     const bloodBanks = await User.find({ role: 'bloodbank', isActive: true })

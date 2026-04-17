@@ -18,7 +18,7 @@ const gamificationRoutes = require("./routes/GamificationRoute.js");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ───── Middleware ─────
+//Middleware
 const allowedOrigins = [
   "http://localhost:5173",
   "https://new-blood-donation.vercel.app",
@@ -47,7 +47,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.options(/.*/, cors()); // ✅ Updated for path-to-regexp v8+ (Named Wildcard)
+app.options(/.*/, cors()); //Updated for path-to-regexp v8+ 
 
 app.use(express.json({ limit: '10mb' })); // Increased limit for profile photos
 
@@ -61,16 +61,16 @@ if (process.env.NODE_ENV !== 'production') {
 
 
 
-// ───── Database ─────
+//Database
 Database();
 
-// ───── Root Route ─────
+// Root Route 
 app.get("/", (req, res) => {
   res.send("Blood Donation Server is running!");
 });
 
-// ───── Routes ─────
-app.use("/api", userRoutes); // ✅ MOUNT AT /api
+// Routes
+app.use("/api", userRoutes); //MOUNT AT /api
 app.use("/api/admin", adminRoutes);
 app.use("/api/bloodbank", bloodBankRoutes);
 app.use("/api/camps", campRoutes);
@@ -82,7 +82,7 @@ app.use("/api/gamification", gamificationRoutes);
 app.use("/api", statsRoutes);
 
 
-// ───── 404 Handler (Optional but Recommended) ─────
+// 404 Handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -90,7 +90,7 @@ app.use((req, res) => {
   });
 });
 
-// ───── Global Error Handler ─────
+//Global Error Handler
 app.use((err, req, res, next) => {
   if (process.env.NODE_ENV !== 'production') {
     console.error("GLOBAL ERROR:", err.stack);
@@ -103,7 +103,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ───── Start Server ─────
+//Start Server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

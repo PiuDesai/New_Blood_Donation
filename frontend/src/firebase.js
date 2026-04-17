@@ -75,14 +75,13 @@ onMessage(messaging, (payload) => {
   if ("Notification" in window && Notification.permission === "granted") {
     new Notification(title, {
       body: body,
-      icon: "/logo192.png", // Replace with your app logo path
+      icon: "/logo192.png", 
       badge: "/logo192.png",
-      tag: "blood-donation-alert", // Prevents multiple notifications for the same thing
+      tag: "blood-donation-alert", 
     });
   }
 
-  // 2. You can also trigger a custom event or use a state manager (Redux/Context)
-  // to update the UI bell icon instantly without waiting for polling.
+
   const event = new CustomEvent('new-notification', { detail: payload });
   window.dispatchEvent(event);
 });

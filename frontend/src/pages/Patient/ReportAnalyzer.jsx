@@ -8,7 +8,7 @@ const ReportAnalyzer = () => {
     const [copied, setCopied] = useState(false);
     const [dragging, setDragging] = useState(false);
 
-    // ✅ File validation
+    //File validation
     const isValidFile = (file) => {
         const allowedTypes = [
             "application/pdf",
@@ -21,7 +21,7 @@ const ReportAnalyzer = () => {
         return allowedTypes.includes(file.type);
     };
 
-    // ✅ Submit
+    //Submit
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -51,7 +51,7 @@ const ReportAnalyzer = () => {
         }
     };
 
-    // ✅ Drag handlers
+    //Drag handlers
     const handleDragOver = (e) => {
         e.preventDefault();
         setDragging(true);
@@ -73,7 +73,7 @@ const ReportAnalyzer = () => {
         if (droppedFile) setFile(droppedFile);
     };
 
-    // ✅ Copy
+    //Copy
     const handleCopy = () => {
         navigator.clipboard.writeText(result);
         setCopied(true);

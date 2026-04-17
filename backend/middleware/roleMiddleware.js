@@ -1,6 +1,5 @@
-/**
- * Require JWT payload role to be one of allowed roles (exact match, lowercase).
- */
+// Require JWT payload role to be one of allowed roles (exact match, lowercase).
+ 
 const requireRole = (...allowedRoles) => (req, res, next) => {
   const userRole = String(req.user?.role || "").toLowerCase();
   const normalizedAllowed = allowedRoles.map((r) => String(r).toLowerCase());

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-// ─── Location Schema ─────────────────────────────
+//Location Schema
 const locationSchema = new mongoose.Schema({
   type: {
     type: String,
@@ -18,7 +18,7 @@ const locationSchema = new mongoose.Schema({
   pincode: String
 });
 
-// ─── User Schema ─────────────────────────────
+//User Schema
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -231,13 +231,13 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// ─── Indexes ─────────────────────────────
+//Indexes
 userSchema.index({ location: '2dsphere' });
 userSchema.index({ bloodGroup: 1, role: 1 });
 userSchema.index({ email: 1 });
 userSchema.index({ phone: 1 });
 
-// ─── Pre-save: hash password ─────────────────
+//Pre-save: hash password
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
 
@@ -245,7 +245,7 @@ userSchema.pre('save', async function () {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// ─── Pre-save: donation eligibility ─────────
+//Pre-save: donation eligibility
 userSchema.pre('save', function () {
   if (this.isModified('donorInfo.lastDonatedAt') && this.donorInfo.lastDonatedAt) {
     const next90 = new Date(this.donorInfo.lastDonatedAt);
@@ -256,7 +256,7 @@ userSchema.pre('save', function () {
   }
 });
 
-// ─── Methods ────────────────────────────
+//Methods
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
@@ -265,7 +265,7 @@ userSchema.methods.isLocked = function () {
   return !!(this.lockUntil && this.lockUntil > Date.now());
 };
 
-// ─── Virtuals ───────────────────────────
+// Virtuals 
 userSchema.virtual('age').get(function () {
   if (!this.dateOfBirth) return null;
   const diff = Date.now() - this.dateOfBirth.getTime();
@@ -295,7 +295,7 @@ userSchema.virtual('canDonate').get(function () {
   return true;
 });
 
-// ─── Clean response ─────────────────────
+// Clean response 
 userSchema.set('toJSON', {
   virtuals: true,
   transform: function (doc, ret) {

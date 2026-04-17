@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 
 const auth = (req, res, next) => {
   try {
-    // 🔹 Get token
+    // Get token
     const authHeader = req.headers.authorization;
     if (process.env.NODE_ENV !== "production") {
       console.log("[auth] authorization header:", authHeader);
@@ -14,7 +14,7 @@ const auth = (req, res, next) => {
       });
     }
 
-    // 🔹 Check format
+    //Check format
     if (!authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         message: "Invalid token format"
@@ -23,7 +23,7 @@ const auth = (req, res, next) => {
 
     const token = authHeader.split(" ")[1];
 
-    // 🔹 Verify
+    //Verify
     const secret = process.env.JWT_SECRET || 'secret';
 
     const decoded = jwt.verify(token, secret);
@@ -39,14 +39,14 @@ const auth = (req, res, next) => {
 
     req.user = decoded;
 
-    next(); // ✅ MUST
+    next(); 
 
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
       console.log("AUTH ERROR:", error.message);
     }
 
-    // ❌ DO NOT USE next(error) here for now
+    
     return res.status(401).json({
       message: "Invalid or expired token"
     });
