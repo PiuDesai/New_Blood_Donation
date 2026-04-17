@@ -9,7 +9,7 @@ function escapeRegex(str) {
 }
 
 
-// 🔴 Get Profile (Protected)
+//Get Profile (Protected)
 exports.getBloodBankProfile = async (req, res) => {
   try {
     const bloodBank = await User.findById(req.user.id).select("-password");
@@ -20,7 +20,7 @@ exports.getBloodBankProfile = async (req, res) => {
 };
 
 
-// 🔴 Add/Manage Blood Stock
+//Add/Manage Blood Stock
 exports.updateBloodStock = async (req, res) => {
   try {
     const { bloodGroup, units } = req.body;
@@ -47,7 +47,7 @@ exports.updateBloodStock = async (req, res) => {
 };
 
 
-// 🔴 View Blood Requests (Example: from all users)
+//View Blood Requests
 // In a real app, this would query a Requests model
 exports.getBloodRequests = async (req, res) => {
   try {
@@ -58,7 +58,7 @@ exports.getBloodRequests = async (req, res) => {
   }
 };
 
-// Donors in the same city (or pincode) as this blood bank — for outreach
+// Donors in the same city (or pincode) as this blood bank
 exports.getDonorsNearby = async (req, res) => {
   try {
     const bank = await User.findById(req.user.id).select("location");

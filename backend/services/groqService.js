@@ -33,7 +33,7 @@ ${text}
     return response.choices[0].message.content;
 
   } catch (error) {
-    console.error("❌ Groq Error:", error);
+    console.error("Groq Error:", error);
     return "AI analysis failed";
   }
 };

@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/UserModel");
 
-// ✅ ADMIN LOGIN
+//ADMIN LOGIN
 exports.adminLogin = (req, res) => {
   const { email, password } = req.body;
 
@@ -28,7 +28,7 @@ exports.adminLogin = (req, res) => {
   });
 };
 
-// ✅ GET APPROVED DONORS
+//GET APPROVED DONORS
 exports.getAllDonors = async (req, res) => {
   try {
     const donors = await User.find({
@@ -44,7 +44,7 @@ exports.getAllDonors = async (req, res) => {
   }
 };
 
-// ✅ GET APPROVED BLOOD BANKS
+//GET APPROVED BLOOD BANKS
 exports.getAllBloodBanks = async (req, res) => {
   try {
     const bloodbanks = await User.find({
@@ -60,7 +60,7 @@ exports.getAllBloodBanks = async (req, res) => {
   }
 };
 
-// ✅ USER DETAILS
+// USER DETAILS
 exports.getUserDetails = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
@@ -76,7 +76,7 @@ exports.getUserDetails = async (req, res) => {
   }
 };
 
-// ✅ REMOVE → MOVE TO PENDING
+//REMOVE → MOVE TO PENDING
 exports.removeUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -84,7 +84,7 @@ exports.removeUser = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       id,
       {
-        isApproved: false, // ⭐ MAIN LOGIC
+        isApproved: false, //  MAIN LOGIC
         isActive: true,
       },
       { new: true }
@@ -105,7 +105,7 @@ exports.removeUser = async (req, res) => {
   }
 };
 
-// ✅ PENDING DONORS
+//PENDING DONORS
 exports.getPendingDonors = async (req, res) => {
   try {
     const donors = await User.find({
@@ -119,7 +119,7 @@ exports.getPendingDonors = async (req, res) => {
   }
 };
 
-// ✅ APPROVE DONOR
+//APPROVE DONOR
 exports.approveDonor = async (req, res) => {
   try {
     const donor = await User.findByIdAndUpdate(
@@ -138,7 +138,7 @@ exports.approveDonor = async (req, res) => {
   }
 };
 
-// ✅ PENDING BLOOD BANKS
+//PENDING BLOOD BANKS
 exports.getPendingBloodBanks = async (req, res) => {
   try {
     const bloodbanks = await User.find({
@@ -152,7 +152,7 @@ exports.getPendingBloodBanks = async (req, res) => {
   }
 };
 
-// ✅ APPROVE BLOOD BANK
+//APPROVE BLOOD BANK
 exports.approveBloodBank = async (req, res) => {
   try {
     const bloodbank = await User.findByIdAndUpdate(
@@ -171,7 +171,7 @@ exports.approveBloodBank = async (req, res) => {
   }
 };
 
-// ✅ ADMIN STATS
+//ADMIN STATS
 exports.getAdminStats = async (req, res) => {
   try {
     const totalDonors = await User.countDocuments({ role: "donor" });

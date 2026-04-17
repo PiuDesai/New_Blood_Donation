@@ -1,8 +1,8 @@
 import API from "./axios";
 
-// ═══════════════════════════════════════════════
-// ─── AUTH ────────────────────────────────────
-// ═══════════════════════════════════════════════
+
+//AUTH 
+
 
 export const registerUser = async (userData) => {
   const { data } = await API.post("/user/register", userData);
@@ -36,9 +36,9 @@ export const logoutUser = async () => {
   }
 };
 
-// ═══════════════════════════════════════════════
-// ─── ADMIN ────────────────────────────────────
-// ═══════════════════════════════════════════════
+
+//ADMIN 
+
 
 export const getAdminStats = async () => {
   const { data } = await API.get("/admin/stats");
@@ -70,9 +70,9 @@ export const removeUser = async (id) => {
   return data;
 };
 
-// ═══════════════════════════════════════════════
-// ─── USER PROFILE ────────────────────────────
-// ═══════════════════════════════════════════════
+
+//USER PROFILE
+
 
 export const getProfile = async () => {
   const { data } = await API.get("/me");
@@ -114,9 +114,9 @@ export const getAllBloodBanks = async () => {
   return data;
 };
 
-// ═══════════════════════════════════════════════
-// ─── BLOOD BANK ──────────────────────────────
-// ═══════════════════════════════════════════════
+
+//BLOOD BANK 
+
 
 export const updateBloodStock = async (payload) => {
   const { data } = await API.post("/bloodbank/stock", payload);
@@ -136,9 +136,8 @@ export const getDonorsNearby = async (bloodGroup) => {
   return data;
 };
 
-// ═══════════════════════════════════════════════
-// ─── CAMPS ────────────────────────────────────
-// ═══════════════════════════════════════════════
+//CAMPS
+
 
 export const createCamp = async (payload) => {
   const { data } = await API.post("/camps/create", payload);
@@ -210,9 +209,9 @@ export const completeCampEvent = async (campId) => {
   return data;
 };
 
-// ═══════════════════════════════════════════════
-// ─── BLOOD REQUESTS ──────────────────────────
-// ═══════════════════════════════════════════════
+
+//BLOOD REQUESTS
+
 
 export const createBloodRequest = async (payload) => {
   const { data } = await API.post("/requests/create", payload);
@@ -239,7 +238,7 @@ export const acceptBloodRequest = async (requestId) => {
   return data;
 };
 
-// ✅ INCLUDED (from old-state)
+
 export const rejectBloodRequest = async (requestId, reason) => {
   const { data } = await API.post("/requests/reject", { requestId, reason });
   return data;
@@ -270,9 +269,9 @@ export const completeBloodDonation = async (requestId) => {
   return data;
 };
 
-// ═══════════════════════════════════════════════
-// ─── BLOOD TEST BOOKING ──────────────────────
-// ═══════════════════════════════════════════════
+
+//BLOOD TEST BOOKING
+
 
 export const getTestTypes = async () => {
   const { data } = await API.get("/tests/types");
@@ -322,9 +321,9 @@ export const uploadTestReport = async (payload) => {
   return data;
 };
 
-// ═══════════════════════════════════════════════
-// ─── NOTIFICATIONS ───────────────────────────
-// ═══════════════════════════════════════════════
+
+//NOTIFICATIONS
+
 
 export const getNotifications = async ({ unreadOnly = false, page = 1, limit = 20 } = {}) => {
   const { data } = await API.get("/notifications", {
@@ -361,9 +360,9 @@ export const analyzeReport = (formData) =>
     },
   });
 
-// ═══════════════════════════════════════════════
-// ─── STATS ────────────────────────────────────
-// ═══════════════════════════════════════════════
+
+// STATS
+
 
 export const getPatientStats = async () => {
   const { data } = await API.get("/patient/stats");
@@ -380,9 +379,9 @@ export const getBloodBankStats = async () => {
   return data;
 };
 
-// ═══════════════════════════════════════════════
-// ─── GAMIFICATION ────────────────────────────
-// ═══════════════════════════════════════════════
+
+//GAMIFICATION 
+
 
 export const getLeaderboard = async () => {
   const { data } = await API.get("/gamification/leaderboard");

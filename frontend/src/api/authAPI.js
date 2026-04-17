@@ -23,9 +23,9 @@ export const loginUser = async (credentials) => {
   }
 };
 
-// ✅ ADMIN LOGIN (ADDED)
+//ADMIN LOGIN (ADDED)
 export const loginAdmin = async (credentials) => {
-  // ✅ ADMIN LOGIN (FIXED)
+  
   try {
     const response = await API.post("/admin/login", credentials);
     const data = response.data;
@@ -38,9 +38,9 @@ export const loginAdmin = async (credentials) => {
   } catch (error) {
     console.warn("Admin API error:", error.message);
 
-    // ❌ DO NOT allow fallback success for admin
+    //DO NOT allow fallback success for admin
     return {
-      success: false, // ✅ IMPORTANT
+      success: false, 
       message:
         error.response?.data?.message ||
         "Invalid email or password",
@@ -131,7 +131,7 @@ export const getDonorStats = async () => {
   }
 };
 
-// ───────────────── PROFILE & SETTINGS ─────────────────
+//PROFILE & SETTINGS
 
 export const getProfile = async () => {
   try {
@@ -199,26 +199,26 @@ export const getPendingDonors = async () => {
   return res.data;
 };
 
-// ✅ APPROVE DONOR
+//APPROVE DONOR
 export const approveDonor = async (id) => {
   const res = await API.put(`/admin/approve-donor/${id}`);
   return res.data;
 };
 
 
-// ✅ GET BLOOD BANK REQUESTS
+//GET BLOOD BANK REQUESTS
 export const getPendingBloodBanks = async () => {
   const res = await API.get("/admin/pending-blood-banks");
   return res.data;
 };
 
-// ✅ APPROVE BLOOD BANK
+//APPROVE BLOOD BANK
 export const approveBloodBank = async (id) => {
   const res = await API.put(`/admin/approve-blood-bank/${id}`);
   return res.data;
 };
 
-// ── Admin: lists + user management ───────────────────────────────
+//Admin: lists + user management
 export const getAllDonors = async () => {
   const res = await API.get("/admin/donors");
   return res.data;

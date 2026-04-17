@@ -1,4 +1,3 @@
-// middlewares/roleCheck.js
 
 module.exports = function (...allowedRoles) {
   return (req, res, next) => {
